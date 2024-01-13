@@ -1,6 +1,29 @@
 Changelog
 =========
 
+v0.4.94 -- 2024-01-12
+---------------------
+
+Major bug fixes:
+
+* ed4914c Fix support for `OPENAI_API_KEY` env var. (Closes: #1060654)
+
+Feature updates:
+
+* 27e53d3 Improve git-commit prompt (Otto Kekäläinen)
+* 166ed80 Refactor file selection in `debgpt` to allow line range specification.
+  For example, you can use `debgpt -f pyproject.toml:3-10` to read from line 3
+  (inclusive) to line 10 (exclusive). It's just python slicing.
+* 1d12619 Add support for loading Arch Wiki pages. (but the wiki pages are
+  really long. Can easily exceed the context length limit)
+
+Minor updates:
+
+* 5641d22 Fix misc typos and improve spelling (Otto Kekäläinen)
+* 30d2ea3 pyflakes is really good
+* 1640f71 Refactor CLI completion in debgpt.
+* 0a9ef7b bts: filter out garbage from the HTML
+
 v0.4.93 -- 2024-01-09
 ---------------------
 
