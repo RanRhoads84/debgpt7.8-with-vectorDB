@@ -1,3 +1,10 @@
+debgpt (0.4.94) unstable; urgency=medium
+
+  * Release v0.4.94. (Closes: #1060654)
+    Find the full changelog at /usr/share/doc/debgpt/changelog-full.md.gz
+
+ -- Mo Zhou <lumin@debian.org>  Fri, 12 Jan 2024 21:35:27 -0500
+
 debgpt (0.4.93) unstable; urgency=medium
 
   * Release v0.4.93.
