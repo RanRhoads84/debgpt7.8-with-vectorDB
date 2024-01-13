@@ -63,7 +63,7 @@ class Config(object):
                 self.toml.update(content)
         # some arguments will be overrden by environment variables
         if (openai_api_key := os.getenv('OPENAI_API_KEY', None)) is not None:
-            self.toml.openai_api_key = openai_api_key
+            self.toml['openai_api_key'] = openai_api_key
         # all the above will be overridden by command line arguments
         pass
 
