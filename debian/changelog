@@ -6,8 +6,9 @@ debgpt (0.4.95) UNRELEASED; urgency=medium
   * Add ollama frontend (OpenAI-API compatibibility mode)
   * Add --monochrome to disable colorized outputs during conversation
     (Closes: #1061387)
+  * cli: Provide a fresh-install guide (Closes: #1064469)
 
- -- Mo Zhou <lumin@debian.org>  Tue, 15 Oct 2024 23:45:31 -0400
+ -- Mo Zhou <lumin@debian.org>  Wed, 16 Oct 2024 00:07:39 -0400
 
 debgpt (0.4.94) unstable; urgency=medium
 
