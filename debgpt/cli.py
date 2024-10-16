@@ -154,7 +154,7 @@ it to web-based LLMs in that case.")
                     help='disable colorized output for prompt_toolkit.')
     config_template += '\n'.join('# ' + x for x in textwrap.wrap(
         ag._option_string_actions['--monochrome'].help))
-    config_template += f'''\nmonochrome = {repr(conf.monochrome)}\n'''
+    config_template += f'''\nmonochrome = {str(conf.monochrome).lower()}\n'''
 
     # LLM Inference Arguments
     config_template += '''\n
