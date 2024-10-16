@@ -27,6 +27,11 @@ authors = [
 ]
 readme = "README.md"
 license = {text = "MIT License"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 
 [project.urls]
 Homepage = "https://salsa.debian.org/deeplearning-team/debgpt"
