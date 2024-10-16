@@ -1,6 +1,21 @@
 Changelog
 =========
 
+v0.4.95 -- 2024-10-16
+---------------------
+
+New features:
+
+* eeab25d Add --monochrome to disable colorized outputs during conversation
+* 38111eb Add ollama frontend (OpenAI-API compatibibility mode)
+* c065fb6 Add llamafile frontend (alias to openai frontend)
+
+Minor updates:
+
+* 949d71e cli: Provide a fresh-install guide (Closes: #1064469)
+* f1c3584 Exchange the order of prompt generation and frontend instantiation.
+          So that genconfig will not produce noise.
+
 v0.4.94 -- 2024-01-12
 ---------------------
 
