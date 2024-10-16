@@ -1,3 +1,16 @@
+debgpt (0.5.1) UNRELEASED; urgency=medium
+
+  * Release v0.5.1
+  * frontend: reorder vLLM API key argument definition in CLI
+  * metadata: add PyPI classifiers to pyproject.toml
+  * frontend: bugfix: inherit OpenAIFrontend instead
+  * Apply autopep8 to all python files.
+  * cli: refactor config template generation with helper function
+  * cli: enhance fresh install detection with OpenAI base URL check
+  * `defaults: update OpenAI model to gpt-4o`
+
+ -- Mo Zhou <lumin@debian.org>  Wed, 16 Oct 2024 12:13:12 -0400
+
 debgpt (0.5.0) unstable; urgency=medium
 
   * Release v0.5.0
