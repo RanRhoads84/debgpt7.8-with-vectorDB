@@ -113,6 +113,7 @@ impacts the quality of the results you will get. make sure to provide as much
 information as possible. The following are some references on this topic:
 
 1. OpenAI's Guide https://platform.openai.com/docs/guides/prompt-engineering
+2. Chain-of-Thought (CoT): https://arxiv.org/pdf/2205.11916.pdf
 
 EXAMPLES
 ========
@@ -418,9 +419,6 @@ TODO
 
 The following is the current **TODO List**.Some ideas might be a little bit far away.
 
-1. `debgpt.backend` error handling ... illegal input format, overlength, CUDA OOM, etc.
-4. `debgpt.llm` tune llm parameters like temperature.
-5. implement very simple CoT https://arxiv.org/pdf/2205.11916.pdf
 1. add perplexity API https://www.perplexity.ai
 1. https://github.com/openai/chatgpt-retrieval-plugin
 1. implement `--archwiki` `--gentoowiki` `--debianwiki` `--fedorawiki` `--wikipedia` (although the LLM have already read the wikipedia dump many times)
@@ -429,7 +427,6 @@ The following is the current **TODO List**.Some ideas might be a little bit far 
 1. organize argparse with argument groups
 1. How can LLM help CPython transition? failing tests, API changes, etc.
 1. What else can we do about the Debian patching workflow? adding patch description?
-1. Uscan? Upstream information?
 1. find upstream bug that matches debian bug (bug triage)
 1. connect with debian codesearch API https://codesearch.debian.net/faq
 1. Let LLM imitate [Janitor](https://wiki.debian.org/Janitor), and possibly do some more complicated things
