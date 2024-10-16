@@ -1,3 +1,14 @@
+debgpt (0.4.95) UNRELEASED; urgency=medium
+
+  * Exchange the order of prompt generation and frontend instantiation.
+    So that genconfig will not produce noise.
+  * Add llamafile frontend (alias to openai frontend)
+  * Add ollama frontend (OpenAI-API compatibibility mode)
+  * Add --monochrome to disable colorized outputs during conversation
+    (Closes: #1061387)
+
+ -- Mo Zhou <lumin@debian.org>  Tue, 15 Oct 2024 23:45:31 -0400
+
 debgpt (0.4.94) unstable; urgency=medium
 
   * Release v0.4.94. (Closes: #1060654)
