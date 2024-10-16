@@ -51,7 +51,7 @@ class Config(object):
             'top_p': 1.0,
             # OpenAI Frontend Specific
             'openai_base_url': 'https://api.openai.com/v1',
-            'openai_model': 'gpt-3.5-turbo',
+            'openai_model': 'gpt-4o',
             'openai_api_key': 'your-openai-api-key',
             # Llamafile Frontend Specific
             'llamafile_base_url': 'http://localhost:8080/v1',
