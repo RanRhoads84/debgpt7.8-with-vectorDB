@@ -59,6 +59,56 @@ def generate_config_file(ag) -> None:
     exit(0)
 
 
+def fresh_install_guide(ag) -> None:
+    '''
+    special task: print fresh install guide, then quit
+    '''
+    __doc__ = '''\
+DebGPT Fresh Install Guide
+==========================
+
+To use DebGPT, you need to configure a frontend to connect to the LLM backend.
+There are several frontends available, including:
+
+   (commercial, proprietary, OpenAI-API)
+ * `openai`: a frontend that connects to the OpenAI API. You need to obtain an
+   API key from https://platform.openai.com/api-keys and set it in the
+   `--openai_api_key` argument. This is the default frontend. Note, this
+   is a commercial proprietary service.
+
+
+   (self-hosted, open-source, OpenAI-API)
+ * `llamafile`: a frontend that connects to the llamafile JSON API service.
+   Please read the instructions at https://github.com/Mozilla-Ocho/llamafile
+   to setup the self-hosted llamafile service.
+
+   (self-hosted, open-source, OpenAI-API)
+ * `ollama`: a frontend that connects to the Ollama JSON API service.
+   Please read the instructions at https://ollama.com/ to setup the
+   self-hosted Ollama service.
+
+   (self-hosted, open-source, transformers, debugging)
+ * `zmq`: a frontend that connects to a self-hosted LLM inference server.
+   This pairs with the self-contained primitive backend implementation
+   of debgpt, which is directly based on `transformers`.
+
+   (debugging, testing)
+ * `dryrun`: a fake frontend that will do nothing other than printing the
+   generated prompt. This is only useful for debugging.
+
+The frontend is specified by the `-F|--frontend` argument. For convenience,
+you can also specify the frontend in the `~/.debgpt/config.toml` file.
+
+You may use the following command to generate a template `config.toml` file:
+
+ $ debgpt genconfig > ~/.debgpt/config.toml
+
+The important flags for each of the frontends are provided in the template.
+
+Enjoy DebGPT!'''
+    console.print(__doc__)
+    exit(0)
+
 def parse_args(argv):
     '''
     argparse with subparsers. Generate a config.toml template as byproduct.
@@ -459,6 +509,10 @@ def main(argv=sys.argv[1:]):
         exit(0)
     if ag.verbose:
         console.log(ag)
+    # detect first-time launch (fresh install)
+    if ag.frontend == 'openai' and ag.openai_api_key == 'your-openai-api-key':
+        fresh_install_guide(ag)
+        exit(0)
 
     # parse argument order
     ag_order = parse_args_order(argv)
