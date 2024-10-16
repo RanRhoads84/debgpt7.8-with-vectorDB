@@ -64,7 +64,10 @@ class AbstractFrontend():
         self.session = []
         self.debgpt_home = args.debgpt_home
         self.monochrome = args.monochrome
-        console.log(f'{self.NAME}> Starting conversation {self.uuid}')
+        if args.subparser_name not in ('genconfig', 'genconf', 'config.toml'):
+            # in order to avoid including the frontend and UUID into the
+            # configuration file.
+            console.log(f'{self.NAME}> Starting conversation {self.uuid}')
 
     def reset(self):
         '''

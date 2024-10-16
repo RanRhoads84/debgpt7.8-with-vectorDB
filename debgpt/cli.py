@@ -295,7 +295,7 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     + "Or a customized string not starting with the colon.")
 
     # Task Specific Subparsers
-    subps = ag.add_subparsers(help='specific task handling')
+    subps = ag.add_subparsers(dest='subparser_name', help='specific task handling')
     ag.set_defaults(func=lambda ag: None)  # if no subparser is specified
 
     # Specific to ZMQ Backend (self-hosted LLM Inference)
