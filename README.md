@@ -62,6 +62,10 @@ They are specified through the `-F | --frontend` argument.
   server. For instance, by specifying `--openai_base_url`, you can switch to
   a different service provider than the default OpenAI API server.
 
+* `llamafile`: Connects with a llamafile (single-file LLM distribution).
+  See https://github.com/Mozilla-Ocho/llamafile for more information.
+  This is an alias to `openai` (they use the same communication protocol).
+
 * `zmq`: Connects with the built-in ZMQ backend.
   The ZMQ backend is provided for self-hosted LLM inference server. This
   implementation is very light weight, and not compatible with the OpenAI API.

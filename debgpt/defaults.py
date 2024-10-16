@@ -51,6 +51,8 @@ class Config(object):
             'openai_base_url': 'https://api.openai.com/v1',
             'openai_model': 'gpt-3.5-turbo',
             'openai_api_key': 'empty',
+            # Llamafile Frontend Specific
+            'llamafile_base_url': 'http://localhost:8080/v1',
             # ZMQ Frontend Specific
             'zmq_backend': 'tcp://localhost:11177',
         }

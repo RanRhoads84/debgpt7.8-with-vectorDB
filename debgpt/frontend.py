@@ -152,6 +152,26 @@ class OpenAIFrontend(AbstractFrontend):
         return self.session[-1]['content']
 
 
+class LlamafileFrontend(OpenAIFrontend):
+    '''
+    https://github.com/Mozilla-Ocho/llamafile
+    '''
+    NAME = 'LlamafileFrontend'
+
+    def __init__(self, args):
+        super().__init__(args)
+        from openai import OpenAI
+        self.client = OpenAI(api_key='no-key-required',
+                             base_url=args.llamafile_base_url)
+        self.session.append({"role": "system", "content": self.system_message})
+        self.model = 'llamafile from https://github.com/Mozilla-Ocho/llamafile'
+        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+        if args.verbose:
+            console.log(f'{self.NAME}> model={repr(self.model)}, '
+                    + f'temperature={args.temperature}, top_p={args.top_p}.')
+
+
+
 class ZMQFrontend(AbstractFrontend):
     '''
     ZMQ frontend communicates with a self-hosted ZMQ backend.
@@ -200,6 +220,8 @@ def create_frontend(args):
         frontend = ZMQFrontend(args)
     elif args.frontend == 'openai':
         frontend = OpenAIFrontend(args)
+    elif args.frontend == 'llamafile':
+        frontend = LlamafileFrontend(args)
     elif args.frontend == 'dryrun':
         frontend = None
     else:
@@ -227,7 +249,7 @@ if __name__ == '__main__':
     ag = argparse.ArgumentParser()
     ag.add_argument('--zmq_backend', '-B', default='tcp://localhost:11177')
     ag.add_argument('--frontend', '-F', default='zmq',
-                    choices=('zmq', 'openai'))
+                    choices=('zmq', 'openai', 'llamafile'))
     ag.add_argument('--debgpt_home', default=os.path.expanduser('~/.debgpt'))
     ag = ag.parse_args()
     console.print(ag)

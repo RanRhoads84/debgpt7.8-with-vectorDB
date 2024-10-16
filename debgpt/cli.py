@@ -91,9 +91,10 @@ use Meta+Enter to accept the input instead.')
     ag.add_argument('--debgpt_home', type=str, default=conf['debgpt_home'],
                     help='directory to store cache and sessions.')
     ag.add_argument('--frontend', '-F', type=str, default=conf['frontend'],
-                    choices=('dryrun', 'zmq', 'openai'),
+                    choices=('dryrun', 'zmq', 'openai', 'llamafile'),
                     help=f"default frontend is {conf['frontend']}. Available \
-choices are: (zmq, openai, dryrun). The 'dryrun' is a fake frontend that will \
+choices are: (openai, zmq, llamafile, dryrun).\
+The 'dryrun' is a fake frontend that will \
 do nothing other than printing the generated prompt. So that you can copy \
 it to web-based LLMs in that case.")
     config_template += '\n'.join('# ' + x for x in textwrap.wrap(
@@ -122,9 +123,9 @@ See https://platform.openai.com/docs/api-reference/chat/create \
 
     # Specific to OpenAI Frontend
     config_template += '''\n
-##############################
+#############################
 # Specific to OpenAI Frontend
-##############################
+#############################
 \n'''
     ag.add_argument('--openai_base_url', type=str,
                     default=conf['openai_base_url'],
@@ -152,6 +153,19 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     config_template += '\n'.join('# ' + x for x in textwrap.wrap(
         ag._option_string_actions['--openai_model'].help))
     config_template += f'''\nopenai_model = {repr(conf.openai_model)}\n'''
+
+    # Specific to Llamafile Frontend
+    config_template += '''\n
+################################
+# Specific to Llamafile Frontend
+################################
+\n'''
+    ag.add_argument('--llamafile_base_url', type=str, default=conf['llamafile_base_url'],
+                    help='the URL to the llamafile JSON API service.')
+    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
+        ag._option_string_actions['--llamafile_base_url'].help))
+    config_template += f'''\nllamafile_base_url = {repr(conf.llamafile_base_url)}\n'''
+    config_template += '\n'
 
     # Specific to ZMQ Frontend
     config_template += '''\n
