@@ -113,7 +113,8 @@ def parse_args(argv):
     argparse with subparsers. Generate a config.toml template as byproduct.
     '''
     # if ~/.debgpt/config.toml exists, parse it to override the built-in defaults.
-    conf = defaults.Config()
+    _verbose = any(x in argv for x in ('-v', '--verbose'))
+    conf = defaults.Config(verbose=_verbose)
     # override the loaded configurations again with command line arguments
     ag = argparse.ArgumentParser()
 

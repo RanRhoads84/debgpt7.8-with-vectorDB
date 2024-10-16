@@ -27,6 +27,7 @@ try:
 except:
     import pip._vendor.tomli as tomllib  # for python < 3.10
 import rich
+console = rich.get_console()
 
 
 ########################
@@ -38,7 +39,7 @@ CONFIG = os.path.join(HOME, 'config.toml')
 
 
 class Config(object):
-    def __init__(self, home: str = HOME, config: str = CONFIG):
+    def __init__(self, home: str = HOME, config: str = CONFIG, verbose:bool = False):
         # The built-in defaults will be overridden by config file
         self.toml = {
             # CLI/Frontend Bebavior
@@ -62,13 +63,19 @@ class Config(object):
         }
         # the built-in defaults will be overridden by config file
         if not os.path.exists(home):
+            if verbose:
+                rich.print(f'Creating directory {home}')
             os.mkdir(home)
         if os.path.exists(config):
+            if verbose:
+                rich.print(f'Loading configuration from {config}')
             with open(config, 'rb') as f:
                 content = tomllib.load(f)
                 self.toml.update(content)
         # some arguments will be overrden by environment variables
         if (openai_api_key := os.getenv('OPENAI_API_KEY', None)) is not None:
+            if verbose:
+                rich.print(f'Found environment variable OPENAI_API_KEY. Overriding openai_api_key')
             self.toml['openai_api_key'] = openai_api_key
         # all the above will be overridden by command line arguments
         pass
