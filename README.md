@@ -77,6 +77,10 @@ They are specified through the `-F | --frontend` argument.
   Make sure to specify `--ollama_model` to the one being served by the ollama
   service you point to with `--ollama_base_url`.
 
+* `vllm`: Connects with a vllm service instance.
+  See https://docs.vllm.ai/en/latest/ for more information.
+  This is a OpenAI-API compatible self-hosted service.
+
 * `zmq`: Connects with the built-in ZMQ backend.
   The ZMQ backend is provided for self-hosted LLM inference server. This
   implementation is very light weight, and not compatible with the OpenAI API.

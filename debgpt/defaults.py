@@ -58,6 +58,10 @@ class Config(object):
             # Ollama Frontend Specific
             'ollama_base_url': 'http://localhost:11434/v1',
             'ollama_model': 'llama3.2',
+            # vLLM Frontend Specific
+            'vllm_base_url': 'http://localhost:8000/v1',
+            'vllm_api_key': 'your-vllm-api-key',
+            'vllm_model': 'NousResearch/Meta-Llama-3-8B-Instruct',
             # ZMQ Frontend Specific
             'zmq_backend': 'tcp://localhost:11177',
         }

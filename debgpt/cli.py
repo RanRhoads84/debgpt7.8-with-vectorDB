@@ -70,7 +70,7 @@ DebGPT Fresh Install Guide
 To use DebGPT, you need to configure a frontend to connect to the LLM backend.
 There are several frontends available, including:
 
-   (default frontend, commercial, proprietary, OpenAI-API)
+   (default frontend, commercial, proprietary, need-api-key, OpenAI-API)
  * `openai`: a frontend that connects to the OpenAI API. You need to obtain an
    API key from https://platform.openai.com/api-keys and set it in the
    `--openai_api_key` argument or the `OPENAI_API_KEY` environment variable.
@@ -85,6 +85,12 @@ There are several frontends available, including:
  * `ollama`: a frontend that connects to the Ollama JSON API service.
    Please read the instructions at https://ollama.com/ to setup the
    self-hosted Ollama service.
+
+   (self-hosted, open-source, need-api-key, OpenAI-API)
+ * `vllm`: a frontend that connects to a vLLM service instance.
+   See https://docs.vllm.ai/en/latest/ for more information.
+   This is a OpenAI-API compatible self-hosted service. You need an API key
+   that matches to the one used in the vLLM service.
 
    (self-hosted, open-source, transformers, debugging)
  * `zmq`: a frontend that connects to a self-hosted LLM inference server.
@@ -141,9 +147,9 @@ use Meta+Enter to accept the input instead.')
     ag.add_argument('--debgpt_home', type=str, default=conf['debgpt_home'],
                     help='directory to store cache and sessions.')
     ag.add_argument('--frontend', '-F', type=str, default=conf['frontend'],
-                    choices=('dryrun', 'zmq', 'openai', 'llamafile', 'ollama'),
+                    choices=('dryrun', 'zmq', 'openai', 'llamafile', 'ollama', 'vllm'),
                     help=f"default frontend is {conf['frontend']}. Available \
-choices are: (dryrun, zmq, openai, zmq, llamafile, ollama).\
+choices are: (dryrun, zmq, openai, zmq, llamafile, ollama, vllm).\
 The 'dryrun' is a fake frontend that will \
 do nothing other than printing the generated prompt. So that you can copy \
 it to web-based LLMs in that case.")
@@ -234,11 +240,36 @@ Their prices vary. See https://platform.openai.com/docs/models .')
         ag._option_string_actions['--ollama_base_url'].help))
     config_template += f'''\nollama_base_url = {repr(conf.ollama_base_url)}\n'''
 
+    ag.add_argument('--vllm_api_key', type=str,
+                    default=conf['vllm_api_key'],
+                    help='vLLM API key is necessary to access services')
+    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
+        ag._option_string_actions['--vllm_api_key'].help))
+    config_template += f'''\nvllm_api_key = {repr(conf.vllm_api_key)}\n'''
+
     ag.add_argument('--ollama_model', type=str, default=conf['ollama_model'],
                     help='the model to use in Ollama. For instance, llama3.2')
     config_template += '\n'.join('# ' + x for x in textwrap.wrap(
         ag._option_string_actions['--ollama_model'].help))
     config_template += f'''\nollama_model = {repr(conf.ollama_model)}\n'''
+
+    # Specific to vLLM Frontend
+    config_template += '''\n
+###########################
+# Specific to vLLM Frontend
+###########################
+\n'''
+    ag.add_argument('--vllm_base_url', type=str, default=conf['vllm_base_url'],
+                    help='the URL to the vllm JSON API service.')
+    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
+        ag._option_string_actions['--vllm_base_url'].help))
+    config_template += f'''\nvllm_base_url = {repr(conf.vllm_base_url)}\n'''
+
+    ag.add_argument('--vllm_model', type=str, default=conf['vllm_model'],
+                    help='the model to use in vllm. For instance, llama3.2')
+    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
+        ag._option_string_actions['--vllm_model'].help))
+    config_template += f'''\nvllm_model = {repr(conf.vllm_model)}\n'''
 
     # Specific to ZMQ Frontend
     config_template += '''\n
