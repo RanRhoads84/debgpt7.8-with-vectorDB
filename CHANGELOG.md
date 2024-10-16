@@ -1,6 +1,19 @@
 Changelog
 =========
 
+v0.5.1 -- 2024-10-16
+---------------------
+
+Minor fixes:
+
+* d2ab5c3 `defaults: update OpenAI model to gpt-4o`
+* d65f9d5 cli: enhance fresh install detection with OpenAI base URL check
+* 9b7d360 cli: refactor config template generation with helper function
+* 3ee10de Apply autopep8.
+* 9dbe4f9 frontend: bugfix: inherit OpenAIFrontend instead
+* 3e287e4 metadata: add PyPI classifiers to pyproject.toml
+* 9a66d94 frontend: reorder vLLM API key argument definition in CLI
+
 v0.5.0 -- 2024-10-16
 ---------------------
 
