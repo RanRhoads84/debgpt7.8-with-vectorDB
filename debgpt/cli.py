@@ -70,12 +70,11 @@ DebGPT Fresh Install Guide
 To use DebGPT, you need to configure a frontend to connect to the LLM backend.
 There are several frontends available, including:
 
-   (commercial, proprietary, OpenAI-API)
+   (default frontend, commercial, proprietary, OpenAI-API)
  * `openai`: a frontend that connects to the OpenAI API. You need to obtain an
    API key from https://platform.openai.com/api-keys and set it in the
-   `--openai_api_key` argument. This is the default frontend. Note, this
-   is a commercial proprietary service.
-
+   `--openai_api_key` argument or the `OPENAI_API_KEY` environment variable.
+   Note, this is a commercial proprietary service that needs to be paied for.
 
    (self-hosted, open-source, OpenAI-API)
  * `llamafile`: a frontend that connects to the llamafile JSON API service.
