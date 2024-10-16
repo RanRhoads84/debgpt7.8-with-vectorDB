@@ -240,13 +240,6 @@ Their prices vary. See https://platform.openai.com/docs/models .')
         ag._option_string_actions['--ollama_base_url'].help))
     config_template += f'''\nollama_base_url = {repr(conf.ollama_base_url)}\n'''
 
-    ag.add_argument('--vllm_api_key', type=str,
-                    default=conf['vllm_api_key'],
-                    help='vLLM API key is necessary to access services')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--vllm_api_key'].help))
-    config_template += f'''\nvllm_api_key = {repr(conf.vllm_api_key)}\n'''
-
     ag.add_argument('--ollama_model', type=str, default=conf['ollama_model'],
                     help='the model to use in Ollama. For instance, llama3.2')
     config_template += '\n'.join('# ' + x for x in textwrap.wrap(
@@ -264,6 +257,13 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     config_template += '\n'.join('# ' + x for x in textwrap.wrap(
         ag._option_string_actions['--vllm_base_url'].help))
     config_template += f'''\nvllm_base_url = {repr(conf.vllm_base_url)}\n'''
+
+    ag.add_argument('--vllm_api_key', type=str,
+                    default=conf['vllm_api_key'],
+                    help='vLLM API key is necessary to access services')
+    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
+        ag._option_string_actions['--vllm_api_key'].help))
+    config_template += f'''\nvllm_api_key = {repr(conf.vllm_api_key)}\n'''
 
     ag.add_argument('--vllm_model', type=str, default=conf['vllm_model'],
                     help='the model to use in vllm. For instance, llama3.2')
