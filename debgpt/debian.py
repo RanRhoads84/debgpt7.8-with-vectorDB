@@ -62,8 +62,10 @@ def _load_bts(identifier: str) -> List[str]:
 
     if not identifier.startswith('src:'):
         # delete useless system messages
-        _ = [x.clear() for x in soup.find_all('p', attrs={'class': 'msgreceived'})]
-        _ = [x.clear() for x in soup.find_all('div', attrs={'class': 'infmessage'})]
+        _ = [x.clear() for x in soup.find_all(
+            'p', attrs={'class': 'msgreceived'})]
+        _ = [x.clear() for x in soup.find_all(
+            'div', attrs={'class': 'infmessage'})]
 
     text = soup.get_text().strip()
     text = re.sub('\n\n+\n', '\n\n', text)
@@ -251,6 +253,7 @@ def pynew(version_section: str):
         part = soup.find_all('section', attrs={'id': section})[0]
         text = part.get_text().strip()
     # enclose in markdown block
-    lines = [f'''The following is the {section} section of Python {version}'s What's New document:''']
+    lines = [
+        f'''The following is the {section} section of Python {version}'s What's New document:''']
     lines.extend(['```', text, '```', ''])
     return '\n'.join(lines)

@@ -81,7 +81,6 @@ class AbstractFrontend():
         '''
         raise NotImplementedError
 
-
     def update_session(self, messages: Union[List, Dict, str]) -> None:
         if isinstance(messages, list):
             # reset the chat with provided message list
@@ -125,7 +124,7 @@ class OpenAIFrontend(AbstractFrontend):
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
             console.log(f'{self.NAME}> model={repr(self.model)}, '
-                    + f'temperature={args.temperature}, top_p={args.top_p}.')
+                        + f'temperature={args.temperature}, top_p={args.top_p}.')
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
@@ -172,7 +171,7 @@ class LlamafileFrontend(OpenAIFrontend):
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
             console.log(f'{self.NAME}> model={repr(self.model)}, '
-                    + f'temperature={args.temperature}, top_p={args.top_p}.')
+                        + f'temperature={args.temperature}, top_p={args.top_p}.')
 
 
 class OllamaFrontend(OpenAIFrontend):
@@ -191,7 +190,7 @@ class OllamaFrontend(OpenAIFrontend):
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
             console.log(f'{self.NAME}> model={repr(self.model)}, '
-                    + f'temperature={args.temperature}, top_p={args.top_p}.')
+                        + f'temperature={args.temperature}, top_p={args.top_p}.')
 
 
 class vLLMFrontend(OpenAIFrontend):
@@ -210,7 +209,7 @@ class vLLMFrontend(OpenAIFrontend):
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
             console.log(f'{self.NAME}> model={repr(self.model)}, '
-                    + f'temperature={args.temperature}, top_p={args.top_p}.')
+                        + f'temperature={args.temperature}, top_p={args.top_p}.')
 
 
 class ZMQFrontend(AbstractFrontend):

@@ -102,7 +102,8 @@ def task_fortune(ag):
             # use a template from defaults.FORTUNE_QUESTIONS
             msg = defaults.FORTUNE_QUESTIONS[ag.ask]
         except KeyError:
-            console.print('Available question templates for argument -A/--ask:')
+            console.print(
+                'Available question templates for argument -A/--ask:')
             defaults.print_fortune_question_templates()
             exit(1)
     else:

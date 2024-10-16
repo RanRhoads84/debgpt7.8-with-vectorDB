@@ -22,27 +22,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 # suppress all warnings.
+import textwrap
+import rich
+import shlex
+from .task import task_backend, task_git, task_git_commit, task_replay, task_fortune
+from . import defaults
+from . import debian
+from . import frontend
+import sys
+import os
+import re
+import argparse
+from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit import PromptSession
+from rich.panel import Panel
+from rich.markup import escape
+from prompt_toolkit.styles import Style
+from typing import List, Optional
 import warnings
 warnings.filterwarnings("ignore")
 
-from typing import List, Optional
-from prompt_toolkit.styles import Style
-from rich.markup import escape
-from rich.panel import Panel
-from prompt_toolkit import PromptSession
-from prompt_toolkit.completion import Completer, Completion
-import argparse
-import re
-import os
-import sys
-from . import frontend
-from . import debian
-from . import defaults
-from .task import task_backend, task_git, task_git_commit, task_replay, task_fortune
-import shlex
-import rich
 console = rich.get_console()
-import textwrap
 
 
 def version() -> None:
@@ -114,6 +114,7 @@ Enjoy DebGPT!'''
     console.print(__doc__)
     exit(0)
 
+
 def parse_args(argv):
     '''
     argparse with subparsers. Generate a config.toml template as byproduct.
@@ -147,7 +148,8 @@ use Meta+Enter to accept the input instead.')
     ag.add_argument('--debgpt_home', type=str, default=conf['debgpt_home'],
                     help='directory to store cache and sessions.')
     ag.add_argument('--frontend', '-F', type=str, default=conf['frontend'],
-                    choices=('dryrun', 'zmq', 'openai', 'llamafile', 'ollama', 'vllm'),
+                    choices=('dryrun', 'zmq', 'openai',
+                             'llamafile', 'ollama', 'vllm'),
                     help=f"default frontend is {conf['frontend']}. Available \
 choices are: (dryrun, zmq, openai, zmq, llamafile, ollama, vllm).\
 The 'dryrun' is a fake frontend that will \
@@ -327,7 +329,8 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     + "Or a customized string not starting with the colon.")
 
     # Task Specific Subparsers
-    subps = ag.add_subparsers(dest='subparser_name', help='specific task handling')
+    subps = ag.add_subparsers(dest='subparser_name',
+                              help='specific task handling')
     ag.set_defaults(func=lambda ag: None)  # if no subparser is specified
 
     # Specific to ZMQ Backend (self-hosted LLM Inference)
@@ -395,12 +398,14 @@ def parse_args_order(argv) -> List[str]:
     For example, we need to match
     -f, --file, -Hf (-[^-]*f), into --file
     '''
-    order : List[str] = []
+    order: List[str] = []
+
     def _match_ls(probe: str, long: str, short: str, dest: List[str]):
         if any(probe == x for x in (long, short)) \
                 or any(probe.startswith(x+'=') for x in (long, short)) \
                 or re.match(r'-[^-]*'+short[-1], probe):
             dest.append(long.lstrip('--'))
+
     def _match_l(probe: str, long: str, dest: List[str]):
         if probe == long or probe.startswith(long+'='):
             dest.append(long.lstrip('--'))
