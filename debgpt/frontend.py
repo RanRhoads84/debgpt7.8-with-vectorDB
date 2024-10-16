@@ -163,7 +163,7 @@ class LlamafileFrontend(AbstractFrontend):
     NAME = 'LlamafileFrontend'
 
     def __init__(self, args):
-        AbstractFrontend.__init__(args)
+        AbstractFrontend.__init__(self, args)
         from openai import OpenAI
         self.client = OpenAI(api_key='no-key-required',
                              base_url=args.llamafile_base_url)
@@ -182,7 +182,7 @@ class OllamaFrontend(OpenAIFrontend):
     NAME = 'OllamaFrontend'
 
     def __init__(self, args):
-        AbstractFrontend.__init__(args)
+        AbstractFrontend.__init__(self, args)
         from openai import OpenAI
         self.client = OpenAI(api_key='no-key-required',
                              base_url=args.ollama_base_url)
@@ -201,7 +201,7 @@ class vLLMFrontend(OpenAIFrontend):
     NAME = 'vLLMFrontend'
 
     def __init__(self, args):
-        AbstractFrontend.__init__(args)
+        AbstractFrontend.__init__(self, args)
         from openai import OpenAI
         self.client = OpenAI(api_key='your-vllm-api-key',
                              base_url=args.vllm_base_url)
