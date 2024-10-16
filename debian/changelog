@@ -1,3 +1,17 @@
+debgpt (0.5.0) unstable; urgency=medium
+
+  * Release v0.5.0
+    * Now we have a reasonable set of supported frontends:
+      OpenAI, Ollama, Llamafile, vLLM, and ZMQ
+      (excluding the dryrun frontend for debugging)
+  * genconfig: fix toml grammar error.
+  * defaults: be verbose on loading config and overriding configs
+  * task: explicitly annotate debgpt usage for debgpt git commit
+  * frontend: add support for vLLM service integration
+  * frontend: use AbstractFrontend init directly instead of super()
+
+ -- Mo Zhou <lumin@debian.org>  Wed, 16 Oct 2024 01:08:39 -0400
+
 debgpt (0.4.95) unstable; urgency=medium
 
   * Release v0.4.95.
