@@ -535,7 +535,8 @@ def main(argv=sys.argv[1:]):
     if ag.verbose:
         console.log(ag)
     # detect first-time launch (fresh install)
-    if ag.frontend == 'openai' and ag.openai_api_key == 'your-openai-api-key':
+    if ag.frontend == 'openai' and ag.openai_api_key == 'your-openai-api-key' \
+        and ag.openai_base_url == 'https://api.openai.com/v1':
         fresh_install_guide(ag)
         exit(0)
 
