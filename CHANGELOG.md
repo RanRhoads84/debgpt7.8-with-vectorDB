@@ -1,6 +1,22 @@
 Changelog
 =========
 
+v0.5.0 -- 2024-10-16
+---------------------
+
+Now we have a reasonable set of supported frontends:
+  OpenAI, Ollama, Llamafile, vLLM, and ZMQ
+
+New features:
+* 07d6de3 frontend: add support for vLLM service integration
+
+Minor fixes:
+
+* 31cf21f frontend: use AbstractFrontend init directly instead of super()
+* 8d76755 task: explicitly annotate debgpt usage for debgpt git commit
+* ef269d2 defaults: be verbose on loading config and overriding configs
+* 907831e genconfig: fix toml grammar error.
+
 v0.4.95 -- 2024-10-16
 ---------------------
 
