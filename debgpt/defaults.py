@@ -44,6 +44,7 @@ class Config(object):
             # CLI/Frontend Bebavior
             'frontend': 'openai',
             'debgpt_home': HOME,
+            'monochrome': False,
             # LLM Inference Parameters
             'temperature': 0.5,
             'top_p': 1.0,

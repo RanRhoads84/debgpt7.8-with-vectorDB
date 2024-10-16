@@ -50,7 +50,10 @@ OPTIONS
 `--cmd CMD`
 : add the command line output to the prompt
 
-TODO: finish CLI redesign first. Then add all cmd options here.
+`--monochrome <true|false>`
+: disable colorized output during the conversation
+
+TODO: add all cmd options here.
 
 FRONTENDS
 =========

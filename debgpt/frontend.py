@@ -63,6 +63,7 @@ class AbstractFrontend():
         self.uuid = uuid.uuid4()
         self.session = []
         self.debgpt_home = args.debgpt_home
+        self.monochrome = args.monochrome
         console.log(f'{self.NAME}> Starting conversation {self.uuid}')
 
     def reset(self):
@@ -251,11 +252,18 @@ def create_frontend(args):
 def query_once(f: AbstractFrontend, text: str) -> None:
     '''
     we have prepared text -- let frontend send it to LLM, and this function
-    will print the LLM reply
+    will print the LLM reply.
+
+    f: any frontend instance from the current source file.
+    text: the text to be sent to LLM.
     '''
     if f.stream:
-        lprompt = f'[bold green]LLM[{1+len(f.session)}]>[/bold green] '
-        console.print(lprompt, end='')
+        if f.monochrome:
+            lprompt = escape(f'LLM[{1+len(f.session)}]> ')
+            console.print(lprompt, end='', highlight=False, markup=False)
+        else:
+            lprompt = f'[bold green]LLM[{1+len(f.session)}]>[/bold green] '
+            console.print(lprompt, end='')
         reply = f(text)
     else:
         with Status('LLM', spinner='line'):

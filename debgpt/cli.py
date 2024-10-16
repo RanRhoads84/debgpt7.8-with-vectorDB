@@ -101,6 +101,12 @@ it to web-based LLMs in that case.")
         ag._option_string_actions['--frontend'].help))
     config_template += f'''\nfrontend = {repr(conf.frontend)}\n'''
 
+    ag.add_argument('--monochrome', type=bool, default=conf['monochrome'],
+                    help='disable colorized output for prompt_toolkit.')
+    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
+        ag._option_string_actions['--monochrome'].help))
+    config_template += f'''\nmonochrome = {repr(conf.monochrome)}\n'''
+
     # LLM Inference Arguments
     config_template += '''\n
 ###########################
@@ -389,8 +395,11 @@ def gather_information_ordered(msg: Optional[str], ag, ag_order) -> Optional[str
 
 def interactive_mode(f: frontend.AbstractFrontend, ag):
     # create prompt_toolkit style
-    prompt_style = Style([('prompt', 'bold fg:ansibrightcyan'),
-                          ('', 'bold ansiwhite')])
+    if ag.monochrome:
+        prompt_style = Style([])
+    else:
+        prompt_style = Style([('prompt', 'bold fg:ansibrightcyan'),
+                              ('', 'bold ansiwhite')])
 
     # Completer with several keywords keywords to be completed
     class CustomCompleter(Completer):
