@@ -156,7 +156,7 @@ class OpenAIFrontend(AbstractFrontend):
         return self.session[-1]['content']
 
 
-class LlamafileFrontend(AbstractFrontend):
+class LlamafileFrontend(OpenAIFrontend):
     '''
     https://github.com/Mozilla-Ocho/llamafile
     '''
