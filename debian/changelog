@@ -1,4 +1,4 @@
-debgpt (0.5.1) UNRELEASED; urgency=medium
+debgpt (0.5.1) unstable; urgency=medium
 
   * Release v0.5.1
   * frontend: reorder vLLM API key argument definition in CLI
@@ -9,7 +9,7 @@ debgpt (0.5.1) UNRELEASED; urgency=medium
   * cli: enhance fresh install detection with OpenAI base URL check
   * `defaults: update OpenAI model to gpt-4o`
 
- -- Mo Zhou <lumin@debian.org>  Wed, 16 Oct 2024 12:13:12 -0400
+ -- Mo Zhou <lumin@debian.org>  Wed, 16 Oct 2024 12:14:12 -0400
 
 debgpt (0.5.0) unstable; urgency=medium
 
