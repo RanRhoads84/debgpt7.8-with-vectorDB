@@ -53,6 +53,9 @@ class Config(object):
             'openai_api_key': 'empty',
             # Llamafile Frontend Specific
             'llamafile_base_url': 'http://localhost:8080/v1',
+            # Ollama Frontend Specific
+            'ollama_base_url': 'http://localhost:11434/v1',
+            'ollama_model': 'llama3.2',
             # ZMQ Frontend Specific
             'zmq_backend': 'tcp://localhost:11177',
         }

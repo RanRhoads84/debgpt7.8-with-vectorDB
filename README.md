@@ -64,7 +64,15 @@ They are specified through the `-F | --frontend` argument.
 
 * `llamafile`: Connects with a llamafile (single-file LLM distribution).
   See https://github.com/Mozilla-Ocho/llamafile for more information.
-  This is an alias to `openai` (they use the same communication protocol).
+  This frontend is implemented in the OpenAI-API compatible way.
+  Setting up `--llamafile_base_url` to point to the llamafile service you want
+  to use should be enough.
+
+* `ollama`: Connects with ollama service instance.
+  See https://github.com/ollama/ollama for more information.
+  We currently implement this frontend in the OpenAI-API compatible way.
+  Make sure to specify `--ollama_model` to the one being served by the ollama
+  service you point to with `--ollama_base_url`.
 
 * `zmq`: Connects with the built-in ZMQ backend.
   The ZMQ backend is provided for self-hosted LLM inference server. This

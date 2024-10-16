@@ -91,9 +91,9 @@ use Meta+Enter to accept the input instead.')
     ag.add_argument('--debgpt_home', type=str, default=conf['debgpt_home'],
                     help='directory to store cache and sessions.')
     ag.add_argument('--frontend', '-F', type=str, default=conf['frontend'],
-                    choices=('dryrun', 'zmq', 'openai', 'llamafile'),
+                    choices=('dryrun', 'zmq', 'openai', 'llamafile', 'ollama'),
                     help=f"default frontend is {conf['frontend']}. Available \
-choices are: (openai, zmq, llamafile, dryrun).\
+choices are: (dryrun, zmq, openai, zmq, llamafile, ollama).\
 The 'dryrun' is a fake frontend that will \
 do nothing other than printing the generated prompt. So that you can copy \
 it to web-based LLMs in that case.")
@@ -165,7 +165,24 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     config_template += '\n'.join('# ' + x for x in textwrap.wrap(
         ag._option_string_actions['--llamafile_base_url'].help))
     config_template += f'''\nllamafile_base_url = {repr(conf.llamafile_base_url)}\n'''
-    config_template += '\n'
+
+    # Specific to Ollama Frontend
+    config_template += '''\n
+#########################################################
+# Specific to Ollama Frontend (OpenAI compatibility mode)
+#########################################################
+\n'''
+    ag.add_argument('--ollama_base_url', type=str, default=conf['ollama_base_url'],
+                    help='the URL to the Ollama JSON API service.')
+    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
+        ag._option_string_actions['--ollama_base_url'].help))
+    config_template += f'''\nollama_base_url = {repr(conf.ollama_base_url)}\n'''
+
+    ag.add_argument('--ollama_model', type=str, default=conf['ollama_model'],
+                    help='the model to use in Ollama. For instance, llama3.2')
+    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
+        ag._option_string_actions['--ollama_model'].help))
+    config_template += f'''\nollama_model = {repr(conf.ollama_model)}\n'''
 
     # Specific to ZMQ Frontend
     config_template += '''\n
