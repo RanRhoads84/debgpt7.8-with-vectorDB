@@ -119,6 +119,18 @@ def parse_args(argv):
     '''
     argparse with subparsers. Generate a config.toml template as byproduct.
     '''
+    # helper functions
+    def __add_arg_to_config(template, parser, argname, formatter: callable = repr):
+        '''
+        We will create a template for the config.toml file, based on the
+        help messages of the argument parser. In that sense I do not have
+        to write everything twice, and this avoids many human errors.
+        '''
+        template += '\n'.join('# ' + x for x in textwrap.wrap(
+            parser._option_string_actions['--'+argname].help))
+        template += f'''\n{argname} = {formatter(getattr(conf, argname))}\n'''
+        return template
+
     # if ~/.debgpt/config.toml exists, parse it to override the built-in defaults.
     _verbose = any(x in argv for x in ('-v', '--verbose'))
     conf = defaults.Config(verbose=_verbose)
@@ -155,15 +167,12 @@ choices are: (dryrun, zmq, openai, zmq, llamafile, ollama, vllm).\
 The 'dryrun' is a fake frontend that will \
 do nothing other than printing the generated prompt. So that you can copy \
 it to web-based LLMs in that case.")
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--frontend'].help))
-    config_template += f'''\nfrontend = {repr(conf.frontend)}\n'''
+    config_template = __add_arg_to_config(config_template, ag, 'frontend')
 
     ag.add_argument('--monochrome', type=bool, default=conf['monochrome'],
                     help='disable colorized output for prompt_toolkit.')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--monochrome'].help))
-    config_template += f'''\nmonochrome = {str(conf.monochrome).lower()}\n'''
+    config_template = __add_arg_to_config(config_template, ag, 'monochrome',
+                                          formatter=lambda x: str(x).lower())
 
     # LLM Inference Arguments
     config_template += '''\n
@@ -175,12 +184,10 @@ it to web-based LLMs in that case.")
                     help='''Sampling temperature. Typically ranges within [0,1]. \
 Low values like 0.2 gives more focused (coherent) answer. \
 High values like 0.8 gives a more random (creative) answer. \
-Not suggested to combine this with with --top_p. \
-See https://platform.openai.com/docs/api-reference/chat/create \
+Not suggested to combine this with with --top_p. See \
+https://platform.openai.com/docs/api-reference/ \
     ''')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--temperature'].help))
-    config_template += f'''\ntemperature = {repr(conf.temperature)}\n'''
+    config_template = __add_arg_to_config(config_template, ag, 'temperature')
 
     ag.add_argument('--top_p', '-P', type=float, default=conf['top_p'])
     # TODO: add this in config template
@@ -196,27 +203,21 @@ See https://platform.openai.com/docs/api-reference/chat/create \
                     help='OpenAI API is a widely adopted standard. You can \
 switch to other compatible service providers, or a self-hosted compatible \
 server.')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--openai_base_url'].help))
-    config_template += f'''\nopenai_base_url = {repr(conf.openai_base_url)}\n'''
-    config_template += '\n'
+    config_template = __add_arg_to_config(
+        config_template, ag, 'openai_base_url')
 
     ag.add_argument('--openai_api_key', type=str,
                     default=conf['openai_api_key'],
                     help='API key is necessary to access services including \
 OpenAI API server. https://platform.openai.com/api-keys')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--openai_api_key'].help))
-    config_template += f'''\nopenai_api_key = {repr(conf.openai_api_key)}\n'''
-    config_template += '\n'
+    config_template = __add_arg_to_config(
+        config_template, ag, 'openai_api_key')
 
     ag.add_argument('--openai_model', type=str, default=conf['openai_model'],
                     help='For instance, gpt-3.5-turbo (4k context), \
 gpt-3.5-turbo-16k (16k context), gpt-4, gpt-4-32k (32k context). \
 Their prices vary. See https://platform.openai.com/docs/models .')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--openai_model'].help))
-    config_template += f'''\nopenai_model = {repr(conf.openai_model)}\n'''
+    config_template = __add_arg_to_config(config_template, ag, 'openai_model')
 
     # Specific to Llamafile Frontend
     config_template += '''\n
@@ -226,9 +227,8 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 \n'''
     ag.add_argument('--llamafile_base_url', type=str, default=conf['llamafile_base_url'],
                     help='the URL to the llamafile JSON API service.')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--llamafile_base_url'].help))
-    config_template += f'''\nllamafile_base_url = {repr(conf.llamafile_base_url)}\n'''
+    config_template = __add_arg_to_config(
+        config_template, ag, 'llamafile_base_url')
 
     # Specific to Ollama Frontend
     config_template += '''\n
@@ -238,15 +238,12 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 \n'''
     ag.add_argument('--ollama_base_url', type=str, default=conf['ollama_base_url'],
                     help='the URL to the Ollama JSON API service.')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--ollama_base_url'].help))
-    config_template += f'''\nollama_base_url = {repr(conf.ollama_base_url)}\n'''
+    config_template = __add_arg_to_config(
+        config_template, ag, 'ollama_base_url')
 
     ag.add_argument('--ollama_model', type=str, default=conf['ollama_model'],
                     help='the model to use in Ollama. For instance, llama3.2')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--ollama_model'].help))
-    config_template += f'''\nollama_model = {repr(conf.ollama_model)}\n'''
+    config_template = __add_arg_to_config(config_template, ag, 'ollama_model')
 
     # Specific to vLLM Frontend
     config_template += '''\n
@@ -256,22 +253,16 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 \n'''
     ag.add_argument('--vllm_base_url', type=str, default=conf['vllm_base_url'],
                     help='the URL to the vllm JSON API service.')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--vllm_base_url'].help))
-    config_template += f'''\nvllm_base_url = {repr(conf.vllm_base_url)}\n'''
+    config_template = __add_arg_to_config(config_template, ag, 'vllm_base_url')
 
     ag.add_argument('--vllm_api_key', type=str,
                     default=conf['vllm_api_key'],
                     help='vLLM API key is necessary to access services')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--vllm_api_key'].help))
-    config_template += f'''\nvllm_api_key = {repr(conf.vllm_api_key)}\n'''
+    config_template = __add_arg_to_config(config_template, ag, 'vllm_api_key')
 
     ag.add_argument('--vllm_model', type=str, default=conf['vllm_model'],
                     help='the model to use in vllm. For instance, llama3.2')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--vllm_model'].help))
-    config_template += f'''\nvllm_model = {repr(conf.vllm_model)}\n'''
+    config_template = __add_arg_to_config(config_template, ag, 'vllm_model')
 
     # Specific to ZMQ Frontend
     config_template += '''\n
@@ -281,9 +272,7 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 \n'''
     ag.add_argument('--zmq_backend', type=str, default=conf['zmq_backend'],
                     help='the ZMQ backend URL that the frontend will connect to')
-    config_template += '\n'.join('# ' + x for x in textwrap.wrap(
-        ag._option_string_actions['--zmq_backend'].help))
-    config_template += f'''\nzmq_backend = {repr(conf.zmq_backend)}\n'''
+    config_template = __add_arg_to_config(config_template, ag, 'zmq_backend')
 
     # Prompt Loaders (numbered list). You can specify them multiple times.
     # for instance, `debgpt -H -f foo.py -f bar.py`.
