@@ -498,7 +498,7 @@ def interactive_mode(f: frontend.AbstractFrontend, ag):
 
     # loop
     try:
-        while text := prompt_session.prompt(f'{os.getlogin()}[{len(f.session)}]> '):
+        while text := prompt_session.prompt(f'{os.getlogin()}[{max(1,len(f.session))}]> '):
             # parse escaped interaction commands
             if text.startswith('/'):
                 cmd = shlex.split(text)
