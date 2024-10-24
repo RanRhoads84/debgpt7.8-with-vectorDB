@@ -55,6 +55,17 @@ OPTIONS
 
 TODO: add all cmd options here.
 
+INTERACTIVE MODE
+================
+
+There are a few tips for using the interactive mode.  Press `/` and you will
+see a list of available commands that will not be sent to the LLM.
+
+* `/save <path.txt>`: save the last LLM response to the specified file.
+
+* `/reset`: clear the context. So you can start a new conversation without quiting.
+
+
 FRONTENDS
 =========
 
@@ -141,10 +152,6 @@ debgpt -Q -A "who are you?"
 
 After each session, the chatting history will be saved in `~/.debgpt` as a
 json file in a unique name.  You can use `debgpt replay <file_name>` to replay the history.
-
-During the interactive session, you can use `/save path.txt` to save the last
-LLM response to the specified file. You can also use `/reset` to clear the
-context.
 
 #### Ex2. BTS / Buildd Query
 
