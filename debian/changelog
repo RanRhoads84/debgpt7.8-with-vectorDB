@@ -1,3 +1,14 @@
+debgpt (0.5.2) unstable; urgency=medium
+
+  * Release v0.5.2
+  * add support for Anthropic frontend integration
+  * add support for Google Gemini frontend integration
+  * cli: add support for loading latest sbuild build logs
+  * README: add interactive mode tips and commands
+  * cli: fix session index display in interactive mode prompt after /reset
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 26 Oct 2024 17:12:38 -0400
+
 debgpt (0.5.1) unstable; urgency=medium
 
   * Release v0.5.1
