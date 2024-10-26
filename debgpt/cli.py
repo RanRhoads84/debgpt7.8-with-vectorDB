@@ -400,6 +400,8 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     ps_git_commit = git_subps.add_parser('commit', aliases=['co'],
                                          help='directly commit staged changes with auto-generated message')
     ps_git_commit.set_defaults(func=task_git_commit)
+    ps_git_commit.add_argument('--amend', action='store_true',
+                               help='amend the last commit')
 
     # Task: replay
     ps_replay = subps.add_parser(

@@ -76,7 +76,10 @@ def task_git_commit(ag) -> None:
         tmp.write(commit_message)
     os.system(f'git commit -F {tmpfile}')
     os.remove(tmpfile)
-    note_message = """
+    if ag.amend:
+        os.system('git commit --amend')
+    else:
+        note_message = """
 Please replace the <Explain why change was made.> in the git commit
 message body by running:
 
@@ -86,7 +89,7 @@ or
 
     $ git citool --amend
 """
-    console.print(Panel(note_message, title='Notice', border_style='green'))
+        console.print(Panel(note_message, title='Notice', border_style='green'))
 
     exit(0)
 
