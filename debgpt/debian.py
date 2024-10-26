@@ -337,3 +337,16 @@ def mapreduce_load_directory(path: str,
             chunkdict = mapreduce_load_file(path, chunk_size=chunk_size)
             all_chunks.update(chunkdict)
     return all_chunks
+
+def mapreduce_load_any(path: str,
+                       chunk_size: int = 8192,
+                       ) -> Dict[Tuple[str,int,int], List[str]]:
+    '''
+    load file or directory and return the chunked contents
+    '''
+    if os.path.isdir(path):
+        return mapreduce_load_directory(path, chunk_size=chunk_size)
+    elif os.path.isfile(path):
+        return mapreduce_load_file(path, chunk_size=chunk_size)
+    else:
+        raise FileNotFoundError(f'{path} not found')
