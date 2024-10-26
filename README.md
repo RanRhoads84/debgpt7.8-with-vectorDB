@@ -433,7 +433,6 @@ TODO
 
 The following is the current **TODO List**.Some ideas might be a little bit far away.
 
-1. add perplexity API https://www.perplexity.ai
 1. https://github.com/openai/chatgpt-retrieval-plugin
 1. implement `--archwiki` `--gentoowiki` `--debianwiki` `--fedorawiki` `--wikipedia` (although the LLM have already read the wikipedia dump many times)
 1. analyze sbuild buildlog
