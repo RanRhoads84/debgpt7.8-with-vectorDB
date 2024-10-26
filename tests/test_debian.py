@@ -23,6 +23,7 @@ SOFTWARE.
 '''
 import pytest
 from debgpt import debian
+import os
 
 
 @pytest.mark.parametrize('idx', ('src:pytorch', '1056388'))
@@ -50,4 +51,12 @@ def test_buildd(p):
 def test_html(url):
     print(debian.html(url, raw=False))
 
-
+def test_mapreduce_load_file(tmp_path):
+    policypath = os.path.join(tmp_path, 'policy.txt')
+    # just download the policy text file
+    debian.policy('1', debgpt_home=tmp_path)
+    chunks = debian.mapreduce_load_file(policypath)
+    for k, v in chunks.items():
+        encoded = '\n'.join(v).encode('utf-8')
+        print(k, len(encoded))
+        print(encoded.decode())

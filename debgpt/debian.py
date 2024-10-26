@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-from typing import List, Union
+from typing import List, Union, Dict, Tuple
 import re
 import requests
 from . import policy as debgpt_policy
@@ -287,3 +287,28 @@ def sbuild():
     lines = [f'''The following is a file named {latest_build_log}:''']
     lines.extend(['```'] + text + ['```', ''])
     return '\n'.join(lines)
+
+##########################################
+# Special Text Loaders
+##########################################
+def mapreduce_load_file(path: str,
+                        chunk_size: int = 8192,
+                        ) -> Dict[Tuple[str,int,int], List[str]]:
+    '''
+    load the file and return the content as a list of lines
+    '''
+    with open(path, 'rt') as f:
+        lines = [x.rstrip() for x in f.readlines()]
+    def _chunk_lines(path: str, start: int, end: int, lines: List[str], *,
+                     chunk_size: int = chunk_size):
+        chunk_size_in_bytes = len('\n'.join(lines[start:end]).encode('utf8'))
+        if chunk_size_in_bytes < chunk_size:
+            return { (path, start, end): lines[start:end] }
+        else:
+            # split the lines into chunks
+            middle = (start+end) // 2
+            left = _chunk_lines(path, start, middle, lines, chunk_size=chunk_size)
+            right = _chunk_lines(path, middle, end, lines, chunk_size=chunk_size)
+            return { **left, **right }
+    chunkdict = _chunk_lines(path, 0, len(lines), lines)
+    return chunkdict
