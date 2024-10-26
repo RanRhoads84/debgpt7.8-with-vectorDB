@@ -67,3 +67,8 @@ def test_mapreduce_load_directory(tmp_path):
         encoded = '\n'.join(v).encode('utf-8')
         print(k, len(encoded))
         print(encoded.decode())
+
+def test_mapreduce_load_any_astext():
+    chunks = debian.mapreduce_load_any_astext('./debian')
+    for v in chunks:
+        print(v)

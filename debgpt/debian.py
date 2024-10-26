@@ -350,3 +350,19 @@ def mapreduce_load_any(path: str,
         return mapreduce_load_file(path, chunk_size=chunk_size)
     else:
         raise FileNotFoundError(f'{path} not found')
+
+def mapreduce_load_any_astext(path: str,
+                              chunk_size: int = 8192,
+                              ) -> List[str]:
+    '''
+    load file or directory and return the contents as a list of lines
+    '''
+    chunkdict = mapreduce_load_any(path, chunk_size=chunk_size)
+    texts = []
+    for (path, start, end), lines in chunkdict.items():
+        txt = f'File: {path} (lines {start}-{end})\n'
+        txt += '```\n'
+        txt += '\n'.join(lines)
+        txt += '\n```\n'
+        texts.append(txt)
+    return texts
