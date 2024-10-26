@@ -1,6 +1,24 @@
 Changelog
 =========
 
+v0.5.2 -- 2024-10-26
+--------------------
+
+Features:
+
+* e618872 add support for Google Gemini frontend integration
+* fa40aa2 add support for Anthropic frontend integration
+* b5ccd43 cli: add support for loading latest sbuild build logs
+
+Minor fixes and improvements:
+
+* b052cf8 cli: fix session index display in interactive mode prompt after /reset
+* 742c54e README: add interactive mode tips and commands
+
+Currently supported frontends:
+  (commercial): OpenAI, Google Gemini, Anthropic
+  (self-hosted): vLLM, Ollama, Llamafile, ZMQ
+
 v0.5.1 -- 2024-10-16
 ---------------------
 
