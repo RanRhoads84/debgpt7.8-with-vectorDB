@@ -29,6 +29,7 @@ from bs4 import BeautifulSoup
 import os
 import subprocess
 import sys
+import glob
 import rich
 console = rich.get_console()
 
@@ -111,6 +112,21 @@ def _load_cmdline(cmd: Union[str, List]) -> List[str]:
 def _load_stdin() -> List[str]:
     lines = [x.rstrip() for x in sys.stdin.readlines()]
     return lines
+
+
+def _latest_file(files: List[str]) -> str:
+    '''
+    return the latest file among the list of files
+    '''
+    latest = max(files, key=os.path.getmtime)
+    return latest
+
+
+def _latest_glob(pattern: str) -> str:
+    '''
+    return the latest file that matches the glob pattern
+    '''
+    return _latest_file(glob.glob(pattern))
 
 
 #####################################
@@ -256,4 +272,18 @@ def pynew(version_section: str):
     lines = [
         f'''The following is the {section} section of Python {version}'s What's New document:''']
     lines.extend(['```', text, '```', ''])
+    return '\n'.join(lines)
+
+
+def sbuild():
+    '''
+    load the latest sbuild buildlog. we will automatically figure out the
+    latest buildlog file in the parent directory.
+    '''
+    if not os.path.exists('./debian'):
+        raise FileNotFoundError('./debian directory not found. Are you in the right directory?')
+    latest_build_log = _latest_glob('../*.build')
+    text = _load_file(latest_build_log)
+    lines = [f'''The following is a file named {latest_build_log}:''']
+    lines.extend(['```'] + text + ['```', ''])
     return '\n'.join(lines)
