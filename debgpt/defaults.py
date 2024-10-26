@@ -53,6 +53,10 @@ class Config(object):
             'openai_base_url': 'https://api.openai.com/v1',
             'openai_model': 'gpt-4o',
             'openai_api_key': 'your-openai-api-key',
+            # Anthropic Frontend Specific
+            'anthropic_base_url': 'https://api.anthropic.com',
+            'anthropic_api_key': 'your-anthropic-api-key',
+            'anthropic_model': 'claude-3-5-sonnet-20241022',
             # Llamafile Frontend Specific
             'llamafile_base_url': 'http://localhost:8080/v1',
             # Ollama Frontend Specific
@@ -82,6 +86,11 @@ class Config(object):
                 rich.print(
                     f'Found environment variable OPENAI_API_KEY. Overriding openai_api_key')
             self.toml['openai_api_key'] = openai_api_key
+        if (anthropic_api_key := os.getenv('ANTHROPIC_API_KEY', None)) is not None:
+            if verbose:
+                rich.print(
+                    f'Found environment variable ANTHROPIC_API_KEY. Overriding anthropic_api_key')
+            self.toml['anthropic_api_key'] = anthropic_api_key
         # all the above will be overridden by command line arguments
         pass
 

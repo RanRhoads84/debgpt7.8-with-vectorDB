@@ -69,12 +69,15 @@ see a list of available commands that will not be sent to the LLM.
 FRONTENDS
 =========
 
-The tool currently have three frontend implementations: `dryrun`, `openai`, and `zmq`.
+The tool currently have the following list of frontend implementations.
 They are specified through the `-F | --frontend` argument.
 
 * `openai`: Connects with a OpenAI API-compatible
   server. For instance, by specifying `--openai_base_url`, you can switch to
   a different service provider than the default OpenAI API server.
+
+* `anthropic`: Connects with Anthropic service. You need to specify
+  `--anthropic_api_key` or environt variable `ANTHROPIC_API_KEY` to use this.
 
 * `llamafile`: Connects with a llamafile (single-file LLM distribution).
   See https://github.com/Mozilla-Ocho/llamafile for more information.

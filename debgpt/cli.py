@@ -70,11 +70,15 @@ DebGPT Fresh Install Guide
 To use DebGPT, you need to configure a frontend to connect to the LLM backend.
 There are several frontends available, including:
 
-   (default frontend, commercial, proprietary, need-api-key, OpenAI-API)
+   (DEFAULT, commercial, proprietary, need-api-key, OpenAI-API)
  * `openai`: a frontend that connects to the OpenAI API. You need to obtain an
    API key from https://platform.openai.com/api-keys and set it in the
    `--openai_api_key` argument or the `OPENAI_API_KEY` environment variable.
    Note, this is a commercial proprietary service that needs to be paied for.
+
+   (commercial, proprietary, need-api-key, Anthropic-API)
+ * `anthropic`: Connects with Anthropic service. You need to specify
+   `--anthropic_api_key` or environt variable `ANTHROPIC_API_KEY` to use this.
 
    (self-hosted, open-source, OpenAI-API)
  * `llamafile`: a frontend that connects to the llamafile JSON API service.
@@ -160,10 +164,13 @@ use Meta+Enter to accept the input instead.')
     ag.add_argument('--debgpt_home', type=str, default=conf['debgpt_home'],
                     help='directory to store cache and sessions.')
     ag.add_argument('--frontend', '-F', type=str, default=conf['frontend'],
-                    choices=('dryrun', 'zmq', 'openai',
-                             'llamafile', 'ollama', 'vllm'),
+                    choices=('dryrun',
+                             # commercial services
+                             'openai', 'anthropic',
+                             # self-hosted services
+                             'llamafile', 'ollama', 'vllm', 'zmq'),
                     help=f"default frontend is {conf['frontend']}. Available \
-choices are: (dryrun, zmq, openai, zmq, llamafile, ollama, vllm).\
+choices are: (dryrun, zmq, openai, anthropic, zmq, llamafile, ollama, vllm).\
 The 'dryrun' is a fake frontend that will \
 do nothing other than printing the generated prompt. So that you can copy \
 it to web-based LLMs in that case.")
@@ -218,6 +225,30 @@ OpenAI API server. https://platform.openai.com/api-keys')
 gpt-3.5-turbo-16k (16k context), gpt-4, gpt-4-32k (32k context). \
 Their prices vary. See https://platform.openai.com/docs/models .')
     config_template = __add_arg_to_config(config_template, ag, 'openai_model')
+
+    # Specific to Anthropic Frontend
+    config_template += '''\n
+##################################
+# Specific to Anthropic Frontend
+##################################
+\n'''
+    ag.add_argument('--anthropic_base_url', type=str,
+                    default=conf['anthropic_base_url'],
+                    help='the URL to the Anthropic JSON API service.')
+    config_template = __add_arg_to_config(
+            config_template, ag, 'anthropic_base_url')
+
+    ag.add_argument('--anthropic_api_key', type=str,
+                    default=conf['anthropic_api_key'],
+                    help='Anthropic API key')
+    config_template = __add_arg_to_config(
+            config_template, ag, 'anthropic_api_key')
+
+    ag.add_argument('--anthropic_model', type=str,
+                    default=conf['anthropic_model'],
+                    help='the anthropic model, e.g., claude-3-5-sonnet-20241022')
+    config_template = __add_arg_to_config(
+            config_template, ag, 'anthropic_model')
 
     # Specific to Llamafile Frontend
     config_template += '''\n

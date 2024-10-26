@@ -140,14 +140,63 @@ class OpenAIFrontend(AbstractFrontend):
                 if chunk.choices[0].delta.content is not None:
                     piece = chunk.choices[0].delta.content
                     chunks.append(piece)
-                    print(piece, end="")
-                    sys.stdout.flush()
+                    print(piece, end="", flush=True)
             generated_text = ''.join(chunks)
             if not generated_text.endswith('\n'):
                 print()
                 sys.stdout.flush()
         else:
             generated_text = completion.choices[0].message.content
+        new_message = {'role': 'assistant', 'content': generated_text}
+        self.update_session(new_message)
+        if self.debug:
+            console.log('recv:', self.session[-1])
+        return self.session[-1]['content']
+
+
+class AnthropicFrontend(AbstractFrontend):
+    '''
+    https://docs.anthropic.com/en/api/getting-started
+    But we are currently using OpenAI API.
+    '''
+    NAME = 'AnthropicFrontend'
+    debug: bool = False
+    stream: bool = True
+    max_tokens: int = 4096
+
+    def __init__(self, args):
+        super().__init__(args)
+        from anthropic import Anthropic
+        self.client = Anthropic(api_key=args.anthropic_api_key,
+                                base_url=args.anthropic_base_url)
+        self.model = args.anthropic_model
+        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+        if args.verbose:
+            console.log(f'{self.NAME}> model={repr(self.model)}, '
+                        + f'temperature={args.temperature}, top_p={args.top_p}.')
+
+    def query(self, messages: Union[List, Dict, str]) -> list:
+        # add the message into the session
+        self.update_session(messages)
+        if self.debug:
+            console.log('send:', self.session[-1])
+        if self.stream:
+            chunks = []
+            with self.client.messages.stream(model=self.model,
+                 messages=self.session, max_tokens=self.max_tokens,
+                 **self.kwargs) as stream:
+                for chunk in stream.text_stream:
+                    chunks.append(chunk)
+                    print(chunk, end="", flush=True)
+            generated_text = ''.join(chunks)
+            if not generated_text.endswith('\n'):
+                print()
+                sys.stdout.flush()
+        else:
+            completion = self.client.messages.create(model=self.model,
+                 messages=self.session, max_tokens=self.max_tokens,
+                 stream=self.stream, **self.kwargs)
+            generated_text = completion.content[0].text
         new_message = {'role': 'assistant', 'content': generated_text}
         self.update_session(new_message)
         if self.debug:
@@ -260,6 +309,8 @@ def create_frontend(args):
         frontend = ZMQFrontend(args)
     elif args.frontend == 'openai':
         frontend = OpenAIFrontend(args)
+    elif args.frontend == 'anthropic':
+        frontend = AnthropicFrontend(args)
     elif args.frontend == 'llamafile':
         frontend = LlamafileFrontend(args)
     elif args.frontend == 'ollama':
@@ -300,7 +351,8 @@ if __name__ == '__main__':
     ag = argparse.ArgumentParser()
     ag.add_argument('--zmq_backend', '-B', default='tcp://localhost:11177')
     ag.add_argument('--frontend', '-F', default='zmq',
-                    choices=('zmq', 'openai', 'llamafile', 'ollama', 'vllm'))
+                    choices=('zmq', 'openai', 'anthropic',
+                             'llamafile', 'ollama', 'vllm'))
     ag.add_argument('--debgpt_home', default=os.path.expanduser('~/.debgpt'))
     ag = ag.parse_args()
     console.print(ag)
