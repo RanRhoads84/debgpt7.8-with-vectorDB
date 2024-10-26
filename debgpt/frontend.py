@@ -75,11 +75,26 @@ class AbstractFrontend():
         '''
         self.session = []
 
-    def query(self, messages):
+    def oneshot(self, message: str) -> str:
         '''
+        Generate response text from the given question, without history.
+        Args:
+            message: a string, the question.
+        Returns:
+            a string, the response text.
+        '''
+        raise NotImplementedError('please override AbstractFrontend.oneshot()')
+
+    def query(self, messages: List[Dict]) -> str:
+        '''
+        Generate response text from the given chat history.
+        Args:
+            messages: a list of dict, each dict contains a message.
+        Returns:
+            a string, the response text.
         the messages format can be found in _check(...) function above.
         '''
-        raise NotImplementedError
+        raise NotImplementedError('please override AbstractFrontend.query()')
 
     def update_session(self, messages: Union[List, Dict, str]) -> None:
         if isinstance(messages, list):
@@ -125,6 +140,12 @@ class OpenAIFrontend(AbstractFrontend):
         if args.verbose:
             console.log(f'{self.NAME}> model={repr(self.model)}, '
                         + f'temperature={args.temperature}, top_p={args.top_p}.')
+
+    def oneshot(self, message: str) -> str:
+        completions = self.client.chat.completions.create(
+            model=self.model, messages=[{"role": "user", "content": message}],
+            **self.kwargs)
+        return completions.choices[0].message.content
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
