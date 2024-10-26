@@ -39,6 +39,15 @@ texts from various sources, which are subsequently combined into the first
 prompt, and sent through frontend to the backend for LLM to process.
 '''
 
+def is_text_file(filepath: str) -> bool:
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            f.read()
+            return True
+    except UnicodeDecodeError:
+        return False
+
+
 ########################
 # Utility I/O functions
 ########################
@@ -312,3 +321,19 @@ def mapreduce_load_file(path: str,
             return { **left, **right }
     chunkdict = _chunk_lines(path, 0, len(lines), lines)
     return chunkdict
+
+def mapreduce_load_directory(path: str,
+                             chunk_size: int = 8192,
+                             ) -> Dict[Tuple[str,int,int], List[str]]:
+    '''
+    load a whole directory and return the chunked contents
+    '''
+    all_chunks = dict()
+    for root, _, files in os.walk(path):
+        for file in files:
+            path = os.path.join(root, file)
+            if not is_text_file(path):
+                continue
+            chunkdict = mapreduce_load_file(path, chunk_size=chunk_size)
+            all_chunks.update(chunkdict)
+    return all_chunks

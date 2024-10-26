@@ -60,3 +60,10 @@ def test_mapreduce_load_file(tmp_path):
         encoded = '\n'.join(v).encode('utf-8')
         print(k, len(encoded))
         print(encoded.decode())
+
+def test_mapreduce_load_directory(tmp_path):
+    chunks = debian.mapreduce_load_directory('./debian')
+    for k, v in chunks.items():
+        encoded = '\n'.join(v).encode('utf-8')
+        print(k, len(encoded))
+        print(encoded.decode())
