@@ -79,6 +79,9 @@ They are specified through the `-F | --frontend` argument.
 * `anthropic`: Connects with Anthropic service. You need to specify
   `--anthropic_api_key` or environt variable `ANTHROPIC_API_KEY` to use this.
 
+* `gemini`: Connects with Google's Gemini service. You need to specify
+  `--gemini_api_key` to use this.
+
 * `llamafile`: Connects with a llamafile (single-file LLM distribution).
   See https://github.com/Mozilla-Ocho/llamafile for more information.
   This frontend is implemented in the OpenAI-API compatible way.

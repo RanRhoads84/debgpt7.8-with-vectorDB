@@ -204,6 +204,52 @@ class AnthropicFrontend(AbstractFrontend):
         return self.session[-1]['content']
 
 
+class GeminiFrontend(AbstractFrontend):
+    '''
+    https://ai.google.dev/gemini-api/docs
+    '''
+    NAME = 'GeminiFrontend'
+    debug: bool = False
+    stream: bool = True
+
+    def __init__(self, args):
+        super().__init__(args)
+        import google.generativeai as genai
+        genai.configure(api_key=args.gemini_api_key)
+        self.client = genai.GenerativeModel(args.gemini_model)
+        self.chat = self.client.start_chat()
+        self.kwargs = genai.types.GenerationConfig(
+                temperature=args.temperature, top_p=args.top_p)
+        if args.verbose:
+            console.log(f'{self.NAME}> model={repr(args.gemini_model)}, '
+                        + f'temperature={args.temperature}, top_p={args.top_p}.')
+
+    def query(self, messages: Union[List, Dict, str]) -> list:
+        # add the message into the session
+        self.update_session(messages)
+        if self.debug:
+            console.log('send:', self.session[-1])
+        if self.stream:
+            chunks = []
+            response = self.chat.send_message(self.session[-1]['content'],
+                                              stream=True,
+                                              generation_config=self.kwargs)
+            for chunk in response:
+                chunks.append(chunk.text)
+                print(chunk.text, end="", flush=True)
+            generated_text = ''.join(chunks)
+        else:
+            response = self.chat.send_message(self.session[-1]['content'],
+                                              generation_config=self.kwargs)
+            generated_text = response.text
+        new_message = {'role': 'assistant', 'content': generated_text}
+        self.update_session(new_message)
+        if self.debug:
+            console.log('recv:', self.session[-1])
+        return self.session[-1]['content']
+
+
+
 class LlamafileFrontend(OpenAIFrontend):
     '''
     https://github.com/Mozilla-Ocho/llamafile
@@ -311,6 +357,8 @@ def create_frontend(args):
         frontend = OpenAIFrontend(args)
     elif args.frontend == 'anthropic':
         frontend = AnthropicFrontend(args)
+    elif args.frontend == 'gemini':
+        frontend = GeminiFrontend(args)
     elif args.frontend == 'llamafile':
         frontend = LlamafileFrontend(args)
     elif args.frontend == 'ollama':
@@ -351,7 +399,8 @@ if __name__ == '__main__':
     ag = argparse.ArgumentParser()
     ag.add_argument('--zmq_backend', '-B', default='tcp://localhost:11177')
     ag.add_argument('--frontend', '-F', default='zmq',
-                    choices=('zmq', 'openai', 'anthropic',
+                    choices=('dryrun', 'zmq',
+                             'openai', 'anthropic', 'gemini',
                              'llamafile', 'ollama', 'vllm'))
     ag.add_argument('--debgpt_home', default=os.path.expanduser('~/.debgpt'))
     ag = ag.parse_args()

@@ -57,6 +57,9 @@ class Config(object):
             'anthropic_base_url': 'https://api.anthropic.com',
             'anthropic_api_key': 'your-anthropic-api-key',
             'anthropic_model': 'claude-3-5-sonnet-20241022',
+            # Gemini Frontend Specific
+            'gemini_api_key': 'your-google-gemini-api-key',
+            'gemini_model': 'gemini-1.5-flash',
             # Llamafile Frontend Specific
             'llamafile_base_url': 'http://localhost:8080/v1',
             # Ollama Frontend Specific

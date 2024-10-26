@@ -80,6 +80,10 @@ There are several frontends available, including:
  * `anthropic`: Connects with Anthropic service. You need to specify
    `--anthropic_api_key` or environt variable `ANTHROPIC_API_KEY` to use this.
 
+   (commercial, proprietary, need-api-key, Google-API)
+ * `gemini`: Connects with Google's Gemini service. You need to specify
+   `--gemini_api_key` to use this.
+
    (self-hosted, open-source, OpenAI-API)
  * `llamafile`: a frontend that connects to the llamafile JSON API service.
    Please read the instructions at https://github.com/Mozilla-Ocho/llamafile
@@ -101,7 +105,7 @@ There are several frontends available, including:
    This pairs with the self-contained primitive backend implementation
    of debgpt, which is directly based on `transformers`.
 
-   (debugging, testing)
+   (debugging)
  * `dryrun`: a fake frontend that will do nothing other than printing the
    generated prompt. This is only useful for debugging.
 
@@ -166,11 +170,11 @@ use Meta+Enter to accept the input instead.')
     ag.add_argument('--frontend', '-F', type=str, default=conf['frontend'],
                     choices=('dryrun',
                              # commercial services
-                             'openai', 'anthropic',
+                             'openai', 'anthropic', 'gemini',
                              # self-hosted services
                              'llamafile', 'ollama', 'vllm', 'zmq'),
                     help=f"default frontend is {conf['frontend']}. Available \
-choices are: (dryrun, zmq, openai, anthropic, zmq, llamafile, ollama, vllm).\
+choices are: (dryrun, zmq, openai, anthropic, gemini, zmq, llamafile, ollama, vllm).\
 The 'dryrun' is a fake frontend that will \
 do nothing other than printing the generated prompt. So that you can copy \
 it to web-based LLMs in that case.")
@@ -249,6 +253,24 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     help='the anthropic model, e.g., claude-3-5-sonnet-20241022')
     config_template = __add_arg_to_config(
             config_template, ag, 'anthropic_model')
+
+    # Specific to Gemini Frontend
+    config_template += '''\n
+##############################
+# Specific to Gemini Frontend
+##############################
+\n'''
+    ag.add_argument('--gemini_api_key', type=str,
+                    default=conf['gemini_api_key'],
+                    help='Gemini API key')
+    config_template = __add_arg_to_config(
+            config_template, ag, 'gemini_api_key')
+
+    ag.add_argument('--gemini_model', type=str,
+                    default=conf['gemini_model'],
+                    help='the gemini model, e.g., gemini-1.5-flash')
+    config_template = __add_arg_to_config(
+            config_template, ag, 'gemini_model')
 
     # Specific to Llamafile Frontend
     config_template += '''\n
