@@ -21,6 +21,7 @@ dependencies = [
     'requests',
     'bs4',
     'tomli',
+# 'anthropic',  # todo: https://github.com/anthropics/anthropic-sdk-python
 ]
 authors = [
   {name = "Mo Zhou", email = "lumin@debian.org"},
