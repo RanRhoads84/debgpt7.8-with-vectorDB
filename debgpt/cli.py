@@ -367,6 +367,13 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     # -- 12. Sbuild build logs
     ag.add_argument('--sbuild', action='store_true',
                     help='load sbuild build logs from parent directory')
+    # -- 998. The special query buider for mapreduce chunks
+    ag.add_argument('--mapreduce', '-x', type=str, 
+                    help='load any file or directory for an answer')
+    ag.add_argument('--mapreduce_chunksize', type=int, default=8192,
+                    help='context chunk size for mapreduce')
+    ag.add_argument('--mapreduce_parallelism', type=int, default=1,
+                    help='number of parallel processes in mapreduce')
     # -- 999. The Question Template at the End of Prompt
     ag.add_argument('--ask', '-A', type=str, default=defaults.QUESTIONS[':none'],
                     help="Question template to append at the end of the prompt. "
@@ -469,7 +476,89 @@ def parse_args_order(argv) -> List[str]:
         _match_l(item, '--pynew', order)
         _match_l(item, '--archw', order)
         _match_l(item, '--sbuild', order)
+        _match_ls(item, '--mapreduce', '-x', order)
     return order
+
+
+def mapreduce_super_long_context(ag) -> str:
+    '''
+    We can add a mechanism to chunk super long context , let LLM read chunk
+    by chunk, providing chunk-wise analysis. Then we aggregate the chunk-wise
+    analysis together using LLM again.
+
+    Procedure:
+      1. chunk a long input into pieces
+      2. map each piece to LLM and get the result
+      3. reduce (aggregate) the results using LLM
+      4. return the aggregated LLM output
+    '''
+    chunks = debian.mapreduce_load_any_astext(ag.mapreduce,
+                                              ag.mapreduce_chunksize)
+    console.print(f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}')
+    for i, chunk in enumerate(chunks):
+        console.print(f'  [bold]Chunk {i}[/bold]: {chunk.split("\n")[:1]}...')
+    # TODO: parse special questions like does in gather_information_ordered()
+    user_question = ag.ask
+
+    def _pad_chunk(chunk: str, question: str) -> str:
+        '''
+        process a chunk of text with a question
+        '''
+        template = 'Extract any information that is relevant to question '
+        template += f'{repr(question)} from the following file part. '
+        template += 'Note, if there is no relevant information, just briefly say nothing.'
+        template += '\n\n\n'
+        template += chunk
+        return template
+
+    def _process_chunk(chunk: str, question: str) -> str:
+        '''
+        process a chunk of text with a question
+        '''
+        template = _pad_chunk(chunk, question)
+        if ag.verbose:
+            console.log('oneshot:template:', template)
+        answer = ag.frontend_instance.oneshot(template)
+        if ag.verbose:
+            console.log('oneshot:answer:', answer)
+        return answer
+
+    def _pad_two_results(a: str, b: str, question: str) -> str:
+        template = 'Extract any information that is relevant to question '
+        template += f'{repr(question)} from the following contents and aggregate them. '
+        template += 'Note, if there is no relevant information, just briefly say nothing.'
+        template += '\n\n\n'
+        template += '```\n' + a + '\n```\n\n'
+        template += '```\n' + b + '\n```\n\n'
+        return template
+
+    def _process_two_results(a: str, b: str, question: str) -> str:
+        template = _pad_two_results(a, b, question)
+        if ag.verbose:
+            console.log('oneshot:template:', template)
+        answer = ag.frontend_instance.oneshot(template)
+        if ag.verbose:
+            console.log('oneshot:answer:', answer)
+        return answer
+    
+    # start the reduce of chunks from super long context
+    if ag.mapreduce_parallelism > 1:
+        raise NotImplementedError('parallelism is not implemented yet')
+    else:
+        # serial processing for debugging
+        # first pass
+        results = [_process_chunk(chunk, user_question) for chunk in chunks]
+        # recursive processing
+        while len(results) > 1:
+            console.print(f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
+            new_results = []
+            for (a, b) in zip(results[::2], results[1::2]):
+                new_results.append(_process_two_results(a, b, user_question))
+            if len(results) % 2 == 1:
+                new_results.append(results[-1])
+            results = new_results
+        aggregated_result = results[0] 
+    return aggregated_result + '\n\n'
 
 
 def gather_information_ordered(msg: Optional[str], ag, ag_order) -> Optional[str]:
@@ -504,6 +593,8 @@ def gather_information_ordered(msg: Optional[str], ag, ag_order) -> Optional[str
             msg = _append_info(msg, func(spec, debgpt_home=ag.debgpt_home))
         elif key == 'sbuild':
             msg = _append_info(msg, debian.sbuild())
+        elif key == 'mapreduce':
+            msg = _append_info(msg, mapreduce_super_long_context(ag))
         else:
             raise NotImplementedError(key)
 
