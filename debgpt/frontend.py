@@ -154,7 +154,11 @@ class OpenAIFrontend(AbstractFrontend):
 
     def __init__(self, args):
         super().__init__(args)
-        from openai import OpenAI
+        try:
+            from openai import OpenAI
+        except ImportError:
+            console.log('please install OpenAI package: "pip install openai"')
+            exit(1)
         self.client = OpenAI(api_key=args.openai_api_key,
                              base_url=args.openai_base_url)
         self.session.append({"role": "system", "content": self.system_message})
@@ -222,7 +226,11 @@ class AnthropicFrontend(AbstractFrontend):
 
     def __init__(self, args):
         super().__init__(args)
-        from anthropic import Anthropic
+        try:
+            from anthropic import Anthropic
+        except ImportError:
+            console.log('please install Anthropic package: "pip install anthropic"')
+            exit(1)
         self.client = Anthropic(api_key=args.anthropic_api_key,
                                 base_url=args.anthropic_base_url)
         self.model = args.anthropic_model
@@ -289,7 +297,11 @@ class GeminiFrontend(AbstractFrontend):
 
     def __init__(self, args):
         super().__init__(args)
-        import google.generativeai as genai
+        try:
+            import google.generativeai as genai
+        except ImportError:
+            console.log('please install gemini package: "pip install google-generativeai"')
+            exit(1)
         genai.configure(api_key=args.gemini_api_key)
         self.client = genai.GenerativeModel(args.gemini_model)
         self.chat = self.client.start_chat()
