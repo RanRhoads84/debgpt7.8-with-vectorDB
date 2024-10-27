@@ -1,6 +1,24 @@
 Changelog
 =========
 
+v0.6.0 -- ?
+--------------------
+
+Major Change:
+
+The biggest change in this release is the introduction of the mapreduce
+functionality which enables any-length text processing, which was not
+possible before.
+
+Examples:
+$ debgpt -Hx <any-file-directory> -A <your-question>
+$ debgpt -Hx ./debian -A 'what is this?'
+$ debgpt -Hx ./debian -A 'how is this package built? how many binary packages will be produced?'
+$ debgpt -Hx :policy -A 'what is the changes of the latest version compared to the previous version?'
+$ debgpt -Hx :sbuild -a 'why does the build fail? do you have any suggestion?'
+
+Changes:
+
 v0.5.2 -- 2024-10-26
 --------------------
 
