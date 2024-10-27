@@ -50,8 +50,6 @@ class Config(object):
             'frontend': 'openai',
             'debgpt_home': HOME,
             'monochrome': False,
-            'mapreduce_chunksize': 65536,
-            'mapreduce_parallelism': 8,
             # LLM Inference Parameters
             'temperature': 0.5,
             'top_p': 1.0,
@@ -77,6 +75,9 @@ class Config(object):
             'vllm_model': 'NousResearch/Meta-Llama-3-8B-Instruct',
             # ZMQ Frontend Specific
             'zmq_backend': 'tcp://localhost:11177',
+            # Prompt Composer Settings
+            'mapreduce_chunksize': 65536,
+            'mapreduce_parallelism': 8,
         }
         # the built-in defaults will be overridden by config file
         if not os.path.exists(home):
