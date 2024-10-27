@@ -242,7 +242,8 @@ https://platform.openai.com/docs/api-reference/ \
     ''')
     config_template = __add_arg_to_config(config_template, ag, 'temperature')
 
-    ag.add_argument('--top_p', '-P', type=float, default=conf['top_p'])
+    ag.add_argument('--top_p', '-P', type=float, default=conf['top_p'],
+                    help='Top-p (nucleus) sampling.')
     config_template = __add_arg_to_config(config_template, ag, 'top_p')
 
     # Specific to OpenAI Frontend
@@ -306,22 +307,23 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # Specific to Gemini Frontend
     config_template += '''\n
-##############################
-# Specific to Gemini Frontend
-##############################
+#########################
+# Gemini Frontend Options
+#########################
 \n'''
-    ag.add_argument('--gemini_api_key',
+    _g = ag.add_argument_group('Gemini Frontend Options')
+    _g.add_argument('--gemini_api_key',
                     type=str,
                     default=conf['gemini_api_key'],
                     help='Gemini API key')
-    config_template = __add_arg_to_config(config_template, ag,
+    config_template = __add_arg_to_config(config_template, _g,
                                           'gemini_api_key')
 
-    ag.add_argument('--gemini_model',
+    _g.add_argument('--gemini_model',
                     type=str,
                     default=conf['gemini_model'],
                     help='the gemini model, e.g., gemini-1.5-flash')
-    config_template = __add_arg_to_config(config_template, ag, 'gemini_model')
+    config_template = __add_arg_to_config(config_template, _g, 'gemini_model')
 
     # Specific to Llamafile Frontend
     config_template += '''\n
