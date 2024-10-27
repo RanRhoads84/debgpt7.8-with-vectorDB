@@ -205,7 +205,7 @@ limitations.
 Note, this functionality is very quota-consuming if you are going to deal
 with long texts. Please keep an eye on your bill when you try this.
 
-#### Ex2. BTS / Buildd Query
+#### Ex3. Standard Query Composers
 
 Ask LLM to summarize the BTS page for `src:pytorch`.
 
@@ -349,6 +349,13 @@ debgpt -H --html 'https://www.debian.org/vote/2022/vote_003' -A :diff --openai_m
 
 In this example, we had to switch to a model supporting a long context (the
 HTML page has roughly 5k tokens).
+
+#### Ex10. Command Line Behavior
+
+Let LLM write some code for you and save the output to a file:
+```
+debgpt -Qa 'write a hello world in rakudo for me' -o hello.raku
+```
 
 #### Ex99. You Name It
 
