@@ -12,11 +12,31 @@ DebGPT - Chatting LLM with Debian-Specific Knowledge
 SYNOPSIS
 ========
 
-`debgpt [-h] [--quit] [--multiline] [--hide_first] [--verbose] [--output OUTPUT] [--version] [--debgpt_home DEBGPT_HOME]
-      [--frontend {dryrun,zmq,openai}] [--temperature TEMPERATURE] [--top_p TOP_P] [--openai_base_url OPENAI_BASE_URL]
-      [--openai_api_key OPENAI_API_KEY] [--openai_model OPENAI_MODEL] [--zmq_backend ZMQ_BACKEND] [--bts BTS] [--bts_raw] [--cmd CMD]
-      [--buildd BUILDD] [--file FILE] [--policy POLICY] [--devref DEVREF] [--tldr TLDR] [--ask ASK]
-      [SUBCOMMAND] ...`
+`debgpt [GENERAL-OPTIONS] [LOADERS] [--frontend {dryrun,zmq,openai}] [--ask ASK]`
+`debgpt [SUBCOMMAND] ...`
+
+[GENERAL-OPTIONS]
+
+`-h, --help`
+: show this help message and exit
+
+`--monochrome <true|false>`
+: disable colorized output during the conversation
+
+[LOADERS]
+
+`-f FILE, --file FILE`
+: load specified file(s) in prompt. A special syntax is supported: "--file filename:start_line:end_line"
+
+`--cmd CMD`
+: add the command line output to the prompt
+
+[SUBCOMMAND]
+
+`debgpt genconfig`
+
+`debgpt git commit [--amend]`
+
 
 DESCRIPTION
 ===========
@@ -40,34 +60,36 @@ automatically generate the git commit message and commit the changes for you.
 This tool supports multiple frontends, including OpenAI and ZMQ.
 The ZMQ frontend/backend are provided in this tool to make it self-contained.
 
+INSTALLATION
+============
 
-OPTIONS
-=======
+This tool can be installed from source via the command "`pip3 install .`".
+By default, it will only pull the dependencies needed to run the OpenAI
+and the ZMQ frontends. The dependencies of the other backend implementations
+(i.e., other commercial APIs and self-hosted LLM inference) needs to be
+installed manually, using tools like pip, venv, conda, mamba, etc.
 
-`-h, --help`
-: show this help message and exit
 
-`--cmd CMD`
-: add the command line output to the prompt
+CONFIGURATION
+=============
 
-`--monochrome <true|false>`
-: disable colorized output during the conversation
+Upon fresh installation or not configured at all, running `debgpt` command
+will simply print the fresh install instructions. Follow the guide to setup.
 
-TODO: add all cmd options here.
+By default, the configuration file is placed at `$HOME/.debgpt/config.toml`.
+Use `debgpt genconfig` or `debgpt config.toml` to generate a config template.
+System-wide configuration file location is not supported.
 
-INTERACTIVE MODE
-================
-
-There are a few tips for using the interactive mode.  Press `/` and you will
-see a list of available commands that will not be sent to the LLM.
-
-* `/save <path.txt>`: save the last LLM response to the specified file.
-
-* `/reset`: clear the context. So you can start a new conversation without quiting.
-
+The minimum configuration needed for `debgpt` to work only involves one
+line: `openai_api_key = "your-api-key"`. You can also export the API key
+in the environment variable `OPENAI_API_KEY`.
 
 FRONTENDS
 =========
+
+Frontend is a client which communicates with an LLM inference backend.
+The frontend is responsible for sending the user input to the backend,
+and receive the response from the backend, while maintaining a history.
 
 The tool currently have the following list of frontend implementations.
 They are specified through the `-F | --frontend` argument.
@@ -116,32 +138,13 @@ Please refer their corresponding user agreements before adopting one of them.
 Be aware of such risks, and refrain from sending confidential information such
 like paid API keys to LLM.
 
-
-CONFIGURATION
-=============
-
-By default, the configuration file is placed at `$HOME/.debgpt/config.toml`.
-Use `debgpt genconfig` or `debgpt config.toml` to generate a config template.
-This configuration file should not be installed system-wide because users
-may need to fill in secrets like paid API keys.
-
-
-PROMPT ENGINEERING
-==================
-
-When you chat with LLM, note that the way you ask a question significant
-impacts the quality of the results you will get. make sure to provide as much
-information as possible. The following are some references on this topic:
-
-1. OpenAI's Guide https://platform.openai.com/docs/guides/prompt-engineering
-2. Chain-of-Thought (CoT): https://arxiv.org/pdf/2205.11916.pdf
-
 EXAMPLES
 ========
 
-The following examples are roughly organized in the order of complexity of command line.
+The following examples are carefully ordered. You can start from the first
+example and gradually move to the next one.
 
-#### Ex1. General Chat
+#### Ex1. Quick Start by Chatting with LLM
 
 When no arguments are given, `debgpt` degenerates into a general terminal
 chatting client with LLM backends. Use `debgpt -h` to see detailed usage.
@@ -158,6 +161,13 @@ debgpt -Q -A "who are you?"
 
 After each session, the chatting history will be saved in `~/.debgpt` as a
 json file in a unique name.  You can use `debgpt replay <file_name>` to replay the history.
+
+There are a few tips for using the interactive mode.  Press `/` and you will
+see a list of available commands that will not be sent to the LLM.
+
+* `/save <path.txt>`: save the last LLM response to the specified file.
+
+* `/reset`: clear the context. So you can start a new conversation without quiting.
 
 #### Ex2. Special MapReduce Question Answering for Any Length Context
 
@@ -302,20 +312,14 @@ to less randomness, and LLM will tend to say the same thing every time.
 
 #### Ex8. File-Specific Questions
 
-Let LLM explain the code `debgpt/llm.py`:
-
+Let LLM explain code files:
 ```
-debgpt -H -f debgpt/llm.py -A :explain
-```
-
-Let LLM explain the purpose of the contents in a file:
-
-```
-debgpt -H -f pyproject.toml -A :what
+debgpt -Hf debgpt/llm.py -A 'explain this file'  # --file|-f for small file
+debgpt -Hx debgpt/llm.py -a 'explain this file'  # --mapreduce|-x for large file
+debgpt -Hf pyproject.toml -A 'what is the purpose of this file'
 ```
 
 You can also specify the line range in a special grammar for `-f/--file`:
-
 ```
 debgpt -H -f pyproject.toml:3-10 -A :what  # select the [3,10) lines
 debgpt -H -f pyproject.toml:-10 -A :what   # select from beginning to 10th (excluding 10th)
@@ -352,8 +356,19 @@ you have more good ideas on how we can make LLMs useful for Debian development:
 https://salsa.debian.org/deeplearning-team/debgpt/-/issues
 
 
-BACKENDS
-========
+HINTS: PROMPT ENGINEERING
+=========================
+
+When you chat with LLM, note that the way you ask a question significant
+impacts the quality of the results you will get. make sure to provide as much
+information as possible. The following are some references on this topic:
+
+1. OpenAI's Guide https://platform.openai.com/docs/guides/prompt-engineering
+2. Chain-of-Thought (CoT): https://arxiv.org/pdf/2205.11916.pdf
+
+
+SELF-CONTAINED BACKEND
+======================
 
 ## Available Backend Implementations
 
@@ -447,23 +462,6 @@ debgpt backend --max_new_tokens=1024 --device cuda --precision 4bit --llm Mixtra
 The argument `--max_new_tokens` does not matter much and you can adjust it (it
 is the maximum length of each llm reply). You can adjust it as wish.
 
-
-SETUP AND INSTALL
-=================
-
-FIXME: add optional (backend) dependencies in `pyproject.toml`
-
-This tool can be installed from source via the command "`pip3 install .`".
-By default, it will only pull the dependencies needed to run the OpenAI
-and the ZMQ frontends. The dependencies of the ZMQ backend (i.e., self-hosted
-LLM inference) needs to be satisfied manually for now, using tools like
-pip, venv, conda, mamba, etc.
-
-The additional dependencies needed to run the LLM backend are: numpy,
-pytorch, pyzmq, scipy, accelerate, bitsandbytes, tokenizers, transformers.
-
-The additional dependencies needed to run the tests are: pytest.
-
 TODO
 ====
 
@@ -482,10 +480,7 @@ The following is the current **TODO List**.Some ideas might be a little bit far 
 1. Let LLM do mentoring (lists.debian.org/debian-mentors) e.g., reviewing a .dsc package. This is very difficult given limited context length. Maybe LLMs are not yet smart enough to do this.
 1. Apart from the `str` type, the frontend supports other return types like `List` or `Dict` (for advanced usage such as in-context learning) are possible (see `debgpt/frontend.py :: ZMQFrontend.query`, but those are not explored yet.
 1. The current implementation stays at prompt-engineering an existing Chatting LLM with debian-specific documents, like debian-policy, debian developer references, and some man pages. In the future, we may want to explore how we can use larger datasets like Salsa dump, Debian mailing list dump, etc. LoRA or RAG or any new methods are to be investegated with the datasets. Also see follow-ups at https://lists.debian.org/debian-project/2023/12/msg00028.html
-1. Should we really train or fine-tune a model? How do we organize the data for RLHF or instruction tuning?
-1. There are other possible backends like https://github.com/ggerganov/llama.cpp
-which allows inference on CPUs (even laptops).
-transformers itself also supports 8bit and 4bit inference with bitsandbytes.
+1. Should we really train or fine-tune a model? How do we organize the data?
 
 LICENSE
 =======

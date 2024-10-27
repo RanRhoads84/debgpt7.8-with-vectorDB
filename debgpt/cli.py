@@ -428,7 +428,8 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     type=str,
                     default=[],
                     action='append',
-                    help='load specified file(s) in prompt')
+                    help='load specified file(s) in prompt. A special syntax \
+                    is supported: "--file filename:start_line:end_line"')
     # -- 5. Debian Policy
     ag.add_argument(
         '--policy',
