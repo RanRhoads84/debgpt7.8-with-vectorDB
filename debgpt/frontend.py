@@ -148,19 +148,20 @@ class OpenAIFrontend(AbstractFrontend):
         func = self.client.chat.completions.create
         if retry:
             from openai import RateLimitError
-            try:
-                completions = func(model=self.model,
-                                   messages=[{
-                                       "role": "user",
-                                       "content": message
-                                   }],
-                                   **self.kwargs)
-            except RateLimitError as e:
-                console.log(
-                    "Rate limit reached. Waiting for 15 seconds before retrying..."
-                )
-                time.sleep(15)
-
+            while True:
+                try:
+                    completions = func(model=self.model,
+                                       messages=[{
+                                           "role": "user",
+                                           "content": message
+                                       }],
+                                       **self.kwargs)
+                    break
+                except RateLimitError as e:
+                    console.log(
+                        "Rate limit reached. Waiting for 15 seconds before retrying..."
+                    )
+                    time.sleep(15)
         else:
             completions = func(model=self.model,
                                messages=[{
