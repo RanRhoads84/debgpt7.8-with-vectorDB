@@ -663,9 +663,9 @@ def mapreduce_super_long_context(ag) -> str:
         user_question = 'summarize the above contents.'
 
     def _shorten(s: str, maxlen: int = 100) -> str:
-        tmp = s[::-1]
-        textwrap.shorten(tmp, width=maxlen)
-        return tmp[::-1]
+        return textwrap.shorten(s[::-1],
+                                width=maxlen,
+                                placeholder=']...[')[::-1]
 
     def _pad_chunk(chunk: str, question: str) -> str:
         '''
