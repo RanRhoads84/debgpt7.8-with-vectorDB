@@ -284,19 +284,6 @@ def pynew(version_section: str):
     return '\n'.join(lines)
 
 
-def sbuild():
-    '''
-    load the latest sbuild buildlog. we will automatically figure out the
-    latest buildlog file in the parent directory.
-    '''
-    if not os.path.exists('./debian'):
-        raise FileNotFoundError('./debian directory not found. Are you in the right directory?')
-    latest_build_log = _latest_glob('../*.build')
-    text = _load_file(latest_build_log)
-    lines = [f'''The following is a file named {latest_build_log}:''']
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
-
 ##########################################
 # Special Text Loaders
 ##########################################
@@ -324,7 +311,7 @@ def mapreduce_load_file(path: str,
     '''
     with open(path, 'rt') as f:
         lines = [x.rstrip() for x in f.readlines()]
-    chunkdict = _mapreduce_chunk_lines(path, 0, len(lines), lines)
+    chunkdict = _mapreduce_chunk_lines(path, 0, len(lines), lines, chunk_size=chunk_size)
     return chunkdict
 
 def mapreduce_load_directory(path: str,
@@ -360,6 +347,15 @@ def mapreduce_load_any(path: str,
             lines = debgpt_policy.DebianDevref(os.path.join(debgpt_home, 'devref.txt')).lines
             return _mapreduce_chunk_lines('Debian Developer Reference',
                                           0, len(lines), lines, chunk_size=chunk_size)
+        elif path == ':sbuild':
+            '''
+            load the latest sbuild buildlog. we will automatically figure out the
+            latest buildlog file in the parent directory.
+            '''
+            if not os.path.exists('./debian'):
+                raise FileNotFoundError('./debian directory not found. Are you in the right directory?')
+            latest_build_log = _latest_glob('../*.build')
+            return mapreduce_load_file(latest_build_log, chunk_size)
         else:
             raise ValueError(f'Undefined special path {path}')
     elif path.startswith('file://'):

@@ -371,9 +371,6 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     # -- 11. Arch Wiki
     ag.add_argument('--archw', type=str, default=[], action='append',
                     help='load Arch Wiki. e.g., "Archiving_and_compression"')
-    # -- 12. Sbuild build logs
-    ag.add_argument('--sbuild', action='store_true',
-                    help='load sbuild build logs from parent directory')
     # -- 998. The special query buider for mapreduce chunks
     ag.add_argument('--mapreduce', '-x', type=str, 
                     help='load any file or directory for an answer')
@@ -484,7 +481,6 @@ def parse_args_order(argv) -> List[str]:
         _match_l(item, '--html', order)
         _match_l(item, '--pynew', order)
         _match_l(item, '--archw', order)
-        _match_l(item, '--sbuild', order)
         _match_ls(item, '--mapreduce', '-x', order)
     return order
 
@@ -634,8 +630,6 @@ def gather_information_ordered(msg: Optional[str], ag, ag_order) -> Optional[str
             spec = getattr(ag, key).pop(0)
             func = getattr(debian, key)
             msg = _append_info(msg, func(spec, debgpt_home=ag.debgpt_home))
-        elif key == 'sbuild':
-            msg = _append_info(msg, debian.sbuild())
         elif key == 'mapreduce':
             msg = _append_info(msg, mapreduce_super_long_context(ag))
         else:
