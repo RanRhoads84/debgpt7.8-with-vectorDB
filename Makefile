@@ -9,6 +9,9 @@ debgpt.1:
 autopep8:
 	find debgpt -type f -name '*.py' -exec autopep8 -i '{}' \;
 
+yapf:
+	find debgpt -type f -name '*.py' -exec yapf -i '{}' \;
+
 pytest:
 	PYTHONPATH=. pytest -v
 
