@@ -275,12 +275,10 @@ debgpt -HQ --cmd 'git diff --staged' -A 'Briefly describe the change as a git co
 This looks interesting, right? In the next example, we have something even
 more convenient!
 
-#### Ex7. Git Wrapper
-
 Let LLM automatically generate the git commit message, and call git to commit it:
 
 ```
-debgpt git commit
+debgpt git commit --amend
 ```
 
 #### Ex7. Fortune
