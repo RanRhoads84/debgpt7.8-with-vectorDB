@@ -31,6 +31,7 @@ import subprocess
 import sys
 import glob
 import rich
+from urllib.request import urlopen
 
 console = rich.get_console()
 
@@ -144,9 +145,27 @@ def _latest_glob(pattern: str) -> str:
     return _latest_file(glob.glob(pattern))
 
 
+def _load_url(url: str) -> List[str]:
+    with urlopen(url) as response:
+        content = response.read().decode('utf-8')
+        lines = content.splitlines()
+    lines = [x.rstrip() for x in lines]
+    return lines
+
+
 #####################################
 # Text Loaders from Various Sources
 #####################################
+
+
+def url(url: str):
+    '''
+    directly load text contents from URL without any processing
+    '''
+    text = _load_url(url)
+    lines = [f'Here is the contents of {url}:']
+    lines.extend(['```'] + text + ['```', ''])
+    return '\n'.join(lines)
 
 
 def archw(identifier: str):
@@ -351,6 +370,25 @@ def _mapreduce_chunk_lines_norecussion(path: str, start: int, end: int,
     return result
 
 
+def mapreduce_load_url(
+    url: str,
+    chunk_size: int = 8192,
+) -> Dict[Tuple[str, int, int], List[str]]:
+    '''
+    load text contents from a URL and return the chunked contents
+    '''
+    with urlopen(url) as response:
+        content = response.read().decode('utf-8')
+        lines = content.splitlines()
+    lines = [x.rstrip() for x in lines]
+    chunkdict = _mapreduce_chunk_lines(url,
+                                       0,
+                                       len(lines),
+                                       lines,
+                                       chunk_size=chunk_size)
+    return chunkdict
+
+
 def mapreduce_load_file(
     path: str,
     chunk_size: int = 8192,
@@ -396,6 +434,29 @@ def mapreduce_load_directory(
     return all_chunks
 
 
+def mapreduce_parse_path(path: str, debgpt_home: str) -> str:
+    '''
+    parse the path string and return the actual path or URL.
+
+    e.g. :policy -> <debgpt_home>/policy.txt
+    '''
+    if path.startswith(':'):
+        if path == ':policy':
+            return os.path.join(debgpt_home, 'policy.txt')
+        elif path == ':devref':
+            return os.path.join(debgpt_home, 'devref.txt')
+        elif path == ':sbuild':
+            if not os.path.exists('./debian'):
+                raise FileNotFoundError(
+                    './debian directory not found. Are you in the right directory?'
+                )
+            return _latest_glob('../*.build')
+        else:
+            raise ValueError(f'Undefined special path {path}')
+    else:
+        return path
+
+
 def mapreduce_load_any(
     path: str,
     chunk_size: int = 8192,
@@ -435,10 +496,8 @@ def mapreduce_load_any(
             return mapreduce_load_file(latest_build_log, chunk_size)
         else:
             raise ValueError(f'Undefined special path {path}')
-    elif path.startswith('file://'):
-        raise NotImplementedError('file:// is not supported')
-    elif path.startswith('http://') or path.startswith('https://'):
-        raise NotImplementedError('HTTP/HTTPS is not supported')
+    elif any(path.startswith(x) for x in ('file://', 'http://', 'https://')):
+        return mapreduce_load_url(path, chunk_size=chunk_size)
     elif os.path.isdir(path):
         return mapreduce_load_directory(path, chunk_size=chunk_size)
     elif os.path.isfile(path):

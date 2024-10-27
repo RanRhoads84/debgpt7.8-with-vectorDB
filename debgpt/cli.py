@@ -661,11 +661,14 @@ def mapreduce_super_long_context(ag) -> str:
 
     # skip mapreduce if there is only one chunk
     if len(chunks) == 1:
-        tmp = debian.mapreduce_load_any(ag.mapreduce,
-                                        ag.mapreduce_chunksize,
-                                        debgpt_home=ag.debgpt_home)
-        filepath = list(tmp.keys())[0][0]
-        return debian.file(filepath)
+        filepath = debian.mapreduce_parse_path(ag.mapreduce,
+                                               debgpt_home=ag.debgpt_home)
+        if any(
+                filepath.startswith(x)
+                for x in ('file://', 'http://', 'https://')):
+            return debian.url(filepath)
+        else:
+            return debian.file(filepath)
 
     def _process_chunk(chunk: str, question: str) -> str:
         '''
