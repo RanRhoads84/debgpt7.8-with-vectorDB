@@ -58,6 +58,7 @@ def retry_ratelimit(func: callable,
     '''
     a decorator to retry the function call when exception occurs.
     '''
+
     @ft.wraps(func)
     def wrapper(*args, **kwargs):
         while True:
@@ -66,9 +67,11 @@ def retry_ratelimit(func: callable,
                 break
             except exception as e:
                 console.log(
-                        f'Rate limit reached. Will retry after {retry_interval} seconds.')
+                    f'Rate limit reached. Will retry after {retry_interval} seconds.'
+                )
                 time.sleep(15)
         return result
+
     return wrapper
 
 
@@ -169,6 +172,7 @@ class OpenAIFrontend(AbstractFrontend):
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
     def oneshot(self, message: str, *, retry: bool = True) -> str:
+
         def _func() -> str:
             _callable = self.client.chat.completions.create
             completions = _callable(model=self.model,
@@ -178,6 +182,7 @@ class OpenAIFrontend(AbstractFrontend):
                                     }],
                                     **self.kwargs)
             return completions.choices[0].message.content
+
         from openai import RateLimitError
         func = retry_ratelimit(_func, RateLimitError) if retry else _func
         return func()
@@ -229,7 +234,8 @@ class AnthropicFrontend(AbstractFrontend):
         try:
             from anthropic import Anthropic
         except ImportError:
-            console.log('please install Anthropic package: "pip install anthropic"')
+            console.log(
+                'please install Anthropic package: "pip install anthropic"')
             exit(1)
         self.client = Anthropic(api_key=args.anthropic_api_key,
                                 base_url=args.anthropic_base_url)
@@ -240,6 +246,7 @@ class AnthropicFrontend(AbstractFrontend):
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
     def oneshot(self, message: str, *, retry: bool = True) -> str:
+
         def _func():
             _callable = self.client.messages.create
             completion = _callable(model=self.model,
@@ -250,6 +257,7 @@ class AnthropicFrontend(AbstractFrontend):
                                    max_tokens=self.max_tokens,
                                    **self.kwargs)
             return completion.content[0].text
+
         from anthropic import RateLimitError
         func = retry_ratelimit(_func, RateLimitError) if retry else _func
         return func()
@@ -300,7 +308,9 @@ class GeminiFrontend(AbstractFrontend):
         try:
             import google.generativeai as genai
         except ImportError:
-            console.log('please install gemini package: "pip install google-generativeai"')
+            console.log(
+                'please install gemini package: "pip install google-generativeai"'
+            )
             exit(1)
         genai.configure(api_key=args.gemini_api_key)
         self.client = genai.GenerativeModel(args.gemini_model)
@@ -312,10 +322,12 @@ class GeminiFrontend(AbstractFrontend):
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
     def oneshot(self, message: str, *, retry: bool = True) -> str:
+
         def _func():
             _callable = self.client.generate_content
             result = _callable(message, generation_config=self.kwargs)
             return result.text
+
         from google.api_core.exceptions import ResourceExhausted
         func = retry_ratelimit(_func, ResourceExhausted) if retry else _func
         return func()
