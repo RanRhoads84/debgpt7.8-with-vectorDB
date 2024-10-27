@@ -31,6 +31,7 @@ import subprocess
 import sys
 import glob
 import rich
+
 console = rich.get_console()
 
 __doc__ = '''
@@ -73,10 +74,14 @@ def _load_bts(identifier: str) -> List[str]:
 
     if not identifier.startswith('src:'):
         # delete useless system messages
-        _ = [x.clear() for x in soup.find_all(
-            'p', attrs={'class': 'msgreceived'})]
-        _ = [x.clear() for x in soup.find_all(
-            'div', attrs={'class': 'infmessage'})]
+        _ = [
+            x.clear()
+            for x in soup.find_all('p', attrs={'class': 'msgreceived'})
+        ]
+        _ = [
+            x.clear()
+            for x in soup.find_all('div', attrs={'class': 'infmessage'})
+        ]
 
     text = soup.get_text().strip()
     text = re.sub('\n\n+\n', '\n\n', text)
@@ -85,7 +90,7 @@ def _load_bts(identifier: str) -> List[str]:
     # filter out useless information from the webpage
     if identifier.startswith('src:'):
         # the lines from 'Options' to the end are useless
-        text = text[: text.index('Options')]
+        text = text[:text.index('Options')]
 
     return text
 
@@ -171,8 +176,7 @@ def html(url: str, *, raw: bool = False):
 def buildd(p: str, *, suite: str = 'sid', raw: bool = False):
     url = f'https://buildd.debian.org/status/package.php?p={p}&suite={suite}'
     text = _load_html_raw(url) if raw else _load_html(url)
-    lines = [
-        f'The following is the build status of package {p}:']
+    lines = [f'The following is the build status of package {p}:']
     lines.extend(['```'] + text + ['```', ''])
     return '\n'.join(lines)
 
@@ -202,7 +206,8 @@ def devref(section: str, *, debgpt_home: str):
     doc = debgpt_policy.DebianDevref(os.path.join(debgpt_home, 'devref.txt'))
     text = doc[section].split('\n')
     lines = [
-        f'''The following is the section {section} of Debian Developer's Reference:''']
+        f'''The following is the section {section} of Debian Developer's Reference:'''
+    ]
     lines.extend(['```'] + text + ['```', ''])
     return '\n'.join(lines)
 
@@ -280,7 +285,8 @@ def pynew(version_section: str):
         text = part.get_text().strip()
     # enclose in markdown block
     lines = [
-        f'''The following is the {section} section of Python {version}'s What's New document:''']
+        f'''The following is the {section} section of Python {version}'s What's New document:'''
+    ]
     lines.extend(['```', text, '```', ''])
     return '\n'.join(lines)
 
@@ -288,12 +294,8 @@ def pynew(version_section: str):
 ##########################################
 # Special Text Loaders
 ##########################################
-def _mapreduce_chunk_lines(path: str,
-                           start: int,
-                           end: int,
-                           lines: List[str],
-                           *,
-                           chunk_size: int):
+def _mapreduce_chunk_lines(path: str, start: int, end: int, lines: List[str],
+                           *, chunk_size: int):
     chunk_size_in_bytes = sum(len(x.encode('utf8')) for x in lines[start:end])
     if chunk_size_in_bytes < chunk_size:
         return {(path, start, end): lines[start:end]}
@@ -301,20 +303,22 @@ def _mapreduce_chunk_lines(path: str,
         return {(path, start, end): lines[start:end]}
     else:
         # split the lines into chunks
-        middle = (start+end) // 2
-        left = _mapreduce_chunk_lines(
-            path, start, middle, lines, chunk_size=chunk_size)
-        right = _mapreduce_chunk_lines(
-            path, middle, end, lines, chunk_size=chunk_size)
+        middle = (start + end) // 2
+        left = _mapreduce_chunk_lines(path,
+                                      start,
+                                      middle,
+                                      lines,
+                                      chunk_size=chunk_size)
+        right = _mapreduce_chunk_lines(path,
+                                       middle,
+                                       end,
+                                       lines,
+                                       chunk_size=chunk_size)
         return {**left, **right}
 
 
-def _mapreduce_chunk_lines_norecussion(path: str,
-                                       start: int,
-                                       end: int,
-                                       lines: List[str],
-                                       *,
-                                       chunk_size: int):
+def _mapreduce_chunk_lines_norecussion(path: str, start: int, end: int,
+                                       lines: List[str], *, chunk_size: int):
     '''
     the non-recursion version of the above function
     the above version seems to be problematic when dealing with large files
@@ -331,12 +335,12 @@ def _mapreduce_chunk_lines_norecussion(path: str,
 
         if chunk_size_in_bytes < chunk_size:
             # If the chunk is within the size limit, add to result
-            result[(path, current_start, current_end)
-                   ] = lines[current_start:current_end]
+            result[(path, current_start,
+                    current_end)] = lines[current_start:current_end]
         elif current_end - current_start == 1:
             # If the chunk is too large, but only one line, add to result
-            result[(path, current_start, current_end)
-                   ] = lines[current_start:current_end]
+            result[(path, current_start,
+                    current_end)] = lines[current_start:current_end]
         else:
             # If the chunk is too large, split it and add to stack
             middle = (current_start + current_end) // 2
@@ -347,28 +351,37 @@ def _mapreduce_chunk_lines_norecussion(path: str,
     return result
 
 
-def mapreduce_load_file(path: str,
-                        chunk_size: int = 8192,
-                        ) -> Dict[Tuple[str, int, int], List[str]]:
+def mapreduce_load_file(
+    path: str,
+    chunk_size: int = 8192,
+) -> Dict[Tuple[str, int, int], List[str]]:
     '''
     load the file and return the content as a list of lines
     '''
     with open(path, 'rt') as f:
         lines = [x.rstrip() for x in f.readlines()]
     try:
-        chunkdict = _mapreduce_chunk_lines(path, 0, len(lines), lines,
+        chunkdict = _mapreduce_chunk_lines(path,
+                                           0,
+                                           len(lines),
+                                           lines,
                                            chunk_size=chunk_size)
     except RecursionError:
         console.log(
-            'Oops! falling back to non-recursion chunking due to RecursionError')
-        chunkdict = _mapreduce_chunk_lines_norecussion(path, 0, len(lines), lines,
+            'Oops! falling back to non-recursion chunking due to RecursionError'
+        )
+        chunkdict = _mapreduce_chunk_lines_norecussion(path,
+                                                       0,
+                                                       len(lines),
+                                                       lines,
                                                        chunk_size=chunk_size)
     return chunkdict
 
 
-def mapreduce_load_directory(path: str,
-                             chunk_size: int = 8192,
-                             ) -> Dict[Tuple[str, int, int], List[str]]:
+def mapreduce_load_directory(
+    path: str,
+    chunk_size: int = 8192,
+) -> Dict[Tuple[str, int, int], List[str]]:
     '''
     load a whole directory and return the chunked contents
     '''
@@ -383,11 +396,12 @@ def mapreduce_load_directory(path: str,
     return all_chunks
 
 
-def mapreduce_load_any(path: str,
-                       chunk_size: int = 8192,
-                       *,
-                       debgpt_home: str = '.',
-                       ) -> Dict[Tuple[str, int, int], List[str]]:
+def mapreduce_load_any(
+    path: str,
+    chunk_size: int = 8192,
+    *,
+    debgpt_home: str = '.',
+) -> Dict[Tuple[str, int, int], List[str]]:
     '''
     load file or directory and return the chunked contents
     '''
@@ -396,12 +410,18 @@ def mapreduce_load_any(path: str,
             lines = debgpt_policy.DebianPolicy(
                 os.path.join(debgpt_home, 'policy.txt')).lines
             return _mapreduce_chunk_lines('Debian Policy',
-                                          0, len(lines), lines, chunk_size=chunk_size)
+                                          0,
+                                          len(lines),
+                                          lines,
+                                          chunk_size=chunk_size)
         elif path == ':devref':
             lines = debgpt_policy.DebianDevref(
                 os.path.join(debgpt_home, 'devref.txt')).lines
             return _mapreduce_chunk_lines('Debian Developer Reference',
-                                          0, len(lines), lines, chunk_size=chunk_size)
+                                          0,
+                                          len(lines),
+                                          lines,
+                                          chunk_size=chunk_size)
         elif path == ':sbuild':
             '''
             load the latest sbuild buildlog. we will automatically figure out the
@@ -409,7 +429,8 @@ def mapreduce_load_any(path: str,
             '''
             if not os.path.exists('./debian'):
                 raise FileNotFoundError(
-                    './debian directory not found. Are you in the right directory?')
+                    './debian directory not found. Are you in the right directory?'
+                )
             latest_build_log = _latest_glob('../*.build')
             return mapreduce_load_file(latest_build_log, chunk_size)
         else:
@@ -426,16 +447,18 @@ def mapreduce_load_any(path: str,
         raise FileNotFoundError(f'{path} not found')
 
 
-def mapreduce_load_any_astext(path: str,
-                              chunk_size: int = 8192,
-                              *,
-                              debgpt_home: str = '.',
-                              ) -> List[str]:
+def mapreduce_load_any_astext(
+    path: str,
+    chunk_size: int = 8192,
+    *,
+    debgpt_home: str = '.',
+) -> List[str]:
     '''
     load file or directory and return the contents as a list of lines
     '''
-    chunkdict = mapreduce_load_any(
-        path, chunk_size=chunk_size, debgpt_home=debgpt_home)
+    chunkdict = mapreduce_load_any(path,
+                                   chunk_size=chunk_size,
+                                   debgpt_home=debgpt_home)
     texts = []
     for (path, start, end), lines in chunkdict.items():
         txt = f'File: {path} (lines {start}-{end})\n'

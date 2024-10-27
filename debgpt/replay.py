@@ -26,6 +26,7 @@ from rich.panel import Panel
 import json
 import argparse
 import rich
+
 console = rich.get_console()
 
 
@@ -43,7 +44,8 @@ def process_entry(entry):
         raise ValueError(f'unknown role in {entry}')
 
     panel = Panel(escape(entry['content']),
-                  title=title, border_style=border_style)
+                  title=title,
+                  border_style=border_style)
     console.print(panel)
 
 
@@ -58,7 +60,8 @@ def replay(path):
 def main():
     parser = argparse.ArgumentParser(
         description='Replay chat messages from a JSON file.')
-    parser.add_argument('input_file', metavar='FILE',
+    parser.add_argument('input_file',
+                        metavar='FILE',
                         help='JSON file containing the chat messages')
     args = parser.parse_args()
     replay(args.input_file)

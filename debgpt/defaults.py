@@ -27,8 +27,8 @@ try:
 except:
     import pip._vendor.tomli as tomllib  # for python < 3.10
 import rich
-console = rich.get_console()
 
+console = rich.get_console()
 
 ########################
 # Configuration handling
@@ -39,7 +39,11 @@ CONFIG = os.path.join(HOME, 'config.toml')
 
 
 class Config(object):
-    def __init__(self, home: str = HOME, config: str = CONFIG, verbose: bool = False):
+
+    def __init__(self,
+                 home: str = HOME,
+                 config: str = CONFIG,
+                 verbose: bool = False):
         # The built-in defaults will be overridden by config file
         self.toml = {
             # CLI/Frontend Bebavior
@@ -89,12 +93,15 @@ class Config(object):
         if (openai_api_key := os.getenv('OPENAI_API_KEY', None)) is not None:
             if verbose:
                 rich.print(
-                    f'Found environment variable OPENAI_API_KEY. Overriding openai_api_key')
+                    f'Found environment variable OPENAI_API_KEY. Overriding openai_api_key'
+                )
             self.toml['openai_api_key'] = openai_api_key
-        if (anthropic_api_key := os.getenv('ANTHROPIC_API_KEY', None)) is not None:
+        if (anthropic_api_key := os.getenv('ANTHROPIC_API_KEY',
+                                           None)) is not None:
             if verbose:
                 rich.print(
-                    f'Found environment variable ANTHROPIC_API_KEY. Overriding anthropic_api_key')
+                    f'Found environment variable ANTHROPIC_API_KEY. Overriding anthropic_api_key'
+                )
             self.toml['anthropic_api_key'] = anthropic_api_key
         # all the above will be overridden by command line arguments
         pass
@@ -105,25 +112,38 @@ class Config(object):
     def __getattr__(self, index):
         return self.toml.__getitem__(index)
 
+
 ########################
 # Question templates
 ########################
 
-
 QUESTIONS = {
-    ':none': '',
-    ':free': 'Read the above information carefully, and I will ask you questions later. Be quiet for now.',
-    ':what': 'What is the purpose of the above material?',
-    ':explain': 'Please explain the above information.',
-    ':brief': 'please briefly summarize the above information, with very short sentences.',
-    ':summary': 'Please summarize the above information.',
-    ':summary_table': 'Please summarize the above information. Make a table to organize it.',
-    ':polish': 'Please polish the language in the above texts, while not changing their original meaning.',
-    ':rephrase': 'Please rephrase the above texts, while not changing their original meaning.',
-    ':git-commit': 'Write a good git commit message subject line for the change diff shown above, using the project style visible in previous commits titles above.',
-    ':licensecheck': 'What is the license of this file? Just tell me the SPDX identifier, and answer in the shortest format.',
-    ':diff': 'Please explain the differences among the above choices.',
-    ':diff_table': 'Please explain the differences among the above choices. Organize your answer in tabular format.',
+    ':none':
+    '',
+    ':free':
+    'Read the above information carefully, and I will ask you questions later. Be quiet for now.',
+    ':what':
+    'What is the purpose of the above material?',
+    ':explain':
+    'Please explain the above information.',
+    ':brief':
+    'please briefly summarize the above information, with very short sentences.',
+    ':summary':
+    'Please summarize the above information.',
+    ':summary_table':
+    'Please summarize the above information. Make a table to organize it.',
+    ':polish':
+    'Please polish the language in the above texts, while not changing their original meaning.',
+    ':rephrase':
+    'Please rephrase the above texts, while not changing their original meaning.',
+    ':git-commit':
+    'Write a good git commit message subject line for the change diff shown above, using the project style visible in previous commits titles above.',
+    ':licensecheck':
+    'What is the license of this file? Just tell me the SPDX identifier, and answer in the shortest format.',
+    ':diff':
+    'Please explain the differences among the above choices.',
+    ':diff_table':
+    'Please explain the differences among the above choices. Organize your answer in tabular format.',
 }
 
 
@@ -134,9 +154,11 @@ def print_question_templates():
 
 FORTUNE_QUESTIONS = {
     ':any': 'Tell me anything in your mind.',
-    ':random': 'Greet with me, and tell me anything in your mind. Note, NSFW content is forbidden.',
+    ':random':
+    'Greet with me, and tell me anything in your mind. Note, NSFW content is forbidden.',
     ':fun': 'Greet with me, and tell me something that is funny.',
-    ':math': 'Greet with me, and tell me something interesting about mathematics.',
+    ':math':
+    'Greet with me, and tell me something interesting about mathematics.',
     ':joke': 'Greet with me, and tell me a joke.',
     ':computer': 'Greet with me, and tell me something about computers.',
     ':art': 'Greet with me, and tell me something about art.',

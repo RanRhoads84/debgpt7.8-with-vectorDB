@@ -42,6 +42,7 @@ from rich.progress import track
 from prompt_toolkit.styles import Style
 from typing import List, Optional
 import warnings
+
 warnings.filterwarnings("ignore")
 
 console = rich.get_console()
@@ -50,7 +51,8 @@ console = rich.get_console()
 def version() -> None:
     from debgpt import __version__, __copyright__, __license__
     console.print(
-        f'DebGPT {__version__}; Copyright {__copyright__}; Released under {__license__} license.')
+        f'DebGPT {__version__}; Copyright {__copyright__}; Released under {__license__} license.'
+    )
 
 
 def generate_config_file(ag) -> None:
@@ -129,15 +131,19 @@ def parse_args(argv):
     '''
     argparse with subparsers. Generate a config.toml template as byproduct.
     '''
+
     # helper functions
-    def __add_arg_to_config(template, parser, argname, formatter: callable = repr):
+    def __add_arg_to_config(template,
+                            parser,
+                            argname,
+                            formatter: callable = repr):
         '''
         We will create a template for the config.toml file, based on the
         help messages of the argument parser. In that sense I do not have
         to write everything twice, and this avoids many human errors.
         '''
         template += '\n'.join('# ' + x for x in textwrap.wrap(
-            parser._option_string_actions['--'+argname].help))
+            parser._option_string_actions['--' + argname].help))
         template += f'''\n{argname} = {formatter(getattr(conf, argname))}\n'''
         return template
 
@@ -153,38 +159,68 @@ def parse_args(argv):
 # Command Line Interface
 ##############################
 \n'''
-    ag.add_argument('--quit', '-Q', action='store_true',
+    ag.add_argument('--quit',
+                    '-Q',
+                    action='store_true',
                     help='directly quit after receiving the first response \
 from LLM, instead of staying in interation.')
-    ag.add_argument('--multiline', '-M', action='store_true',
+    ag.add_argument('--multiline',
+                    '-M',
+                    action='store_true',
                     help='enable multi-line input for prompt_toolkit. \
 use Meta+Enter to accept the input instead.')
-    ag.add_argument('--hide_first', '-H', action='store_true',
-                    help='hide the first (generated) prompt; do not print argparse results')
-    ag.add_argument('--verbose', '-v', action='store_true',
+    ag.add_argument(
+        '--hide_first',
+        '-H',
+        action='store_true',
+        help='hide the first (generated) prompt; do not print argparse results'
+    )
+    ag.add_argument('--verbose',
+                    '-v',
+                    action='store_true',
                     help='verbose mode. helpful for debugging')
-    ag.add_argument('--output', '-o', type=str, default=None,
+    ag.add_argument('--output',
+                    '-o',
+                    type=str,
+                    default=None,
                     help='write the last LLM message to specified file')
-    ag.add_argument('--version', action='store_true',
+    ag.add_argument('--version',
+                    action='store_true',
                     help='show DebGPT software version and quit.')
-    ag.add_argument('--debgpt_home', type=str, default=conf['debgpt_home'],
+    ag.add_argument('--debgpt_home',
+                    type=str,
+                    default=conf['debgpt_home'],
                     help='directory to store cache and sessions.')
-    ag.add_argument('--frontend', '-F', type=str, default=conf['frontend'],
-                    choices=('dryrun',
-                             # commercial services
-                             'openai', 'anthropic', 'gemini',
-                             # self-hosted services
-                             'llamafile', 'ollama', 'vllm', 'zmq'),
-                    help=f"default frontend is {conf['frontend']}. Available \
+    ag.add_argument(
+        '--frontend',
+        '-F',
+        type=str,
+        default=conf['frontend'],
+        choices=(
+            'dryrun',
+            # commercial services
+            'openai',
+            'anthropic',
+            'gemini',
+            # self-hosted services
+            'llamafile',
+            'ollama',
+            'vllm',
+            'zmq'),
+        help=f"default frontend is {conf['frontend']}. Available \
 choices are: (dryrun, zmq, openai, anthropic, gemini, zmq, llamafile, ollama, vllm).\
 The 'dryrun' is a fake frontend that will \
 do nothing other than printing the generated prompt. So that you can copy \
 it to web-based LLMs in that case.")
     config_template = __add_arg_to_config(config_template, ag, 'frontend')
 
-    ag.add_argument('--monochrome', type=bool, default=conf['monochrome'],
+    ag.add_argument('--monochrome',
+                    type=bool,
+                    default=conf['monochrome'],
                     help='disable colorized output for prompt_toolkit.')
-    config_template = __add_arg_to_config(config_template, ag, 'monochrome',
+    config_template = __add_arg_to_config(config_template,
+                                          ag,
+                                          'monochrome',
                                           formatter=lambda x: str(x).lower())
 
     # LLM Inference Arguments
@@ -193,8 +229,12 @@ it to web-based LLMs in that case.")
 # LLM Inference Arguments
 ###########################
 \n'''
-    ag.add_argument('--temperature', '-T', type=float, default=conf['temperature'],
-                    help='''Sampling temperature. Typically ranges within [0,1]. \
+    ag.add_argument(
+        '--temperature',
+        '-T',
+        type=float,
+        default=conf['temperature'],
+        help='''Sampling temperature. Typically ranges within [0,1]. \
 Low values like 0.2 gives more focused (coherent) answer. \
 High values like 0.8 gives a more random (creative) answer. \
 Not suggested to combine this with with --top_p. See \
@@ -211,22 +251,26 @@ https://platform.openai.com/docs/api-reference/ \
 # Specific to OpenAI Frontend
 #############################
 \n'''
-    ag.add_argument('--openai_base_url', type=str,
+    ag.add_argument('--openai_base_url',
+                    type=str,
                     default=conf['openai_base_url'],
                     help='OpenAI API is a widely adopted standard. You can \
 switch to other compatible service providers, or a self-hosted compatible \
 server.')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'openai_base_url')
+    config_template = __add_arg_to_config(config_template, ag,
+                                          'openai_base_url')
 
-    ag.add_argument('--openai_api_key', type=str,
+    ag.add_argument('--openai_api_key',
+                    type=str,
                     default=conf['openai_api_key'],
                     help='API key is necessary to access services including \
 OpenAI API server. https://platform.openai.com/api-keys')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'openai_api_key')
+    config_template = __add_arg_to_config(config_template, ag,
+                                          'openai_api_key')
 
-    ag.add_argument('--openai_model', type=str, default=conf['openai_model'],
+    ag.add_argument('--openai_model',
+                    type=str,
+                    default=conf['openai_model'],
                     help='For instance, gpt-3.5-turbo (4k context), \
 gpt-3.5-turbo-16k (16k context), gpt-4, gpt-4-32k (32k context). \
 Their prices vary. See https://platform.openai.com/docs/models .')
@@ -238,23 +282,27 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 # Specific to Anthropic Frontend
 ##################################
 \n'''
-    ag.add_argument('--anthropic_base_url', type=str,
+    ag.add_argument('--anthropic_base_url',
+                    type=str,
                     default=conf['anthropic_base_url'],
                     help='the URL to the Anthropic JSON API service.')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'anthropic_base_url')
+    config_template = __add_arg_to_config(config_template, ag,
+                                          'anthropic_base_url')
 
-    ag.add_argument('--anthropic_api_key', type=str,
+    ag.add_argument('--anthropic_api_key',
+                    type=str,
                     default=conf['anthropic_api_key'],
                     help='Anthropic API key')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'anthropic_api_key')
+    config_template = __add_arg_to_config(config_template, ag,
+                                          'anthropic_api_key')
 
-    ag.add_argument('--anthropic_model', type=str,
-                    default=conf['anthropic_model'],
-                    help='the anthropic model, e.g., claude-3-5-sonnet-20241022')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'anthropic_model')
+    ag.add_argument(
+        '--anthropic_model',
+        type=str,
+        default=conf['anthropic_model'],
+        help='the anthropic model, e.g., claude-3-5-sonnet-20241022')
+    config_template = __add_arg_to_config(config_template, ag,
+                                          'anthropic_model')
 
     # Specific to Gemini Frontend
     config_template += '''\n
@@ -262,17 +310,18 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 # Specific to Gemini Frontend
 ##############################
 \n'''
-    ag.add_argument('--gemini_api_key', type=str,
+    ag.add_argument('--gemini_api_key',
+                    type=str,
                     default=conf['gemini_api_key'],
                     help='Gemini API key')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'gemini_api_key')
+    config_template = __add_arg_to_config(config_template, ag,
+                                          'gemini_api_key')
 
-    ag.add_argument('--gemini_model', type=str,
+    ag.add_argument('--gemini_model',
+                    type=str,
                     default=conf['gemini_model'],
                     help='the gemini model, e.g., gemini-1.5-flash')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'gemini_model')
+    config_template = __add_arg_to_config(config_template, ag, 'gemini_model')
 
     # Specific to Llamafile Frontend
     config_template += '''\n
@@ -280,10 +329,12 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 # Specific to Llamafile Frontend
 ################################
 \n'''
-    ag.add_argument('--llamafile_base_url', type=str, default=conf['llamafile_base_url'],
+    ag.add_argument('--llamafile_base_url',
+                    type=str,
+                    default=conf['llamafile_base_url'],
                     help='the URL to the llamafile JSON API service.')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'llamafile_base_url')
+    config_template = __add_arg_to_config(config_template, ag,
+                                          'llamafile_base_url')
 
     # Specific to Ollama Frontend
     config_template += '''\n
@@ -291,12 +342,16 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 # Specific to Ollama Frontend (OpenAI compatibility mode)
 #########################################################
 \n'''
-    ag.add_argument('--ollama_base_url', type=str, default=conf['ollama_base_url'],
+    ag.add_argument('--ollama_base_url',
+                    type=str,
+                    default=conf['ollama_base_url'],
                     help='the URL to the Ollama JSON API service.')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'ollama_base_url')
+    config_template = __add_arg_to_config(config_template, ag,
+                                          'ollama_base_url')
 
-    ag.add_argument('--ollama_model', type=str, default=conf['ollama_model'],
+    ag.add_argument('--ollama_model',
+                    type=str,
+                    default=conf['ollama_model'],
                     help='the model to use in Ollama. For instance, llama3.2')
     config_template = __add_arg_to_config(config_template, ag, 'ollama_model')
 
@@ -306,16 +361,21 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 # Specific to vLLM Frontend
 ###########################
 \n'''
-    ag.add_argument('--vllm_base_url', type=str, default=conf['vllm_base_url'],
+    ag.add_argument('--vllm_base_url',
+                    type=str,
+                    default=conf['vllm_base_url'],
                     help='the URL to the vllm JSON API service.')
     config_template = __add_arg_to_config(config_template, ag, 'vllm_base_url')
 
-    ag.add_argument('--vllm_api_key', type=str,
+    ag.add_argument('--vllm_api_key',
+                    type=str,
                     default=conf['vllm_api_key'],
                     help='vLLM API key is necessary to access services')
     config_template = __add_arg_to_config(config_template, ag, 'vllm_api_key')
 
-    ag.add_argument('--vllm_model', type=str, default=conf['vllm_model'],
+    ag.add_argument('--vllm_model',
+                    type=str,
+                    default=conf['vllm_model'],
                     help='the model to use in vllm. For instance, llama3.2')
     config_template = __add_arg_to_config(config_template, ag, 'vllm_model')
 
@@ -325,8 +385,11 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 # Specific to ZMQ Frontend
 ##############################
 \n'''
-    ag.add_argument('--zmq_backend', type=str, default=conf['zmq_backend'],
-                    help='the ZMQ backend URL that the frontend will connect to')
+    ag.add_argument(
+        '--zmq_backend',
+        type=str,
+        default=conf['zmq_backend'],
+        help='the ZMQ backend URL that the frontend will connect to')
     config_template = __add_arg_to_config(config_template, ag, 'zmq_backend')
 
     # Prompt Loaders (numbered list). You can specify them multiple times.
@@ -337,56 +400,109 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 ##############################
 \n'''
     # -- 1. Debian BTS
-    ag.add_argument('--bts', type=str, default=[], action='append',
-                    help='Retrieve BTS webpage to prompt. example: "src:pytorch", "1056388"')
-    ag.add_argument('--bts_raw', action='store_true',
+    ag.add_argument(
+        '--bts',
+        type=str,
+        default=[],
+        action='append',
+        help='Retrieve BTS webpage to prompt. example: "src:pytorch", "1056388"'
+    )
+    ag.add_argument('--bts_raw',
+                    action='store_true',
                     help='load raw HTML instead of plain text.')
     # -- 2. Custom Command Line(s)
-    ag.add_argument('--cmd', type=str, default=[], action='append',
+    ag.add_argument('--cmd',
+                    type=str,
+                    default=[],
+                    action='append',
                     help='add the command line output to the prompt')
     # -- 3. Debian Buildd
-    ag.add_argument('--buildd', type=str, default=[], action='append',
+    ag.add_argument('--buildd',
+                    type=str,
+                    default=[],
+                    action='append',
                     help='Retrieve buildd page for package to prompt.')
     # -- 4. Arbitrary Plain Text File(s)
-    ag.add_argument('--file', '-f', type=str, default=[], action='append',
+    ag.add_argument('--file',
+                    '-f',
+                    type=str,
+                    default=[],
+                    action='append',
                     help='load specified file(s) in prompt')
     # -- 5. Debian Policy
-    ag.add_argument('--policy', type=str, default=[], action='append',
-                    help='load specified policy section(s). (e.g., "1", "4.6")')
+    ag.add_argument(
+        '--policy',
+        type=str,
+        default=[],
+        action='append',
+        help='load specified policy section(s). (e.g., "1", "4.6")')
     # -- 6. Debian Developers References
-    ag.add_argument('--devref', type=str, default=[], action='append',
+    ag.add_argument('--devref',
+                    type=str,
+                    default=[],
+                    action='append',
                     help='load specified devref section(s).')
     # -- 7. TLDR Manual Page
-    ag.add_argument('--tldr', type=str, default=[], action='append',
+    ag.add_argument('--tldr',
+                    type=str,
+                    default=[],
+                    action='append',
                     help='add tldr page to the prompt.')
     # -- 8. Man Page
-    ag.add_argument('--man', type=str, default=[], action='append',
-                    help='add man page to the prompt. Note the context length!')
+    ag.add_argument(
+        '--man',
+        type=str,
+        default=[],
+        action='append',
+        help='add man page to the prompt. Note the context length!')
     # -- 9. Arbitrary HTML document
-    ag.add_argument('--html', type=str, default=[], action='append',
+    ag.add_argument('--html',
+                    type=str,
+                    default=[],
+                    action='append',
                     help='load HTML document from given URL(s)')
     # -- 10. CPython What's New
-    ag.add_argument('--pynew', type=str, default=[], action='append',
-                    help="load CPython What's New website, e.g. '3.12:summary-release-highlights'")
+    ag.add_argument(
+        '--pynew',
+        type=str,
+        default=[],
+        action='append',
+        help=
+        "load CPython What's New website, e.g. '3.12:summary-release-highlights'"
+    )
     # -- 11. Arch Wiki
-    ag.add_argument('--archw', type=str, default=[], action='append',
+    ag.add_argument('--archw',
+                    type=str,
+                    default=[],
+                    action='append',
                     help='load Arch Wiki. e.g., "Archiving_and_compression"')
     # -- 998. The special query buider for mapreduce chunks
-    ag.add_argument('--mapreduce', '-x', type=str,
+    ag.add_argument('--mapreduce',
+                    '-x',
+                    type=str,
                     help='load any file or directory for an answer')
-    ag.add_argument('--mapreduce_chunksize', type=int, default=conf['mapreduce_chunksize'],
+    ag.add_argument('--mapreduce_chunksize',
+                    type=int,
+                    default=conf['mapreduce_chunksize'],
                     help='context chunk size for mapreduce')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'mapreduce_chunksize')
-    ag.add_argument('--mapreduce_parallelism', type=int, default=conf['mapreduce_parallelism'],
+    config_template = __add_arg_to_config(config_template, ag,
+                                          'mapreduce_chunksize')
+    ag.add_argument('--mapreduce_parallelism',
+                    type=int,
+                    default=conf['mapreduce_parallelism'],
                     help='number of parallel processes in mapreduce')
-    config_template = __add_arg_to_config(
-        config_template, ag, 'mapreduce_parallelism')
+    config_template = __add_arg_to_config(config_template, ag,
+                                          'mapreduce_parallelism')
     # -- 999. The Question Template at the End of Prompt
-    ag.add_argument('--ask', '-A', '-a', type=str, default=defaults.QUESTIONS[':none'],
-                    help="Question template to append at the end of the prompt. "
-                    + "Specify ':' for printing all available templates. "
-                    + "Or a customized string not starting with the colon.")
+    ag.add_argument(
+        '--ask',
+        '-A',
+        '-a',
+        type=str,
+        default=defaults.QUESTIONS[':none'],
+        help="Question template to append at the end of the prompt. " +
+        "Specify ':' for printing all available templates. " +
+        "Or a customized string not starting with the colon.")
 
     # Task Specific Subparsers
     subps = ag.add_subparsers(dest='subparser_name',
@@ -396,11 +512,16 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     # Specific to ZMQ Backend (self-hosted LLM Inference)
     ps_backend = subps.add_parser(
         'backend', help='start backend server (self-hosted LLM inference)')
-    ps_backend.add_argument('--port', '-p', type=int, default=11177,
+    ps_backend.add_argument('--port',
+                            '-p',
+                            type=int,
+                            default=11177,
                             help='port number "11177" looks like "LLM"')
     ps_backend.add_argument('--host', type=str, default='tcp://*')
-    ps_backend.add_argument('--backend_impl', type=str,
-                            default='zmq', choices=('zmq',))
+    ps_backend.add_argument('--backend_impl',
+                            type=str,
+                            default='zmq',
+                            choices=('zmq', ))
     ps_backend.add_argument('--max_new_tokens', type=int, default=512)
     ps_backend.add_argument('--llm', type=str, default='Mistral7B')
     ps_backend.add_argument('--device', type=str, default='cuda')
@@ -412,34 +533,44 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     ps_git.set_defaults(func=task_git)
     git_subps = ps_git.add_subparsers(help='git commands')
     # Task: git commit
-    ps_git_commit = git_subps.add_parser('commit', aliases=['co'],
-                                         help='directly commit staged changes with auto-generated message')
+    ps_git_commit = git_subps.add_parser(
+        'commit',
+        aliases=['co'],
+        help='directly commit staged changes with auto-generated message')
     ps_git_commit.set_defaults(func=task_git_commit)
-    ps_git_commit.add_argument('--amend', action='store_true',
+    ps_git_commit.add_argument('--amend',
+                               action='store_true',
                                help='amend the last commit')
 
     # Task: replay
-    ps_replay = subps.add_parser(
-        'replay', help='replay a conversation from a JSON file')
-    ps_replay.add_argument('json_file_path', type=str,
+    ps_replay = subps.add_parser('replay',
+                                 help='replay a conversation from a JSON file')
+    ps_replay.add_argument('json_file_path',
+                           type=str,
                            help='path to the JSON file')
     ps_replay.set_defaults(func=task_replay)
 
     # Task: stdin
     ps_stdin = subps.add_parser(
-        'stdin', help='read stdin as the first prompt. Should combine with -Q.')
+        'stdin',
+        help='read stdin as the first prompt. Should combine with -Q.')
     ps_stdin.set_defaults(func=lambda ag: debian.stdin())
 
     # Task: fortune
-    ps_fortune = subps.add_parser('fortune', help='fortune mode. Note, it is \
+    ps_fortune = subps.add_parser('fortune',
+                                  help='fortune mode. Note, it is \
 very recommended to set --temperature to a value larger than 1.0, or LLM will \
 give you the same thing across multiple runs.')
-    ps_fortune.add_argument('ask', type=str, nargs='?', default=':fun',
+    ps_fortune.add_argument('ask',
+                            type=str,
+                            nargs='?',
+                            default=':fun',
                             help='specify what type of fortune you want')
     ps_fortune.set_defaults(func=task_fortune)
 
     # Task: genconfig
-    ps_genconfig = subps.add_parser('genconfig', aliases=['genconf', 'config.toml'],
+    ps_genconfig = subps.add_parser('genconfig',
+                                    aliases=['genconf', 'config.toml'],
                                     help='generate config.toml file template')
     ps_genconfig.set_defaults(func=generate_config_file)
 
@@ -469,8 +600,9 @@ def parse_args_order(argv) -> List[str]:
             dest.append(long.lstrip('--'))
 
     def _match_l(probe: str, long: str, dest: List[str]):
-        if probe == long or probe.startswith(long+'='):
+        if probe == long or probe.startswith(long + '='):
             dest.append(long.lstrip('--'))
+
     for item in argv:
         _match_l(item, '--bts', order)
         _match_l(item, '--cmd', order)
@@ -503,7 +635,8 @@ def mapreduce_super_long_context(ag) -> str:
                                               ag.mapreduce_chunksize,
                                               debgpt_home=ag.debgpt_home)
     console.print(
-        f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}')
+        f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}'
+    )
     if ag.verbose:
         for i, chunk in enumerate(chunks):
             firstline = chunk.split('\n')[:1]
@@ -573,20 +706,31 @@ def mapreduce_super_long_context(ag) -> str:
 
         openai.RateLimitError: Error code: 429 - {'error': {'message': ...
         '''
-        with concurrent.futures.ThreadPoolExecutor(max_workers=ag.mapreduce_parallelism) as executor:
-            results = list(track(executor.map(lambda x: _process_chunk(x, user_question), chunks),
-                                 total=len(chunks),
-                                 description=f'MapReduce[{ag.mapreduce_parallelism}]: initial pass',
-                                 transient=True))
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=ag.mapreduce_parallelism) as executor:
+            results = list(
+                track(executor.map(lambda x: _process_chunk(x, user_question),
+                                   chunks),
+                      total=len(chunks),
+                      description=
+                      f'MapReduce[{ag.mapreduce_parallelism}]: initial pass',
+                      transient=True))
         while len(results) > 1:
             console.print(
-                f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
+                f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
+            )
             pairs = list(zip(results[::2], results[1::2]))
-            with concurrent.futures.ThreadPoolExecutor(max_workers=ag.mapreduce_parallelism) as executor:
-                new_results = list(track(executor.map(lambda x: _process_two_results(*x, user_question), pairs),
-                                         total=len(pairs),
-                                         description=f'Mapreduce[{ag.mapreduce_parallelism}]: intermediate pass',
-                                         transient=True))
+            with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=ag.mapreduce_parallelism) as executor:
+                new_results = list(
+                    track(
+                        executor.map(
+                            lambda x: _process_two_results(*x, user_question),
+                            pairs),
+                        total=len(pairs),
+                        description=
+                        f'Mapreduce[{ag.mapreduce_parallelism}]: intermediate pass',
+                        transient=True))
             if len(results) % 2 == 1:
                 new_results.append(results[-1])
             results = new_results
@@ -597,14 +741,18 @@ def mapreduce_super_long_context(ag) -> str:
         '''
         # mapreduce::first pass
         results = []
-        for chunk in track(chunks, total=len(chunks), description='MapReduce: initial pass'):
+        for chunk in track(chunks,
+                           total=len(chunks),
+                           description='MapReduce: initial pass'):
             results.append(_process_chunk(chunk, user_question))
         # mapreduce::recursive processing
         while len(results) > 1:
             console.print(
-                f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
+                f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
+            )
             new_results = []
-            for (a, b) in track(zip(results[::2], results[1::2]), total=len(results)//2,
+            for (a, b) in track(zip(results[::2], results[1::2]),
+                                total=len(results) // 2,
                                 description='Mapreduce: intermediate pass'):
                 new_results.append(_process_two_results(a, b, user_question))
             if len(results) % 2 == 1:
@@ -614,12 +762,14 @@ def mapreduce_super_long_context(ag) -> str:
     return aggregated_result + '\n\n'
 
 
-def gather_information_ordered(msg: Optional[str], ag, ag_order) -> Optional[str]:
+def gather_information_ordered(msg: Optional[str], ag,
+                               ag_order) -> Optional[str]:
     '''
     based on the argparse results, as well as the argument order, collect
     the specified information into the first prompt. If none specified,
     return None.
     '''
+
     def _append_info(msg: str, info: str) -> str:
         msg = '' if msg is None else msg
         return msg + '\n' + info
@@ -681,6 +831,7 @@ def interactive_mode(f: frontend.AbstractFrontend, ag):
 
     # Completer with several keywords keywords to be completed
     class CustomCompleter(Completer):
+
         def get_completions(self, document, complete_event):
             # Get the current text before the cursor
             text_before_cursor = document.text_before_cursor
@@ -696,12 +847,14 @@ def interactive_mode(f: frontend.AbstractFrontend, ag):
                         yield Completion(keyword, -len(text_before_cursor))
 
     # start prompt session
-    prompt_session = PromptSession(style=prompt_style, multiline=ag.multiline,
+    prompt_session = PromptSession(style=prompt_style,
+                                   multiline=ag.multiline,
                                    completer=CustomCompleter())
 
     # loop
     try:
-        while text := prompt_session.prompt(f'{os.getlogin()}[{max(1, len(f.session))}]> '):
+        while text := prompt_session.prompt(
+                f'{os.getlogin()}[{max(1, len(f.session))}]> '):
             # parse escaped interaction commands
             if text.startswith('/'):
                 cmd = shlex.split(text)
@@ -786,7 +939,8 @@ def main(argv=sys.argv[1:]):
     if ag.output is not None:
         if os.path.exists(ag.output):
             console.print(
-                f'[red]! destination {ag.output} exists. Will not overwrite this file.[/red]')
+                f'[red]! destination {ag.output} exists. Will not overwrite this file.[/red]'
+            )
         else:
             with open(ag.output, 'wt') as fp:
                 fp.write(f.session[-1]['content'])

@@ -24,6 +24,7 @@ SOFTWARE.
 import os
 import requests
 import rich
+
 console = rich.get_console()
 
 
@@ -51,8 +52,11 @@ class DebianPolicy(object):
         return '\n'.join(self.lines)
 
     def __getitem__(self, index: str):
-        sep = {1: self.SEP_SECTION, 2: self.SEP_SUBSECTION,
-               3: self.SEP_SUBSUBSECTION}[len(index.split('.'))]
+        sep = {
+            1: self.SEP_SECTION,
+            2: self.SEP_SUBSECTION,
+            3: self.SEP_SUBSUBSECTION
+        }[len(index.split('.'))]
         ret = []
         prev = ''
         in_range = False

@@ -33,10 +33,12 @@ import torch as th
 from typing import Union, List, Dict
 import argparse
 import rich
+
 console = rich.get_console()
 
 
 class AbstractLLM(object):
+
     def __init__(self):
         self.device = 'cuda' if th.cuda.is_available() else 'cpu'
 
@@ -78,8 +80,11 @@ class Mistral7B(AbstractLLM):
         console.log(
             f'{self.NAME}> Loading {self.model_id} ({device}/{precision})')
         self.tok = AutoTokenizer.from_pretrained(self.model_id)
-        llm_kwargs = {'torch_dtype': th.float16,
-                      'load_in_8bit': False, 'load_in_4bit': False}
+        llm_kwargs = {
+            'torch_dtype': th.float16,
+            'load_in_8bit': False,
+            'load_in_4bit': False
+        }
         if precision == 'fp16':
             llm_kwargs['torch_dtype'] = th.float16
         elif precision == 'fp32':
@@ -94,8 +99,12 @@ class Mistral7B(AbstractLLM):
         else:
             raise NotImplementedError(precision)
         if self.is_pipeline:
-            self.llm = transformers.pipeline('text-generation', model=self.model_id,
-                                             model_kwargs=llm_kwargs, tokenizer=self.tok, device_map='auto' if self.device == 'cuda' else self.device)
+            self.llm = transformers.pipeline(
+                'text-generation',
+                model=self.model_id,
+                model_kwargs=llm_kwargs,
+                tokenizer=self.tok,
+                device_map='auto' if self.device == 'cuda' else self.device)
         else:
             self.llm = AutoModelForCausalLM.from_pretrained(
                 self.model_id, llm_kwargs)
@@ -103,36 +112,40 @@ class Mistral7B(AbstractLLM):
             self.llm.to(self.device)
         else:
             pass
-        self.kwargs = {'max_new_tokens': 512,
-                       'do_sample': True,
-                       'pad_token_id': 2,
-                       # default parameters for mixtral
-                       # https://huggingface.co/blog/mixtral
-                       'temperature': 0.7,
-                       'top_k': 50,
-                       'top_p': 0.95,
-                       }
+        self.kwargs = {
+            'max_new_tokens': 512,
+            'do_sample': True,
+            'pad_token_id': 2,
+            # default parameters for mixtral
+            # https://huggingface.co/blog/mixtral
+            'temperature': 0.7,
+            'top_k': 50,
+            'top_p': 0.95,
+        }
 
     @th.no_grad()
     def generate(self, messages: List[Dict]):
         if self.is_pipeline:
-            templated = self.tok.apply_chat_template(messages, tokenize=False,
-                                                     add_generation_prompt=True)
+            templated = self.tok.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True)
             outputs = self.llm(templated, **self.kwargs)
             generated = outputs[0]['generated_text'][len(templated):].lstrip()
             messages.append({'role': 'assistant', 'content': generated})
             return messages
         else:
-            encoded = self.tok.apply_chat_template(messages, tokenize=True,
-                                                   return_tensors='pt',
-                                                   add_generation_prompt=True).to(0)
+            encoded = self.tok.apply_chat_template(
+                messages,
+                tokenize=True,
+                return_tensors='pt',
+                add_generation_prompt=True).to(0)
             model_inputs = encoded.to(self.device)
             input_length = model_inputs.shape[1]
             generated_ids = self.llm.generate(model_inputs, **self.kwargs)
             generated_new_ids = generated_ids[:, input_length:]
-            generated_new_text = self.tok.batch_decode(generated_new_ids,
-                                                       skip_special_tokens=True,
-                                                       clean_up_tokenization_spaces=True)[0]
+            generated_new_text = self.tok.batch_decode(
+                generated_new_ids,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=True)[0]
             new_message = {'role': 'assistant', 'content': generated_new_text}
             messages.append(new_message)
             return messages
@@ -144,29 +157,41 @@ class Mistral7B(AbstractLLM):
         if self.is_pipeline:
             pipe = self.llm
         else:
-            pipe = pipeline('conversational', model=self.llm,
-                            tokenizer=self.tok, device=self.device)
+            pipe = pipeline('conversational',
+                            model=self.llm,
+                            tokenizer=self.tok,
+                            device=self.device)
 
-        streamer = TextStreamer(
-            self.tok, skip_prompt=True, clean_up_tokenization_spaces=True, skip_special_tokens=True)
-        prompt_style = Style(
-            [('prompt', 'bold fg:ansibrightcyan'), ('', 'ansiwhite')])
+        streamer = TextStreamer(self.tok,
+                                skip_prompt=True,
+                                clean_up_tokenization_spaces=True,
+                                skip_special_tokens=True)
+        prompt_style = Style([('prompt', 'bold fg:ansibrightcyan'),
+                              ('', 'ansiwhite')])
         try:
-            while text := prompt(f'Prompt[{len(chat.messages)}]> ', style=prompt_style):
+            while text := prompt(f'Prompt[{len(chat.messages)}]> ',
+                                 style=prompt_style):
                 chat.add_message({'role': 'user', 'content': text})
                 if True:
                     if self.is_pipeline:
-                        templated = self.tok.apply_chat_template(chat.messages, tokenize=False,
-                                                                 add_generation_prompt=True)
+                        templated = self.tok.apply_chat_template(
+                            chat.messages,
+                            tokenize=False,
+                            add_generation_prompt=True)
                         print(
-                            f'\x1b[1;32mStream[{len(chat.messages)}]>\x1b[0m \x1b[0;32m', end='')
-                        outputs = pipe(
-                            templated, **self.kwargs, streamer=streamer, clean_up_tokenization_spaces=True)
+                            f'\x1b[1;32mStream[{len(chat.messages)}]>\x1b[0m \x1b[0;32m',
+                            end='')
+                        outputs = pipe(templated,
+                                       **self.kwargs,
+                                       streamer=streamer,
+                                       clean_up_tokenization_spaces=True)
                         print('\x1b[0m', end='')
-                        generated = outputs[0]['generated_text'][len(
-                            templated):]
-                        chat.add_message(
-                            {'role': 'assistant', 'content': generated})
+                        generated = outputs[0]['generated_text'][len(templated
+                                                                     ):]
+                        chat.add_message({
+                            'role': 'assistant',
+                            'content': generated
+                        })
                     else:
                         chat = pipe(chat, **self.kwargs)
         except EOFError:
@@ -197,16 +222,23 @@ def create_llm(args) -> AbstractLLM:
 
 if __name__ == '__main__':
     ag = argparse.ArgumentParser('Chat with LLM locally.')
-    ag.add_argument('--max_new_tokens', type=int, default=512,
+    ag.add_argument('--max_new_tokens',
+                    type=int,
+                    default=512,
                     help='max length of new token sequences added by llm')
-    ag.add_argument('--debgpt_home', type=str,
+    ag.add_argument('--debgpt_home',
+                    type=str,
                     default=os.path.expanduser('~/.debgpt'))
-    ag.add_argument('--llm', type=str, default='Mistral7B',
+    ag.add_argument('--llm',
+                    type=str,
+                    default='Mistral7B',
                     choices=('Mistral7B', 'Mixtral8x7B'))
     ag.add_argument('-i', '--ipython', action='store_true')
-    ag.add_argument('--device', type=str,
+    ag.add_argument('--device',
+                    type=str,
                     default='cuda' if th.cuda.is_available() else 'cpu')
-    ag.add_argument('--precision', type=str,
+    ag.add_argument('--precision',
+                    type=str,
                     default='fp16' if th.cuda.is_available() else '4bit')
     ag = ag.parse_args()
     console.log(ag)

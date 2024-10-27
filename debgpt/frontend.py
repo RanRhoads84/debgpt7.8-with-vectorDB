@@ -32,6 +32,7 @@ import rich
 import uuid
 import sys
 from . import defaults
+
 console = rich.get_console()
 
 
@@ -138,13 +139,18 @@ class OpenAIFrontend(AbstractFrontend):
         self.model = args.openai_model
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, '
-                        + f'temperature={args.temperature}, top_p={args.top_p}.')
+            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                        f'temperature={args.temperature}, top_p={args.top_p}.')
 
     def oneshot(self, message: str) -> str:
-        completions = self.client.chat.completions.create(
-            model=self.model, messages=[{"role": "user", "content": message}],
-            **self.kwargs)
+        completions = self.client.chat.completions.create(model=self.model,
+                                                          messages=[{
+                                                              "role":
+                                                              "user",
+                                                              "content":
+                                                              message
+                                                          }],
+                                                          **self.kwargs)
         return completions.choices[0].message.content
 
     def query(self, messages: Union[List, Dict, str]) -> list:
@@ -152,9 +158,10 @@ class OpenAIFrontend(AbstractFrontend):
         self.update_session(messages)
         if self.debug:
             console.log('send:', self.session[-1])
-        completion = self.client.chat.completions.create(
-            model=self.model, messages=self.session, stream=self.stream,
-            **self.kwargs)
+        completion = self.client.chat.completions.create(model=self.model,
+                                                         messages=self.session,
+                                                         stream=self.stream,
+                                                         **self.kwargs)
         if self.stream:
             chunks = []
             for chunk in completion:
@@ -193,13 +200,17 @@ class AnthropicFrontend(AbstractFrontend):
         self.model = args.anthropic_model
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, '
-                        + f'temperature={args.temperature}, top_p={args.top_p}.')
+            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                        f'temperature={args.temperature}, top_p={args.top_p}.')
 
     def oneshot(self, message: str) -> str:
-        completion = self.client.messages.create(
-            model=self.model, messages=[{"role": "user", "content": message}],
-            max_tokens=self.max_tokens, **self.kwargs)
+        completion = self.client.messages.create(model=self.model,
+                                                 messages=[{
+                                                     "role": "user",
+                                                     "content": message
+                                                 }],
+                                                 max_tokens=self.max_tokens,
+                                                 **self.kwargs)
         return completion.content[0].text
 
     def query(self, messages: Union[List, Dict, str]) -> list:
@@ -210,7 +221,8 @@ class AnthropicFrontend(AbstractFrontend):
         if self.stream:
             chunks = []
             with self.client.messages.stream(model=self.model,
-                                             messages=self.session, max_tokens=self.max_tokens,
+                                             messages=self.session,
+                                             max_tokens=self.max_tokens,
                                              **self.kwargs) as stream:
                 for chunk in stream.text_stream:
                     chunks.append(chunk)
@@ -220,9 +232,12 @@ class AnthropicFrontend(AbstractFrontend):
                 print()
                 sys.stdout.flush()
         else:
-            completion = self.client.messages.create(model=self.model,
-                                                     messages=self.session, max_tokens=self.max_tokens,
-                                                     stream=self.stream, **self.kwargs)
+            completion = self.client.messages.create(
+                model=self.model,
+                messages=self.session,
+                max_tokens=self.max_tokens,
+                stream=self.stream,
+                **self.kwargs)
             generated_text = completion.content[0].text
         new_message = {'role': 'assistant', 'content': generated_text}
         self.update_session(new_message)
@@ -248,8 +263,8 @@ class GeminiFrontend(AbstractFrontend):
         self.kwargs = genai.types.GenerationConfig(
             temperature=args.temperature, top_p=args.top_p)
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(args.gemini_model)}, '
-                        + f'temperature={args.temperature}, top_p={args.top_p}.')
+            console.log(f'{self.NAME}> model={repr(args.gemini_model)}, ' +
+                        f'temperature={args.temperature}, top_p={args.top_p}.')
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
@@ -291,8 +306,8 @@ class LlamafileFrontend(OpenAIFrontend):
         self.model = 'llamafile from https://github.com/Mozilla-Ocho/llamafile'
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, '
-                        + f'temperature={args.temperature}, top_p={args.top_p}.')
+            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                        f'temperature={args.temperature}, top_p={args.top_p}.')
 
 
 class OllamaFrontend(OpenAIFrontend):
@@ -310,8 +325,8 @@ class OllamaFrontend(OpenAIFrontend):
         self.model = args.ollama_model
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, '
-                        + f'temperature={args.temperature}, top_p={args.top_p}.')
+            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                        f'temperature={args.temperature}, top_p={args.top_p}.')
 
 
 class vLLMFrontend(OpenAIFrontend):
@@ -329,8 +344,8 @@ class vLLMFrontend(OpenAIFrontend):
         self.model = args.vllm_model
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, '
-                        + f'temperature={args.temperature}, top_p={args.top_p}.')
+            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                        f'temperature={args.temperature}, top_p={args.top_p}.')
 
 
 class ZMQFrontend(AbstractFrontend):
@@ -424,9 +439,10 @@ def query_once(f: AbstractFrontend, text: str) -> None:
 if __name__ == '__main__':
     ag = argparse.ArgumentParser()
     ag.add_argument('--zmq_backend', '-B', default='tcp://localhost:11177')
-    ag.add_argument('--frontend', '-F', default='zmq',
-                    choices=('dryrun', 'zmq',
-                             'openai', 'anthropic', 'gemini',
+    ag.add_argument('--frontend',
+                    '-F',
+                    default='zmq',
+                    choices=('dryrun', 'zmq', 'openai', 'anthropic', 'gemini',
                              'llamafile', 'ollama', 'vllm'))
     ag.add_argument('--debgpt_home', default=os.path.expanduser('~/.debgpt'))
     ag = ag.parse_args()
