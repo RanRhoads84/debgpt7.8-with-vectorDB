@@ -32,6 +32,7 @@ import sys
 import glob
 import rich
 console = rich.get_console()
+sys.setrecursionlimit(512)
 
 __doc__ = '''
 This file is in charge of organizaing (debian specific) functions for loading
@@ -293,7 +294,7 @@ def _mapreduce_chunk_lines(path: str,
                            lines: List[str],
                            *,
                            chunk_size: int):
-    chunk_size_in_bytes = len('\n'.join(lines[start:end]).encode('utf8'))
+    chunk_size_in_bytes = sum(len(x.encode('utf8')) for x in lines[start:end])
     if chunk_size_in_bytes < chunk_size:
         return { (path, start, end): lines[start:end] }
     else:
