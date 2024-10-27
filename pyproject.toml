@@ -39,3 +39,26 @@ Issues = "https://salsa.debian.org/deeplearning-team/debgpt/-/issues"
 
 [project.scripts]
 debgpt = "debgpt.cli:main"
+
+[project.optional-dependencies]
+gemini = [
+    'google-generativeai',
+]
+anthropic = [
+    'anthropic',
+]
+test = [
+    "pytest>=7.0",
+]
+dev = [
+    "pyflakes",
+    "pylint",
+]
+backend = [
+    'pytorch',
+    'transformers',
+]
+all = [
+    "debgpt[gemini]",
+    "debgpt[anthropic]",
+]
