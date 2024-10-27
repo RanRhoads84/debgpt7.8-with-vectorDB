@@ -186,11 +186,14 @@ class AnthropicFrontend(AbstractFrontend):
     '''
     https://docs.anthropic.com/en/api/getting-started
     But we are currently using OpenAI API.
+
+    The max_token limit for each model can be found here:
+    https://docs.anthropic.com/en/docs/about-claude/models
     '''
     NAME = 'AnthropicFrontend'
     debug: bool = False
     stream: bool = True
-    max_tokens: int = 8192
+    max_tokens: int = 4096
 
     def __init__(self, args):
         super().__init__(args)
