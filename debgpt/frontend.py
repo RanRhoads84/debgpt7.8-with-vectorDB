@@ -231,15 +231,20 @@ class AnthropicFrontend(AbstractFrontend):
             console.log(f'{self.NAME}> model={repr(self.model)}, ' +
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
-    def oneshot(self, message: str) -> str:
-        completion = self.client.messages.create(model=self.model,
-                                                 messages=[{
-                                                     "role": "user",
-                                                     "content": message
-                                                 }],
-                                                 max_tokens=self.max_tokens,
-                                                 **self.kwargs)
-        return completion.content[0].text
+    def oneshot(self, message: str, *, retry: bool = True) -> str:
+        def _func():
+            _callable = self.client.messages.create
+            completion = _callable(model=self.model,
+                                   messages=[{
+                                       "role": "user",
+                                       "content": message
+                                   }],
+                                   max_tokens=self.max_tokens,
+                                   **self.kwargs)
+            return completion.content[0].text
+        from anthropic import RateLimitError
+        func = retry_ratelimit(_func, RateLimitError) if retry else _func
+        return func()
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
