@@ -435,11 +435,9 @@ def mapreduce_load_file(
     mime_type, _ = mimetypes.guess_type(path)
     if mime_type == 'application/pdf':
         lines = _load_pdf(path)
-    elif mime_type and mime_type.startswith('text/'):
+    else:
         with open(path, 'rt') as f:
             lines = [x.rstrip() for x in f.readlines()]
-    else:
-        raise ValueError(f'Unsupported file type {mime_type}')
 
     # chunk the lines
     try:
