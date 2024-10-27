@@ -345,17 +345,19 @@ def mapreduce_load_directory(path: str,
 
 def mapreduce_load_any(path: str,
                        chunk_size: int = 8192,
+                       *,
+                       debgpt_home: str = '.',
                        ) -> Dict[Tuple[str,int,int], List[str]]:
     '''
     load file or directory and return the chunked contents
     '''
     if path.startswith(':'):
         if path == ':policy':
-            lines = debgpt_policy.DebianPolicy().lines
+            lines = debgpt_policy.DebianPolicy(os.path.join(debgpt_home, 'policy.txt')).lines
             return _mapreduce_chunk_lines('Debian Policy',
                                           0, len(lines), lines, chunk_size=chunk_size)
         elif path == ':devref':
-            lines = debgpt_policy.DebianDevref().lines
+            lines = debgpt_policy.DebianDevref(os.path.join(debgpt_home, 'devref.txt')).lines
             return _mapreduce_chunk_lines('Debian Developer Reference',
                                           0, len(lines), lines, chunk_size=chunk_size)
         else:
@@ -373,11 +375,13 @@ def mapreduce_load_any(path: str,
 
 def mapreduce_load_any_astext(path: str,
                               chunk_size: int = 8192,
+                              *,
+                              debgpt_home: str = '.',
                               ) -> List[str]:
     '''
     load file or directory and return the contents as a list of lines
     '''
-    chunkdict = mapreduce_load_any(path, chunk_size=chunk_size)
+    chunkdict = mapreduce_load_any(path, chunk_size=chunk_size, debgpt_home=debgpt_home)
     texts = []
     for (path, start, end), lines in chunkdict.items():
         txt = f'File: {path} (lines {start}-{end})\n'

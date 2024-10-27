@@ -502,7 +502,8 @@ def mapreduce_super_long_context(ag) -> str:
       4. return the aggregated LLM output
     '''
     chunks = debian.mapreduce_load_any_astext(ag.mapreduce,
-                                              ag.mapreduce_chunksize)
+                                              ag.mapreduce_chunksize,
+                                              debgpt_home=ag.debgpt_home)
     console.print(f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}')
     if ag.verbose:
         for i, chunk in enumerate(chunks):
