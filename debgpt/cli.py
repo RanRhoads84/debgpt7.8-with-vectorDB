@@ -566,13 +566,17 @@ def mapreduce_super_long_context(ag) -> str:
         '''
         with concurrent.futures.ThreadPoolExecutor(max_workers=ag.mapreduce_parallelism) as executor:
             results = list(track(executor.map(lambda x: _process_chunk(x, user_question), chunks),
-                                 total=len(chunks), description=f'MapReduce[{ag.mapreduce_parallelism}]: initial pass'))
+                                 total=len(chunks),
+                                 description=f'MapReduce[{ag.mapreduce_parallelism}]: initial pass',
+                                 transient=True))
         while len(results) > 1:
             console.print(f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
             pairs = list(zip(results[::2], results[1::2]))
             with concurrent.futures.ThreadPoolExecutor(max_workers=ag.mapreduce_parallelism) as executor:
                 new_results = list(track(executor.map(lambda x: _process_two_results(*x, user_question), pairs),
-                                         total=len(pairs), description=f'Mapreduce[{ag.mapreduce_parallelism}]: intermediate pass'))
+                                         total=len(pairs),
+                                         description=f'Mapreduce[{ag.mapreduce_parallelism}]: intermediate pass',
+                                         transient=True))
             if len(results) % 2 == 1:
                 new_results.append(results[-1])
             results = new_results
