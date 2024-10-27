@@ -159,7 +159,7 @@ class OpenAIFrontend(AbstractFrontend):
                     break
                 except RateLimitError as e:
                     console.log(
-                        "Rate limit reached. Waiting for 15 seconds before retrying..."
+                        "Rate limit reached. Will retry after 15 seconds."
                     )
                     time.sleep(15)
         else:
