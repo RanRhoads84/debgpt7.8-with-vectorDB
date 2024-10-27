@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v0.6.0 -- ?
+v0.5.90 -- ?
 --------------------
 
 Major Change:
@@ -18,6 +18,13 @@ $ debgpt -Hx :policy -A 'what is the changes of the latest version compared to t
 $ debgpt -Hx :sbuild -a 'why does the build fail? do you have any suggestion?'
 
 Changes:
+
+* frontend: add oneshot() method for all frontends
+* README: introduce mapreduce usage example.
+* use yapf instead of autopep8 for code formatting
+* debgpt: remove sbuild support in favor of refactor mapreduce load for build logs
+* cli: add short '-a' option for '--ask' argument in mapreduce configuration
+* cli: add --amend option to git commit subcommand.
 
 v0.5.2 -- 2024-10-26
 --------------------
