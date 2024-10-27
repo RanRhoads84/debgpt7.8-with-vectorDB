@@ -63,12 +63,24 @@ The ZMQ frontend/backend are provided in this tool to make it self-contained.
 INSTALLATION
 ============
 
-This tool can be installed from source via the command "`pip3 install .`".
-By default, it will only pull the dependencies needed to run the OpenAI
-and the ZMQ frontends. The dependencies of the other backend implementations
-(i.e., other commercial APIs and self-hosted LLM inference) needs to be
-installed manually, using tools like pip, venv, conda, mamba, etc.
+Install from PyPI:
 
+```
+pip3 install debgpt
+```
+
+Install from source:
+
+```
+git clone https://salsa.debian.org/deeplearning-team/debgpt.git
+cd debgpt
+pip3 install .
+```
+
+By default, it will only pull the dependencies needed to run the OpenAI
+and the ZMQ frontends. The dependencies for other frontends such as
+Anthropic, Gemini, are not installed by default. The dependencies for
+the self-included LLM backend are also not automatically installed.
 
 CONFIGURATION
 =============
