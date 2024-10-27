@@ -174,10 +174,18 @@ assume that you want to summarize the provided information.
 ```
 debgpt -Hx <any-file-directory> -A <your-question>
 debgpt -Hx ./debian -A 'what is this?'
-debgpt --openai_model='gpt-4o-mini' -Hx debian/ -A 'how is this package built?'
-debgpt --openai_model='gpt-4o-mini' -Hx :policy -A 'what is the changes of the latest version compared to the previous version?'
-debgpt --openai_model='gpt-4o-mini' -Hx :sbuild -a 'why does the build fail? do you have any suggestion?'
+debgpt -Hx ./debian -A 'how is this package built? how many binary packages will be produced?'
+debgpt -Hx :policy -A 'what is the changes of the latest version compared to the previous version?'
+debgpt -Hx :sbuild -a 'why does the build fail? do you have any suggestion?'
 ```
+
+The `:policy` and `:sbuild` are special paths. `:policy` will load the
+Debian Policy document, and `:sbuild` will load the latest sbuild log.
+See https://salsa.debian.org/deeplearning-team/debgpt/-/issues/6 for some
+examples with their corresponding outputs.
+
+Note, this functionality is very quota-consuming if you are going to deal
+with long texts. Please keep an eye on your bill when you try this.
 
 #### Ex2. BTS / Buildd Query
 
