@@ -499,16 +499,21 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     help='load texts from PDF file(s)')
     # -- 998. The special query buider for mapreduce chunks
     _g.add_argument('--mapreduce',
+                    '--map',
                     '-x',
                     type=str,
                     help='load any file or directory for an answer')
     _g.add_argument('--mapreduce_chunksize',
+                    '--map_chunksize',
                     type=int,
                     default=conf['mapreduce_chunksize'],
                     help='context chunk size for mapreduce')
     config_template = __add_arg_to_config(config_template, _g,
                                           'mapreduce_chunksize')
     _g.add_argument('--mapreduce_parallelism',
+                    '--mapreduce_jobs',
+                    '--map_parallelism',
+                    '--map_jobs',
                     type=int,
                     default=conf['mapreduce_parallelism'],
                     help='number of parallel processes in mapreduce')
