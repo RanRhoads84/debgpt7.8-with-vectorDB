@@ -471,7 +471,6 @@ The following is the current **TODO List**.Some ideas might be a little bit far 
 1. https://github.com/openai/chatgpt-retrieval-plugin
 1. implement `--archwiki` `--gentoowiki` `--debianwiki` `--fedorawiki` `--wikipedia` (although the LLM have already read the wikipedia dump many times)
 1. analyze udd, ddpo, contributors, nm
-1. organize argparse with argument groups
 1. How can LLM help CPython transition? failing tests, API changes, etc.
 1. What else can we do about the Debian patching workflow? adding patch description?
 1. find upstream bug that matches debian bug (bug triage)

@@ -156,42 +156,43 @@ def parse_args(argv):
     # CLI Behavior / Frontend Arguments
     config_template = '''\
 ##############################
-# Command Line Interface
+# Command Line Interface Behavior
 ##############################
 \n'''
-    ag.add_argument('--quit',
+    _g = ag.add_argument_group('Command Line Interface Behavior')
+    _g.add_argument('--quit',
                     '-Q',
                     action='store_true',
                     help='directly quit after receiving the first response \
 from LLM, instead of staying in interation.')
-    ag.add_argument('--multiline',
+    _g.add_argument('--multiline',
                     '-M',
                     action='store_true',
                     help='enable multi-line input for prompt_toolkit. \
 use Meta+Enter to accept the input instead.')
-    ag.add_argument(
+    _g.add_argument(
         '--hide_first',
         '-H',
         action='store_true',
         help='hide the first (generated) prompt; do not print argparse results'
     )
-    ag.add_argument('--verbose',
+    _g.add_argument('--verbose',
                     '-v',
                     action='store_true',
                     help='verbose mode. helpful for debugging')
-    ag.add_argument('--output',
+    _g.add_argument('--output',
                     '-o',
                     type=str,
                     default=None,
                     help='write the last LLM message to specified file')
-    ag.add_argument('--version',
+    _g.add_argument('--version',
                     action='store_true',
                     help='show DebGPT software version and quit.')
-    ag.add_argument('--debgpt_home',
+    _g.add_argument('--debgpt_home',
                     type=str,
                     default=conf['debgpt_home'],
                     help='directory to store cache and sessions.')
-    ag.add_argument(
+    _g.add_argument(
         '--frontend',
         '-F',
         type=str,
@@ -214,22 +215,23 @@ do nothing other than printing the generated prompt. So that you can copy \
 it to web-based LLMs in that case.")
     config_template = __add_arg_to_config(config_template, ag, 'frontend')
 
-    ag.add_argument('--monochrome',
+    _g.add_argument('--monochrome',
                     type=bool,
                     default=conf['monochrome'],
                     help='disable colorized output for prompt_toolkit.')
     config_template = __add_arg_to_config(config_template,
-                                          ag,
+                                          _g,
                                           'monochrome',
                                           formatter=lambda x: str(x).lower())
 
     # LLM Inference Arguments
     config_template += '''\n
 ###########################
-# LLM Inference Arguments
+# Common Frontend Arguments
 ###########################
 \n'''
-    ag.add_argument(
+    _g = ag.add_argument_group('Common Frontend Arguments')
+    _g.add_argument(
         '--temperature',
         '-T',
         type=float,
@@ -240,11 +242,14 @@ High values like 0.8 gives a more random (creative) answer. \
 Not suggested to combine this with with --top_p. See \
 https://platform.openai.com/docs/api-reference/ \
     ''')
-    config_template = __add_arg_to_config(config_template, ag, 'temperature')
+    config_template = __add_arg_to_config(config_template, _g, 'temperature')
 
-    ag.add_argument('--top_p', '-P', type=float, default=conf['top_p'],
+    _g.add_argument('--top_p',
+                    '-P',
+                    type=float,
+                    default=conf['top_p'],
                     help='Top-p (nucleus) sampling.')
-    config_template = __add_arg_to_config(config_template, ag, 'top_p')
+    config_template = __add_arg_to_config(config_template, _g, 'top_p')
 
     # Specific to OpenAI Frontend
     config_template += '''\n
@@ -252,57 +257,59 @@ https://platform.openai.com/docs/api-reference/ \
 # Specific to OpenAI Frontend
 #############################
 \n'''
-    ag.add_argument('--openai_base_url',
+    _g = ag.add_argument_group('OpenAI Frontend Options')
+    _g.add_argument('--openai_base_url',
                     type=str,
                     default=conf['openai_base_url'],
                     help='OpenAI API is a widely adopted standard. You can \
 switch to other compatible service providers, or a self-hosted compatible \
 server.')
-    config_template = __add_arg_to_config(config_template, ag,
+    config_template = __add_arg_to_config(config_template, _g,
                                           'openai_base_url')
 
-    ag.add_argument('--openai_api_key',
+    _g.add_argument('--openai_api_key',
                     type=str,
                     default=conf['openai_api_key'],
                     help='API key is necessary to access services including \
 OpenAI API server. https://platform.openai.com/api-keys')
-    config_template = __add_arg_to_config(config_template, ag,
+    config_template = __add_arg_to_config(config_template, _g,
                                           'openai_api_key')
 
-    ag.add_argument('--openai_model',
+    _g.add_argument('--openai_model',
                     type=str,
                     default=conf['openai_model'],
                     help='For instance, gpt-3.5-turbo (4k context), \
 gpt-3.5-turbo-16k (16k context), gpt-4, gpt-4-32k (32k context). \
 Their prices vary. See https://platform.openai.com/docs/models .')
-    config_template = __add_arg_to_config(config_template, ag, 'openai_model')
+    config_template = __add_arg_to_config(config_template, _g, 'openai_model')
 
     # Specific to Anthropic Frontend
     config_template += '''\n
 ##################################
-# Specific to Anthropic Frontend
+# Anthropic Frontend Options
 ##################################
 \n'''
-    ag.add_argument('--anthropic_base_url',
+    _g = ag.add_argument_group('Anthropic Frontend Options')
+    _g.add_argument('--anthropic_base_url',
                     type=str,
                     default=conf['anthropic_base_url'],
                     help='the URL to the Anthropic JSON API service.')
-    config_template = __add_arg_to_config(config_template, ag,
+    config_template = __add_arg_to_config(config_template, _g,
                                           'anthropic_base_url')
 
-    ag.add_argument('--anthropic_api_key',
+    _g.add_argument('--anthropic_api_key',
                     type=str,
                     default=conf['anthropic_api_key'],
                     help='Anthropic API key')
-    config_template = __add_arg_to_config(config_template, ag,
+    config_template = __add_arg_to_config(config_template, _g,
                                           'anthropic_api_key')
 
-    ag.add_argument(
+    _g.add_argument(
         '--anthropic_model',
         type=str,
         default=conf['anthropic_model'],
         help='the anthropic model, e.g., claude-3-5-sonnet-20241022')
-    config_template = __add_arg_to_config(config_template, ag,
+    config_template = __add_arg_to_config(config_template, _g,
                                           'anthropic_model')
 
     # Specific to Gemini Frontend
@@ -327,105 +334,110 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # Specific to Llamafile Frontend
     config_template += '''\n
-################################
-# Specific to Llamafile Frontend
-################################
+############################
+# Llamafile Frontend Options
+############################
 \n'''
-    ag.add_argument('--llamafile_base_url',
+    _g = ag.add_argument_group('Llamafile Frontend Options')
+    _g.add_argument('--llamafile_base_url',
                     type=str,
                     default=conf['llamafile_base_url'],
                     help='the URL to the llamafile JSON API service.')
-    config_template = __add_arg_to_config(config_template, ag,
+    config_template = __add_arg_to_config(config_template, _g,
                                           'llamafile_base_url')
 
     # Specific to Ollama Frontend
     config_template += '''\n
 #########################################################
-# Specific to Ollama Frontend (OpenAI compatibility mode)
+# Ollama Frontend Options (OpenAI compatibility mode)
 #########################################################
 \n'''
-    ag.add_argument('--ollama_base_url',
+    _g = ag.add_argument_group('Ollama Frontend Options')
+    _g.add_argument('--ollama_base_url',
                     type=str,
                     default=conf['ollama_base_url'],
                     help='the URL to the Ollama JSON API service.')
-    config_template = __add_arg_to_config(config_template, ag,
+    config_template = __add_arg_to_config(config_template, _g,
                                           'ollama_base_url')
 
-    ag.add_argument('--ollama_model',
+    _g.add_argument('--ollama_model',
                     type=str,
                     default=conf['ollama_model'],
                     help='the model to use in Ollama. For instance, llama3.2')
-    config_template = __add_arg_to_config(config_template, ag, 'ollama_model')
+    config_template = __add_arg_to_config(config_template, _g, 'ollama_model')
 
     # Specific to vLLM Frontend
     config_template += '''\n
 ###########################
-# Specific to vLLM Frontend
+# vLLM Frontend Options
 ###########################
 \n'''
-    ag.add_argument('--vllm_base_url',
+    _g = ag.add_argument_group('vLLM Frontend Options')
+    _g.add_argument('--vllm_base_url',
                     type=str,
                     default=conf['vllm_base_url'],
                     help='the URL to the vllm JSON API service.')
-    config_template = __add_arg_to_config(config_template, ag, 'vllm_base_url')
+    config_template = __add_arg_to_config(config_template, _g, 'vllm_base_url')
 
-    ag.add_argument('--vllm_api_key',
+    _g.add_argument('--vllm_api_key',
                     type=str,
                     default=conf['vllm_api_key'],
                     help='vLLM API key is necessary to access services')
-    config_template = __add_arg_to_config(config_template, ag, 'vllm_api_key')
+    config_template = __add_arg_to_config(config_template, _g, 'vllm_api_key')
 
-    ag.add_argument('--vllm_model',
+    _g.add_argument('--vllm_model',
                     type=str,
                     default=conf['vllm_model'],
                     help='the model to use in vllm. For instance, llama3.2')
-    config_template = __add_arg_to_config(config_template, ag, 'vllm_model')
+    config_template = __add_arg_to_config(config_template, _g, 'vllm_model')
 
     # Specific to ZMQ Frontend
     config_template += '''\n
 ##############################
-# Specific to ZMQ Frontend
+# ZMQ Frontend Options
 ##############################
 \n'''
-    ag.add_argument(
+    _g = ag.add_argument_group('ZMQ Frontend Options')
+    _g.add_argument(
         '--zmq_backend',
         type=str,
         default=conf['zmq_backend'],
         help='the ZMQ backend URL that the frontend will connect to')
-    config_template = __add_arg_to_config(config_template, ag, 'zmq_backend')
+    config_template = __add_arg_to_config(config_template, _g, 'zmq_backend')
 
     # Prompt Loaders (numbered list). You can specify them multiple times.
     # for instance, `debgpt -H -f foo.py -f bar.py`.
     config_template += '''\n
 ##############################
-# Prompt Loaders
+# Prompt Composer
 ##############################
 \n'''
     # -- 1. Debian BTS
-    ag.add_argument(
+    _g = ag.add_argument_group('Prompt Composer')
+    _g.add_argument(
         '--bts',
         type=str,
         default=[],
         action='append',
         help='Retrieve BTS webpage to prompt. example: "src:pytorch", "1056388"'
     )
-    ag.add_argument('--bts_raw',
+    _g.add_argument('--bts_raw',
                     action='store_true',
                     help='load raw HTML instead of plain text.')
     # -- 2. Custom Command Line(s)
-    ag.add_argument('--cmd',
+    _g.add_argument('--cmd',
                     type=str,
                     default=[],
                     action='append',
                     help='add the command line output to the prompt')
     # -- 3. Debian Buildd
-    ag.add_argument('--buildd',
+    _g.add_argument('--buildd',
                     type=str,
                     default=[],
                     action='append',
                     help='Retrieve buildd page for package to prompt.')
     # -- 4. Arbitrary Plain Text File(s)
-    ag.add_argument('--file',
+    _g.add_argument('--file',
                     '-f',
                     type=str,
                     default=[],
@@ -433,39 +445,39 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     help='load specified file(s) in prompt. A special syntax \
                     is supported: "--file filename:start_line:end_line"')
     # -- 5. Debian Policy
-    ag.add_argument(
+    _g.add_argument(
         '--policy',
         type=str,
         default=[],
         action='append',
         help='load specified policy section(s). (e.g., "1", "4.6")')
     # -- 6. Debian Developers References
-    ag.add_argument('--devref',
+    _g.add_argument('--devref',
                     type=str,
                     default=[],
                     action='append',
                     help='load specified devref section(s).')
     # -- 7. TLDR Manual Page
-    ag.add_argument('--tldr',
+    _g.add_argument('--tldr',
                     type=str,
                     default=[],
                     action='append',
                     help='add tldr page to the prompt.')
     # -- 8. Man Page
-    ag.add_argument(
+    _g.add_argument(
         '--man',
         type=str,
         default=[],
         action='append',
         help='add man page to the prompt. Note the context length!')
     # -- 9. Arbitrary HTML document
-    ag.add_argument('--html',
+    _g.add_argument('--html',
                     type=str,
                     default=[],
                     action='append',
                     help='load HTML document from given URL(s)')
     # -- 10. CPython What's New
-    ag.add_argument(
+    _g.add_argument(
         '--pynew',
         type=str,
         default=[],
@@ -474,30 +486,30 @@ Their prices vary. See https://platform.openai.com/docs/models .')
         "load CPython What's New website, e.g. '3.12:summary-release-highlights'"
     )
     # -- 11. Arch Wiki
-    ag.add_argument('--archw',
+    _g.add_argument('--archw',
                     type=str,
                     default=[],
                     action='append',
                     help='load Arch Wiki. e.g., "Archiving_and_compression"')
     # -- 998. The special query buider for mapreduce chunks
-    ag.add_argument('--mapreduce',
+    _g.add_argument('--mapreduce',
                     '-x',
                     type=str,
                     help='load any file or directory for an answer')
-    ag.add_argument('--mapreduce_chunksize',
+    _g.add_argument('--mapreduce_chunksize',
                     type=int,
                     default=conf['mapreduce_chunksize'],
                     help='context chunk size for mapreduce')
-    config_template = __add_arg_to_config(config_template, ag,
+    config_template = __add_arg_to_config(config_template, _g,
                                           'mapreduce_chunksize')
-    ag.add_argument('--mapreduce_parallelism',
+    _g.add_argument('--mapreduce_parallelism',
                     type=int,
                     default=conf['mapreduce_parallelism'],
                     help='number of parallel processes in mapreduce')
-    config_template = __add_arg_to_config(config_template, ag,
+    config_template = __add_arg_to_config(config_template, _g,
                                           'mapreduce_parallelism')
     # -- 999. The Question Template at the End of Prompt
-    ag.add_argument(
+    _g.add_argument(
         '--ask',
         '-A',
         '-a',
