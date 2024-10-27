@@ -521,6 +521,10 @@ def mapreduce_super_long_context(ag) -> str:
         template += chunk
         return template
 
+    # skip mapreduce if there is only one chunk
+    if len(chunks) == 1:
+        return _pad_chunk(chunks[0], user_question)+ '\n'
+
     def _process_chunk(chunk: str, question: str) -> str:
         '''
         process a chunk of text with a question
