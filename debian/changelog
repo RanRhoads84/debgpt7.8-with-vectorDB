@@ -1,3 +1,17 @@
+debgpt (0.5.90) unstable; urgency=medium
+
+  * Release v0.5.90
+    + Introduce mapreduce functionality for any-length text processing.
+      See README for usage examples.
+  * frontend: add oneshot() method for all frontends
+  * README: introduce mapreduce usage example.
+  * use yapf instead of autopep8 for code formatting
+  * debgpt: remove --sbuild option
+  * cli: add short '-a' option for '--ask' argument in mapreduce configuration
+  * cli: add --amend option to git commit subcommand.
+
+ -- Mo Zhou <lumin@debian.org>  Sun, 27 Oct 2024 01:03:14 -0400
+
 debgpt (0.5.2) unstable; urgency=medium
 
   * Release v0.5.2
