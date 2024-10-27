@@ -297,12 +297,50 @@ def _mapreduce_chunk_lines(path: str,
     chunk_size_in_bytes = sum(len(x.encode('utf8')) for x in lines[start:end])
     if chunk_size_in_bytes < chunk_size:
         return { (path, start, end): lines[start:end] }
+    elif end - start == 1:
+        return { (path, start, end): lines[start:end] }
     else:
         # split the lines into chunks
         middle = (start+end) // 2
         left = _mapreduce_chunk_lines(path, start, middle, lines, chunk_size=chunk_size)
         right = _mapreduce_chunk_lines(path, middle, end, lines, chunk_size=chunk_size)
         return { **left, **right }
+
+
+def _mapreduce_chunk_lines_norecussion(path: str,
+                                       start: int,
+                                       end: int,
+                                       lines: List[str],
+                                       *,
+                                       chunk_size: int):
+    '''
+    the non-recursion version of the above function
+    the above version seems to be problematic when dealing with large files
+
+    this function is modified from re-written of the above function with chatgpt.
+    '''
+    result = {}
+    stack = [(start, end)]
+    lens = [len(line.encode('utf8')) for line in lines]
+
+    while stack:
+        current_start, current_end = stack.pop()
+        chunk_size_in_bytes = sum(lens[current_start:current_end])
+
+        if chunk_size_in_bytes < chunk_size:
+            # If the chunk is within the size limit, add to result
+            result[(path, current_start, current_end)] = lines[current_start:current_end]
+        elif current_end - current_start == 1:
+            # If the chunk is too large, but only one line, add to result
+            result[(path, current_start, current_end)] = lines[current_start:current_end]
+        else:
+            # If the chunk is too large, split it and add to stack
+            middle = (current_start + current_end) // 2
+            stack.append((current_start, middle))
+            stack.append((middle, current_end))
+        print('number of lines:', len(lines), 'stack size:', len(stack))
+
+    return result
 
 def mapreduce_load_file(path: str,
                         chunk_size: int = 8192,
@@ -312,7 +350,13 @@ def mapreduce_load_file(path: str,
     '''
     with open(path, 'rt') as f:
         lines = [x.rstrip() for x in f.readlines()]
-    chunkdict = _mapreduce_chunk_lines(path, 0, len(lines), lines, chunk_size=chunk_size)
+    try:
+        chunkdict = _mapreduce_chunk_lines(path, 0, len(lines), lines,
+                                           chunk_size=chunk_size)
+    except RecursionError:
+        console.log('Oops! falling back to non-recursion chunking due to RecursionError')
+        chunkdict = _mapreduce_chunk_lines_norecussion(path, 0, len(lines), lines,
+                                                       chunk_size=chunk_size)
     return chunkdict
 
 def mapreduce_load_directory(path: str,
