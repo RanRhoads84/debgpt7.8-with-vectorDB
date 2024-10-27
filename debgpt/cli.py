@@ -381,7 +381,7 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     help='number of parallel processes in mapreduce')
     config_template = __add_arg_to_config(config_template, ag, 'mapreduce_parallelism')
     # -- 999. The Question Template at the End of Prompt
-    ag.add_argument('--ask', '-A', type=str, default=defaults.QUESTIONS[':none'],
+    ag.add_argument('--ask', '-A', '-a', type=str, default=defaults.QUESTIONS[':none'],
                     help="Question template to append at the end of the prompt. "
                     + "Specify ':' for printing all available templates. "
                     + "Or a customized string not starting with the colon.")
