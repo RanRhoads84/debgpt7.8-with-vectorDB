@@ -269,6 +269,11 @@ class GeminiFrontend(AbstractFrontend):
             console.log(f'{self.NAME}> model={repr(args.gemini_model)}, ' +
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
+    def oneshot(self, message: str) -> str:
+        response = self.client.generate_content(message,
+                                                generation_config=self.kwargs)
+        return response.text
+
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
         self.update_session(messages)
