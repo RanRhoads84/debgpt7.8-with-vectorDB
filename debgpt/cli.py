@@ -645,7 +645,7 @@ def mapreduce_super_long_context(ag) -> str:
     if ag.ask:
         user_question = ag.ask
     else:
-        user_question = 'summarize it.'
+        user_question = 'summarize the above contents.'
 
     def _pad_chunk(chunk: str, question: str) -> str:
         '''
