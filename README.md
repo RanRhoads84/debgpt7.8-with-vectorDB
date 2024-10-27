@@ -186,7 +186,8 @@ debgpt -Hx <any-file-directory> -A <your-question>
 debgpt -Hx ./debian -A 'what is this?'
 debgpt -Hx ./debian -A 'how is this package built? how many binary packages will be produced?'
 debgpt -Hx :policy -A 'what is the changes of the latest version compared to the previous version?'
-debgpt -Hx :sbuild -a 'why does the build fail? do you have any suggestion?'
+debgpt -Hx :policy -A 'what package should enter contrib instead of main or non-free?'
+debgpt -Hx :sbuild -A 'why does the build fail? do you have any suggestion?'
 ```
 
 The `:policy` and `:sbuild` are special paths. `:policy` will load the
