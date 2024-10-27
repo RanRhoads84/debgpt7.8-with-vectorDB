@@ -32,7 +32,6 @@ import sys
 import glob
 import rich
 console = rich.get_console()
-sys.setrecursionlimit(512)
 
 __doc__ = '''
 This file is in charge of organizaing (debian specific) functions for loading
