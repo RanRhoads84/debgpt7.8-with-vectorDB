@@ -63,10 +63,11 @@ The ZMQ frontend/backend are provided in this tool to make it self-contained.
 INSTALLATION
 ============
 
-Install from PyPI:
+Install from PyPI or Git repository:
 
 ```
 pip3 install debgpt
+pip3 install git+https://salsa.debian.org/deeplearning-team/debgpt.git
 ```
 
 Install from source:
@@ -74,7 +75,7 @@ Install from source:
 ```
 git clone https://salsa.debian.org/deeplearning-team/debgpt.git
 cd debgpt
-pip3 install .
+pip3 install -e .
 ```
 
 By default, it will only pull the dependencies needed to run the OpenAI
