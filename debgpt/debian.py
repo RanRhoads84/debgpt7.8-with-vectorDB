@@ -300,6 +300,22 @@ def sbuild():
 ##########################################
 # Special Text Loaders
 ##########################################
+def _mapreduce_chunk_lines(path: str,
+                           start: int,
+                           end: int,
+                           lines: List[str],
+                           *,
+                           chunk_size: int):
+    chunk_size_in_bytes = len('\n'.join(lines[start:end]).encode('utf8'))
+    if chunk_size_in_bytes < chunk_size:
+        return { (path, start, end): lines[start:end] }
+    else:
+        # split the lines into chunks
+        middle = (start+end) // 2
+        left = _mapreduce_chunk_lines(path, start, middle, lines, chunk_size=chunk_size)
+        right = _mapreduce_chunk_lines(path, middle, end, lines, chunk_size=chunk_size)
+        return { **left, **right }
+
 def mapreduce_load_file(path: str,
                         chunk_size: int = 8192,
                         ) -> Dict[Tuple[str,int,int], List[str]]:
@@ -308,18 +324,7 @@ def mapreduce_load_file(path: str,
     '''
     with open(path, 'rt') as f:
         lines = [x.rstrip() for x in f.readlines()]
-    def _chunk_lines(path: str, start: int, end: int, lines: List[str], *,
-                     chunk_size: int = chunk_size):
-        chunk_size_in_bytes = len('\n'.join(lines[start:end]).encode('utf8'))
-        if chunk_size_in_bytes < chunk_size:
-            return { (path, start, end): lines[start:end] }
-        else:
-            # split the lines into chunks
-            middle = (start+end) // 2
-            left = _chunk_lines(path, start, middle, lines, chunk_size=chunk_size)
-            right = _chunk_lines(path, middle, end, lines, chunk_size=chunk_size)
-            return { **left, **right }
-    chunkdict = _chunk_lines(path, 0, len(lines), lines)
+    chunkdict = _mapreduce_chunk_lines(path, 0, len(lines), lines)
     return chunkdict
 
 def mapreduce_load_directory(path: str,
@@ -344,7 +349,22 @@ def mapreduce_load_any(path: str,
     '''
     load file or directory and return the chunked contents
     '''
-    if os.path.isdir(path):
+    if path.startswith(':'):
+        if path == ':policy':
+            lines = debgpt_policy.DebianPolicy().lines
+            return _mapreduce_chunk_lines('Debian Policy',
+                                          0, len(lines), lines, chunk_size=chunk_size)
+        elif path == ':devref':
+            lines = debgpt_policy.DebianDevref().lines
+            return _mapreduce_chunk_lines('Debian Developer Reference',
+                                          0, len(lines), lines, chunk_size=chunk_size)
+        else:
+            raise ValueError(f'Undefined special path {path}')
+    elif path.startswith('file://'):
+        raise NotImplementedError('file:// is not supported')
+    elif path.startswith('http://') or path.startswith('https://'):
+        raise NotImplementedError('HTTP/HTTPS is not supported')
+    elif os.path.isdir(path):
         return mapreduce_load_directory(path, chunk_size=chunk_size)
     elif os.path.isfile(path):
         return mapreduce_load_file(path, chunk_size=chunk_size)

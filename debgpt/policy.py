@@ -47,6 +47,9 @@ class DebianPolicy(object):
         with open(cache, 'rt') as f:
             self.lines = [x.rstrip() for x in f.readlines()]
 
+    def __str__(self):
+        return '\n'.join(self.lines)
+
     def __getitem__(self, index: str):
         sep = {1: self.SEP_SECTION, 2: self.SEP_SUBSECTION,
                3: self.SEP_SUBSUBSECTION}[len(index.split('.'))]

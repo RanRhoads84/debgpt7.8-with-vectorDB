@@ -174,6 +174,8 @@ assume that you want to summarize the provided information.
 ```
 debgpt -Hx <any-file-directory> -A <your-question>
 debgpt -Hx ./debian -A 'what is this?'
+debgpt --openai_model='gpt-4o-mini' -Hx debian/ -A 'how is this package built?'
+debgpt --openai_model='gpt-4o-mini' -Hx :policy -A 'what is the changes of the latest version compared to the previous version?'
 ```
 
 #### Ex2. BTS / Buildd Query
