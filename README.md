@@ -159,6 +159,23 @@ debgpt -Q -A "who are you?"
 After each session, the chatting history will be saved in `~/.debgpt` as a
 json file in a unique name.  You can use `debgpt replay <file_name>` to replay the history.
 
+#### Ex2. Special MapReduce Question Answering for Any Length Context
+
+Generally, LLMs have a limited context length. If you want to ask a question
+regarding a very long context, you can split the context into multiple parts,
+and extract the relevant information from each part. Then, you can ask the
+LLM to answer the question based on the extracted information. We have
+implemented it as a special feature in the `debgpt` tool. You can use this
+functionality through the `--mapreduce|-x` argument. We need the `--ask|-A`
+argument to tell LLM what kind of question we want to ask so it can extract
+the right information. If `--ask|-A` is not provided, the tool will simply
+assume that you want to summarize the provided information.
+
+```
+debgpt -Hx <any-file-directory> -A <your-question>
+debgpt -Hx ./debian -A 'what is this?'
+```
+
 #### Ex2. BTS / Buildd Query
 
 Ask LLM to summarize the BTS page for `src:pytorch`.

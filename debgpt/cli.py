@@ -498,7 +498,10 @@ def mapreduce_super_long_context(ag) -> str:
     for i, chunk in enumerate(chunks):
         console.print(f'  [bold]Chunk {i}[/bold]: {chunk.split("\n")[:1]}...')
     # TODO: parse special questions like does in gather_information_ordered()
-    user_question = ag.ask
+    if ag.ask:
+        user_question = ag.ask
+    else:
+        user_question = 'summarize it.'
 
     def _pad_chunk(chunk: str, question: str) -> str:
         '''
