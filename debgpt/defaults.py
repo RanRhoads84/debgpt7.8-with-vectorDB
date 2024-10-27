@@ -51,7 +51,7 @@ class Config(object):
             'debgpt_home': HOME,
             'monochrome': False,
             'mapreduce_chunksize': 65536,
-            'mapreduce_parallelism': 2,
+            'mapreduce_parallelism': 8,
             # LLM Inference Parameters
             'temperature': 0.5,
             'top_p': 1.0,
