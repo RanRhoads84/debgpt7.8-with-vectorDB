@@ -39,6 +39,7 @@ texts from various sources, which are subsequently combined into the first
 prompt, and sent through frontend to the backend for LLM to process.
 '''
 
+
 def is_text_file(filepath: str) -> bool:
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
@@ -295,15 +296,17 @@ def _mapreduce_chunk_lines(path: str,
                            chunk_size: int):
     chunk_size_in_bytes = sum(len(x.encode('utf8')) for x in lines[start:end])
     if chunk_size_in_bytes < chunk_size:
-        return { (path, start, end): lines[start:end] }
+        return {(path, start, end): lines[start:end]}
     elif end - start == 1:
-        return { (path, start, end): lines[start:end] }
+        return {(path, start, end): lines[start:end]}
     else:
         # split the lines into chunks
         middle = (start+end) // 2
-        left = _mapreduce_chunk_lines(path, start, middle, lines, chunk_size=chunk_size)
-        right = _mapreduce_chunk_lines(path, middle, end, lines, chunk_size=chunk_size)
-        return { **left, **right }
+        left = _mapreduce_chunk_lines(
+            path, start, middle, lines, chunk_size=chunk_size)
+        right = _mapreduce_chunk_lines(
+            path, middle, end, lines, chunk_size=chunk_size)
+        return {**left, **right}
 
 
 def _mapreduce_chunk_lines_norecussion(path: str,
@@ -328,10 +331,12 @@ def _mapreduce_chunk_lines_norecussion(path: str,
 
         if chunk_size_in_bytes < chunk_size:
             # If the chunk is within the size limit, add to result
-            result[(path, current_start, current_end)] = lines[current_start:current_end]
+            result[(path, current_start, current_end)
+                   ] = lines[current_start:current_end]
         elif current_end - current_start == 1:
             # If the chunk is too large, but only one line, add to result
-            result[(path, current_start, current_end)] = lines[current_start:current_end]
+            result[(path, current_start, current_end)
+                   ] = lines[current_start:current_end]
         else:
             # If the chunk is too large, split it and add to stack
             middle = (current_start + current_end) // 2
@@ -341,9 +346,10 @@ def _mapreduce_chunk_lines_norecussion(path: str,
 
     return result
 
+
 def mapreduce_load_file(path: str,
                         chunk_size: int = 8192,
-                        ) -> Dict[Tuple[str,int,int], List[str]]:
+                        ) -> Dict[Tuple[str, int, int], List[str]]:
     '''
     load the file and return the content as a list of lines
     '''
@@ -353,14 +359,16 @@ def mapreduce_load_file(path: str,
         chunkdict = _mapreduce_chunk_lines(path, 0, len(lines), lines,
                                            chunk_size=chunk_size)
     except RecursionError:
-        console.log('Oops! falling back to non-recursion chunking due to RecursionError')
+        console.log(
+            'Oops! falling back to non-recursion chunking due to RecursionError')
         chunkdict = _mapreduce_chunk_lines_norecussion(path, 0, len(lines), lines,
                                                        chunk_size=chunk_size)
     return chunkdict
 
+
 def mapreduce_load_directory(path: str,
                              chunk_size: int = 8192,
-                             ) -> Dict[Tuple[str,int,int], List[str]]:
+                             ) -> Dict[Tuple[str, int, int], List[str]]:
     '''
     load a whole directory and return the chunked contents
     '''
@@ -374,21 +382,24 @@ def mapreduce_load_directory(path: str,
             all_chunks.update(chunkdict)
     return all_chunks
 
+
 def mapreduce_load_any(path: str,
                        chunk_size: int = 8192,
                        *,
                        debgpt_home: str = '.',
-                       ) -> Dict[Tuple[str,int,int], List[str]]:
+                       ) -> Dict[Tuple[str, int, int], List[str]]:
     '''
     load file or directory and return the chunked contents
     '''
     if path.startswith(':'):
         if path == ':policy':
-            lines = debgpt_policy.DebianPolicy(os.path.join(debgpt_home, 'policy.txt')).lines
+            lines = debgpt_policy.DebianPolicy(
+                os.path.join(debgpt_home, 'policy.txt')).lines
             return _mapreduce_chunk_lines('Debian Policy',
                                           0, len(lines), lines, chunk_size=chunk_size)
         elif path == ':devref':
-            lines = debgpt_policy.DebianDevref(os.path.join(debgpt_home, 'devref.txt')).lines
+            lines = debgpt_policy.DebianDevref(
+                os.path.join(debgpt_home, 'devref.txt')).lines
             return _mapreduce_chunk_lines('Debian Developer Reference',
                                           0, len(lines), lines, chunk_size=chunk_size)
         elif path == ':sbuild':
@@ -397,7 +408,8 @@ def mapreduce_load_any(path: str,
             latest buildlog file in the parent directory.
             '''
             if not os.path.exists('./debian'):
-                raise FileNotFoundError('./debian directory not found. Are you in the right directory?')
+                raise FileNotFoundError(
+                    './debian directory not found. Are you in the right directory?')
             latest_build_log = _latest_glob('../*.build')
             return mapreduce_load_file(latest_build_log, chunk_size)
         else:
@@ -413,6 +425,7 @@ def mapreduce_load_any(path: str,
     else:
         raise FileNotFoundError(f'{path} not found')
 
+
 def mapreduce_load_any_astext(path: str,
                               chunk_size: int = 8192,
                               *,
@@ -421,7 +434,8 @@ def mapreduce_load_any_astext(path: str,
     '''
     load file or directory and return the contents as a list of lines
     '''
-    chunkdict = mapreduce_load_any(path, chunk_size=chunk_size, debgpt_home=debgpt_home)
+    chunkdict = mapreduce_load_any(
+        path, chunk_size=chunk_size, debgpt_home=debgpt_home)
     texts = []
     for (path, start, end), lines in chunkdict.items():
         txt = f'File: {path} (lines {start}-{end})\n'

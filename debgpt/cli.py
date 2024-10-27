@@ -242,19 +242,19 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     default=conf['anthropic_base_url'],
                     help='the URL to the Anthropic JSON API service.')
     config_template = __add_arg_to_config(
-            config_template, ag, 'anthropic_base_url')
+        config_template, ag, 'anthropic_base_url')
 
     ag.add_argument('--anthropic_api_key', type=str,
                     default=conf['anthropic_api_key'],
                     help='Anthropic API key')
     config_template = __add_arg_to_config(
-            config_template, ag, 'anthropic_api_key')
+        config_template, ag, 'anthropic_api_key')
 
     ag.add_argument('--anthropic_model', type=str,
                     default=conf['anthropic_model'],
                     help='the anthropic model, e.g., claude-3-5-sonnet-20241022')
     config_template = __add_arg_to_config(
-            config_template, ag, 'anthropic_model')
+        config_template, ag, 'anthropic_model')
 
     # Specific to Gemini Frontend
     config_template += '''\n
@@ -266,13 +266,13 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     default=conf['gemini_api_key'],
                     help='Gemini API key')
     config_template = __add_arg_to_config(
-            config_template, ag, 'gemini_api_key')
+        config_template, ag, 'gemini_api_key')
 
     ag.add_argument('--gemini_model', type=str,
                     default=conf['gemini_model'],
                     help='the gemini model, e.g., gemini-1.5-flash')
     config_template = __add_arg_to_config(
-            config_template, ag, 'gemini_model')
+        config_template, ag, 'gemini_model')
 
     # Specific to Llamafile Frontend
     config_template += '''\n
@@ -372,14 +372,16 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     ag.add_argument('--archw', type=str, default=[], action='append',
                     help='load Arch Wiki. e.g., "Archiving_and_compression"')
     # -- 998. The special query buider for mapreduce chunks
-    ag.add_argument('--mapreduce', '-x', type=str, 
+    ag.add_argument('--mapreduce', '-x', type=str,
                     help='load any file or directory for an answer')
     ag.add_argument('--mapreduce_chunksize', type=int, default=conf['mapreduce_chunksize'],
                     help='context chunk size for mapreduce')
-    config_template = __add_arg_to_config(config_template, ag, 'mapreduce_chunksize')
+    config_template = __add_arg_to_config(
+        config_template, ag, 'mapreduce_chunksize')
     ag.add_argument('--mapreduce_parallelism', type=int, default=conf['mapreduce_parallelism'],
                     help='number of parallel processes in mapreduce')
-    config_template = __add_arg_to_config(config_template, ag, 'mapreduce_parallelism')
+    config_template = __add_arg_to_config(
+        config_template, ag, 'mapreduce_parallelism')
     # -- 999. The Question Template at the End of Prompt
     ag.add_argument('--ask', '-A', '-a', type=str, default=defaults.QUESTIONS[':none'],
                     help="Question template to append at the end of the prompt. "
@@ -500,7 +502,8 @@ def mapreduce_super_long_context(ag) -> str:
     chunks = debian.mapreduce_load_any_astext(ag.mapreduce,
                                               ag.mapreduce_chunksize,
                                               debgpt_home=ag.debgpt_home)
-    console.print(f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}')
+    console.print(
+        f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}')
     if ag.verbose:
         for i, chunk in enumerate(chunks):
             firstline = chunk.split('\n')[:1]
@@ -559,7 +562,7 @@ def mapreduce_super_long_context(ag) -> str:
         if ag.verbose:
             console.log('oneshot:answer:', answer)
         return answer
-    
+
     # start the reduce of chunks from super long context
     if ag.mapreduce_parallelism > 1:
         '''
@@ -576,7 +579,8 @@ def mapreduce_super_long_context(ag) -> str:
                                  description=f'MapReduce[{ag.mapreduce_parallelism}]: initial pass',
                                  transient=True))
         while len(results) > 1:
-            console.print(f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
+            console.print(
+                f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
             pairs = list(zip(results[::2], results[1::2]))
             with concurrent.futures.ThreadPoolExecutor(max_workers=ag.mapreduce_parallelism) as executor:
                 new_results = list(track(executor.map(lambda x: _process_two_results(*x, user_question), pairs),
@@ -586,7 +590,7 @@ def mapreduce_super_long_context(ag) -> str:
             if len(results) % 2 == 1:
                 new_results.append(results[-1])
             results = new_results
-        aggregated_result = results[0] 
+        aggregated_result = results[0]
     else:
         '''
         serial processing
@@ -597,7 +601,8 @@ def mapreduce_super_long_context(ag) -> str:
             results.append(_process_chunk(chunk, user_question))
         # mapreduce::recursive processing
         while len(results) > 1:
-            console.print(f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
+            console.print(
+                f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
             new_results = []
             for (a, b) in track(zip(results[::2], results[1::2]), total=len(results)//2,
                                 description='Mapreduce: intermediate pass'):
@@ -605,7 +610,7 @@ def mapreduce_super_long_context(ag) -> str:
             if len(results) % 2 == 1:
                 new_results.append(results[-1])
             results = new_results
-        aggregated_result = results[0] 
+        aggregated_result = results[0]
     return aggregated_result + '\n\n'
 
 
@@ -696,7 +701,7 @@ def interactive_mode(f: frontend.AbstractFrontend, ag):
 
     # loop
     try:
-        while text := prompt_session.prompt(f'{os.getlogin()}[{max(1,len(f.session))}]> '):
+        while text := prompt_session.prompt(f'{os.getlogin()}[{max(1, len(f.session))}]> '):
             # parse escaped interaction commands
             if text.startswith('/'):
                 cmd = shlex.split(text)
@@ -734,7 +739,7 @@ def main(argv=sys.argv[1:]):
         console.log(ag)
     # detect first-time launch (fresh install)
     if ag.frontend == 'openai' and ag.openai_api_key == 'your-openai-api-key' \
-        and ag.openai_base_url == 'https://api.openai.com/v1':
+            and ag.openai_base_url == 'https://api.openai.com/v1':
         fresh_install_guide(ag)
         exit(0)
 

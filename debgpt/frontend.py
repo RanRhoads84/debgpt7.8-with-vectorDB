@@ -210,8 +210,8 @@ class AnthropicFrontend(AbstractFrontend):
         if self.stream:
             chunks = []
             with self.client.messages.stream(model=self.model,
-                 messages=self.session, max_tokens=self.max_tokens,
-                 **self.kwargs) as stream:
+                                             messages=self.session, max_tokens=self.max_tokens,
+                                             **self.kwargs) as stream:
                 for chunk in stream.text_stream:
                     chunks.append(chunk)
                     print(chunk, end="", flush=True)
@@ -221,8 +221,8 @@ class AnthropicFrontend(AbstractFrontend):
                 sys.stdout.flush()
         else:
             completion = self.client.messages.create(model=self.model,
-                 messages=self.session, max_tokens=self.max_tokens,
-                 stream=self.stream, **self.kwargs)
+                                                     messages=self.session, max_tokens=self.max_tokens,
+                                                     stream=self.stream, **self.kwargs)
             generated_text = completion.content[0].text
         new_message = {'role': 'assistant', 'content': generated_text}
         self.update_session(new_message)
@@ -246,7 +246,7 @@ class GeminiFrontend(AbstractFrontend):
         self.client = genai.GenerativeModel(args.gemini_model)
         self.chat = self.client.start_chat()
         self.kwargs = genai.types.GenerationConfig(
-                temperature=args.temperature, top_p=args.top_p)
+            temperature=args.temperature, top_p=args.top_p)
         if args.verbose:
             console.log(f'{self.NAME}> model={repr(args.gemini_model)}, '
                         + f'temperature={args.temperature}, top_p={args.top_p}.')
@@ -274,7 +274,6 @@ class GeminiFrontend(AbstractFrontend):
         if self.debug:
             console.log('recv:', self.session[-1])
         return self.session[-1]['content']
-
 
 
 class LlamafileFrontend(OpenAIFrontend):

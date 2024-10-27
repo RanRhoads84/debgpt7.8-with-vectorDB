@@ -89,7 +89,8 @@ or
 
     $ git citool --amend
 """
-        console.print(Panel(note_message, title='Notice', border_style='green'))
+        console.print(
+            Panel(note_message, title='Notice', border_style='green'))
 
     exit(0)
 
