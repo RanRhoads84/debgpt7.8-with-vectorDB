@@ -169,17 +169,15 @@ see a list of available commands that will not be sent to the LLM.
 
 * `/reset`: clear the context. So you can start a new conversation without quiting.
 
-#### Ex2. Special MapReduce Question Answering for Any Length Context
+#### Ex2. Special MapReduce Prompt Composer for Any Length Context
 
 Generally, LLMs have a limited context length. If you want to ask a question
 regarding a very long context, you can split the context into multiple parts,
 and extract the relevant information from each part. Then, you can ask the
-LLM to answer the question based on the extracted information. We have
-implemented it as a special feature in the `debgpt` tool. You can use this
-functionality through the `--mapreduce|-x` argument. We need the `--ask|-A`
-argument to tell LLM what kind of question we want to ask so it can extract
-the right information. If `--ask|-A` is not provided, the tool will simply
-assume that you want to summarize the provided information.
+LLM to answer the question based on the extracted information.
+
+We have implemented it as a special feature in the `debgpt` tool. You can use
+this functionality through the `--mapreduce|-x` argument.
 
 ```
 debgpt -Hx <any-file-directory> -A <your-question>
@@ -195,6 +193,10 @@ Debian Policy document, and `:sbuild` will load the latest sbuild log.
 See https://salsa.debian.org/deeplearning-team/debgpt/-/issues/6 for some
 examples with their corresponding outputs.
 
+We need the `--ask|-A` argument to tell LLM what kind of question we want to
+ask so it can extract the right information. If `--ask|-A` is not provided, the
+tool will simply assume that you want to summarize the provided information.
+
 There are two important arguments for the `--mapreduce|-x` feature:
 (1) `--mapreduce_chunksize <int>` which decides the chunk size (in bytes) for
 processing the bulky inputs;
@@ -202,10 +204,16 @@ processing the bulky inputs;
 You may need to adjust them to adapt to your hardware or service provider
 limitations.
 
-Note, this functionality is very quota-consuming if you are going to deal
-with long texts. Please keep an eye on your bill when you try this.
+The idea behind this
+is fairly simple: binary split the input text until the chunk size is smaller
+than a pre-defined size, and then pairwise reduce those results using LLM
+until there is only one chunk left.
 
-#### Ex3. Standard Query Composers
+Note, this functionality can be very quota-consuming if you are going to deal
+with long texts. Please keep an eye on your bill when you try this on a
+paied API service.
+
+#### Ex3. Standard Query Composers for Texts that Fit in Context Window
 
 Ask LLM to summarize the BTS page for `src:pytorch`.
 
