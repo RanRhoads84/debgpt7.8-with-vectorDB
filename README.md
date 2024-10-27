@@ -151,8 +151,8 @@ Please refer their corresponding user agreements before adopting one of them.
 Be aware of such risks, and refrain from sending confidential information such
 like paid API keys to LLM.
 
-TUTORIALS
-=========
+TUTORIAL
+========
 
 The following examples are carefully ordered. You can start from the first
 example and gradually move to the next one.
@@ -508,6 +508,12 @@ The following is the current **TODO List**.Some ideas might be a little bit far 
 1. Apart from the `str` type, the frontend supports other return types like `List` or `Dict` (for advanced usage such as in-context learning) are possible (see `debgpt/frontend.py :: ZMQFrontend.query`, but those are not explored yet.
 1. The current implementation stays at prompt-engineering an existing Chatting LLM with debian-specific documents, like debian-policy, debian developer references, and some man pages. In the future, we may want to explore how we can use larger datasets like Salsa dump, Debian mailing list dump, etc. LoRA or RAG or any new methods are to be investegated with the datasets. Also see follow-ups at https://lists.debian.org/debian-project/2023/12/msg00028.html
 1. Should we really train or fine-tune a model? How do we organize the data?
+
+REFERENCES
+==========
+
+[1] Access large language models from the command-line
+: `https://github.com/simonw/llm`
 
 LICENSE
 =======
