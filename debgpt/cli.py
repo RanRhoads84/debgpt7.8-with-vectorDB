@@ -523,7 +523,11 @@ def mapreduce_super_long_context(ag) -> str:
 
     # skip mapreduce if there is only one chunk
     if len(chunks) == 1:
-        return debian.file(ag.mapreduce)
+        tmp = debian.mapreduce_load_any(ag.mapreduce,
+                                        ag.mapreduce_chunksize,
+                                        debgpt_home=ag.debgpt_home)
+        filepath = list(tmp.keys())[0][0]
+        return debian.file(filepath)
 
     def _process_chunk(chunk: str, question: str) -> str:
         '''
