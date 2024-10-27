@@ -492,7 +492,10 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     action='append',
                     help='load Arch Wiki. e.g., "Archiving_and_compression"')
     # -- 12. PDF File
-    _g.add_argument('--pdf', type=str, default=[], action='append',
+    _g.add_argument('--pdf',
+                    type=str,
+                    default=[],
+                    action='append',
                     help='load texts from PDF file(s)')
     # -- 998. The special query buider for mapreduce chunks
     _g.add_argument('--mapreduce',
@@ -914,8 +917,13 @@ def main(argv=sys.argv[1:]):
         version()
         exit(0)
     # detect first-time launch (fresh install)
-    if ag.frontend == 'openai' and ag.openai_api_key == 'your-openai-api-key' \
-            and ag.openai_base_url == 'https://api.openai.com/v1':
+    whether_show_fresh_install_guide = all(
+        ag.frontend == 'openai',
+        ag.openai_api_key == 'your-openai-api-key',
+        ag.openai_base_url == 'https://api.openai.com/v1',
+        ag.subparser_name not in ('genconfig', 'genconf', 'config.toml'),
+    )
+    if whether_show_fresh_install_guide:
         fresh_install_guide(ag)
         exit(0)
 
