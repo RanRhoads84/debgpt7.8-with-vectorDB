@@ -52,6 +52,26 @@ def _check(messages: List[Dict]):
     assert all(x['role'] in ('system', 'user', 'assistant') for x in messages)
 
 
+def retry_ratelimit(func: callable,
+                    exception: Exception,
+                    retry_interval: int = 15):
+    '''
+    a decorator to retry the function call when exception occurs.
+    '''
+    @ft.wraps(func)
+    def wrapper(*args, **kwargs):
+        while True:
+            try:
+                result = func(*args, **kwargs)
+                break
+            except exception as e:
+                console.log(
+                        f'Rate limit reached. Will retry after {retry_interval} seconds.')
+                time.sleep(15)
+        return result
+    return wrapper
+
+
 class AbstractFrontend():
     '''
     The frontend instance holds the whole chat session. The context is the whole
@@ -145,30 +165,18 @@ class OpenAIFrontend(AbstractFrontend):
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
     def oneshot(self, message: str, *, retry: bool = True) -> str:
-        func = self.client.chat.completions.create
-        if retry:
-            from openai import RateLimitError
-            while True:
-                try:
-                    completions = func(model=self.model,
-                                       messages=[{
-                                           "role": "user",
-                                           "content": message
-                                       }],
-                                       **self.kwargs)
-                    break
-                except RateLimitError as e:
-                    console.log(
-                        "Rate limit reached. Will retry after 15 seconds.")
-                    time.sleep(15)
-        else:
-            completions = func(model=self.model,
-                               messages=[{
-                                   "role": "user",
-                                   "content": message
-                               }],
-                               **self.kwargs)
-        return completions.choices[0].message.content
+        def _func() -> str:
+            _callable = self.client.chat.completions.create
+            completions = _callable(model=self.model,
+                                    messages=[{
+                                        "role": "user",
+                                        "content": message
+                                    }],
+                                    **self.kwargs)
+            return completions.choices[0].message.content
+        from openai import RateLimitError
+        func = retry_ratelimit(_func, RateLimitError) if retry else _func
+        return func()
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
