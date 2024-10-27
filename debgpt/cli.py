@@ -728,12 +728,8 @@ def mapreduce_super_long_context(ag) -> str:
     # start the reduce of chunks from super long context
     if ag.mapreduce_parallelism > 1:
         '''
-        parallel processing. Note, you may easily exceed the TPM limit set
-        by your service provider.
-
-        Example error:
-
-        openai.RateLimitError: Error code: 429 - {'error': {'message': ...
+        Parallel processing. Note, we may easily exceed the TPM limit set
+        by the service provider. We will automatically retry until success.
         '''
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=ag.mapreduce_parallelism) as executor:
