@@ -31,6 +31,8 @@ import json
 import rich
 import uuid
 import sys
+import time
+import functools as ft
 from . import defaults
 
 console = rich.get_console()
@@ -142,15 +144,30 @@ class OpenAIFrontend(AbstractFrontend):
             console.log(f'{self.NAME}> model={repr(self.model)}, ' +
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
-    def oneshot(self, message: str) -> str:
-        completions = self.client.chat.completions.create(model=self.model,
-                                                          messages=[{
-                                                              "role":
-                                                              "user",
-                                                              "content":
-                                                              message
-                                                          }],
-                                                          **self.kwargs)
+    def oneshot(self, message: str, *, retry: bool = True) -> str:
+        func = self.client.chat.completions.create
+        if retry:
+            from openai import RateLimitError
+            try:
+                completions = func(model=self.model,
+                                   messages=[{
+                                       "role": "user",
+                                       "content": message
+                                   }],
+                                   **self.kwargs)
+            except RateLimitError as e:
+                console.log(
+                    "Rate limit reached. Waiting for 15 seconds before retrying..."
+                )
+                time.sleep(15)
+
+        else:
+            completions = func(model=self.model,
+                               messages=[{
+                                   "role": "user",
+                                   "content": message
+                               }],
+                               **self.kwargs)
         return completions.choices[0].message.content
 
     def query(self, messages: Union[List, Dict, str]) -> list:
