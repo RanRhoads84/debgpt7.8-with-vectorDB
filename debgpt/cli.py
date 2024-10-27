@@ -37,6 +37,7 @@ from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit import PromptSession
 from rich.panel import Panel
 from rich.markup import escape
+from rich.progress import track
 from prompt_toolkit.styles import Style
 from typing import List, Optional
 import warnings
@@ -329,6 +330,11 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # Prompt Loaders (numbered list). You can specify them multiple times.
     # for instance, `debgpt -H -f foo.py -f bar.py`.
+    config_template += '''\n
+##############################
+# Prompt Loaders
+##############################
+\n'''
     # -- 1. Debian BTS
     ag.add_argument('--bts', type=str, default=[], action='append',
                     help='Retrieve BTS webpage to prompt. example: "src:pytorch", "1056388"')
@@ -374,6 +380,7 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     help='context chunk size for mapreduce')
     ag.add_argument('--mapreduce_parallelism', type=int, default=1,
                     help='number of parallel processes in mapreduce')
+    config_template = __add_arg_to_config(config_template, ag, 'mapreduce_chunksize')
     # -- 999. The Question Template at the End of Prompt
     ag.add_argument('--ask', '-A', type=str, default=defaults.QUESTIONS[':none'],
                     help="Question template to append at the end of the prompt. "
@@ -549,13 +556,16 @@ def mapreduce_super_long_context(ag) -> str:
         raise NotImplementedError('parallelism is not implemented yet')
     else:
         # serial processing for debugging
-        # first pass
-        results = [_process_chunk(chunk, user_question) for chunk in chunks]
-        # recursive processing
+        # mapreduce::first pass
+        results = []
+        for chunk in track(chunks, total=len(chunks), description='MapReduce: first pass'):
+            results.append(_process_chunk(chunk, user_question))
+        # mapreduce::recursive processing
         while len(results) > 1:
             console.print(f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
             new_results = []
-            for (a, b) in zip(results[::2], results[1::2]):
+            for (a, b) in track(zip(results[::2], results[1::2]), total=len(results)//2,
+                                description='Mapreduce: intermediate pass'):
                 new_results.append(_process_two_results(a, b, user_question))
             if len(results) % 2 == 1:
                 new_results.append(results[-1])
