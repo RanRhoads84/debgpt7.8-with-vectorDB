@@ -50,8 +50,8 @@ class Config(object):
             'frontend': 'openai',
             'debgpt_home': HOME,
             'monochrome': False,
-            'mapreduce_chunksize': 8192,
-            'mapreduce_parallelism': 16,
+            'mapreduce_chunksize': 65536,
+            'mapreduce_parallelism': 2,
             # LLM Inference Parameters
             'temperature': 0.5,
             'top_p': 1.0,
