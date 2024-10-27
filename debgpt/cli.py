@@ -917,12 +917,12 @@ def main(argv=sys.argv[1:]):
         version()
         exit(0)
     # detect first-time launch (fresh install)
-    whether_show_fresh_install_guide = all(
+    whether_show_fresh_install_guide = all([
         ag.frontend == 'openai',
         ag.openai_api_key == 'your-openai-api-key',
         ag.openai_base_url == 'https://api.openai.com/v1',
         ag.subparser_name not in ('genconfig', 'genconf', 'config.toml'),
-    )
+    ])
     if whether_show_fresh_install_guide:
         fresh_install_guide(ag)
         exit(0)
