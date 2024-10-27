@@ -1,6 +1,24 @@
 Changelog
 =========
 
+v0.5.91 -- 2024-10-27
+---------------------
+
+Minor features::
+
+* Add retry mechanism for rate limit exceeded errors in the mapreduce function.
+  This is added for OpenAI, Google Gemini, and Anthropic frontends.
+* mapreduce functionality now supports loading text from URLs.
+  Example: http://.., https://..., file://....
+
+Minor fixes:
+
+* fed46bf frontend: add import error handling for service sdks
+* improve verbose and debugging messages
+* cli: organize argument parser in argument group
+* 2d324c8 debgpt: add top_p parameter to config template
+* 5dacfe1 debian: mapreduce: add support for loading text from URLs
+
 v0.5.90 -- 2024-10-26
 ---------------------
 
