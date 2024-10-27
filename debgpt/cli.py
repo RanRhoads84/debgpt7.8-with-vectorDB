@@ -686,7 +686,10 @@ def mapreduce_super_long_context(ag) -> str:
                 for x in ('file://', 'http://', 'https://')):
             return debian.url(filepath)
         else:
-            return debian.file(filepath)
+            if filepath.endswith('.pdf'):
+                return debian.pdf(filepath)
+            else:
+                return debian.file(filepath)
 
     def _process_chunk(chunk: str, question: str) -> str:
         '''

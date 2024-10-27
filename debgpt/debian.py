@@ -31,6 +31,7 @@ import subprocess
 import sys
 import glob
 import rich
+import mimetypes
 from urllib.request import urlopen
 
 console = rich.get_console()
@@ -153,6 +154,33 @@ def _load_url(url: str) -> List[str]:
     return lines
 
 
+def _load_pdf(file_path: str) -> list[str]:
+    try:
+        import PyPDF2
+    except ImportError:
+        print("Please install PyPDF2 using 'pip install PyPDF2'")
+        exit(1)
+    # Open the PDF file
+    with open(file_path, 'rb') as file:
+        # Create a PDF reader object
+        pdf_reader = PyPDF2.PdfReader(file)
+
+        # Get the number of pages
+        num_pages = len(pdf_reader.pages)
+
+        # Initialize a string to store the text
+        text = ""
+
+        # Extract text from each page
+        for page_num in range(num_pages):
+            # Get the page object
+            page = pdf_reader.pages[page_num]
+            # Extract text from the page
+            text += page.extract_text()
+
+    return text.split('\n')
+
+
 #####################################
 # Text Loaders from Various Sources
 #####################################
@@ -168,7 +196,14 @@ def url(url: str):
     return '\n'.join(lines)
 
 
-def archw(identifier: str):
+def pdf(path: str) -> str:
+    text = _load_pdf(path)
+    lines = [f'Here is the contents of PDF file {path}:']
+    lines.extend(['```'] + text + ['```', ''])
+    return '\n'.join(lines)
+
+
+def archw(identifier: str) -> str:
     '''
     Archwiki. e.g.,
     https://wiki.archlinux.org/title/Archiving_and_compression
@@ -396,8 +431,17 @@ def mapreduce_load_file(
     '''
     load the file and return the content as a list of lines
     '''
-    with open(path, 'rt') as f:
-        lines = [x.rstrip() for x in f.readlines()]
+    # tell the file type and load the file as lines
+    mime_type, _ = mimetypes.guess_type(path)
+    if mime_type == 'application/pdf':
+        lines = _load_pdf(path)
+    elif mime_type and mime_type.startswith('text/'):
+        with open(path, 'rt') as f:
+            lines = [x.rstrip() for x in f.readlines()]
+    else:
+        raise ValueError(f'Unsupported file type {mime_type}')
+
+    # chunk the lines
     try:
         chunkdict = _mapreduce_chunk_lines(path,
                                            0,
