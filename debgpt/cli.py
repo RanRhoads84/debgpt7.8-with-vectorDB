@@ -690,10 +690,10 @@ def mapreduce_super_long_context(ag) -> str:
         '''
         template = _pad_chunk(chunk, question)
         if ag.verbose:
-            console.log('oneshot:template:', template)
+            console.log('oneshot:send:', textwrap.shorten(template, 100))
         answer = ag.frontend_instance.oneshot(template)
         if ag.verbose:
-            console.log('oneshot:answer:', answer)
+            console.log('oneshot:recv:', textwrap.shorten(answer, 100))
         return answer
 
     def _pad_two_results(a: str, b: str, question: str) -> str:
@@ -708,10 +708,10 @@ def mapreduce_super_long_context(ag) -> str:
     def _process_two_results(a: str, b: str, question: str) -> str:
         template = _pad_two_results(a, b, question)
         if ag.verbose:
-            console.log('oneshot:template:', template)
+            console.log('oneshot:send:', textwrap.shorten(template, 100))
         answer = ag.frontend_instance.oneshot(template)
         if ag.verbose:
-            console.log('oneshot:answer:', answer)
+            console.log('oneshot:recv:', textwrap.shorten(answer, 100))
         return answer
 
     # start the reduce of chunks from super long context
