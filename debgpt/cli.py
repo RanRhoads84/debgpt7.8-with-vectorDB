@@ -33,6 +33,7 @@ import sys
 import os
 import re
 import argparse
+import concurrent.futures
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit import PromptSession
 from rich.panel import Panel
@@ -378,9 +379,10 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     help='load any file or directory for an answer')
     ag.add_argument('--mapreduce_chunksize', type=int, default=8192,
                     help='context chunk size for mapreduce')
+    config_template = __add_arg_to_config(config_template, ag, 'mapreduce_chunksize')
     ag.add_argument('--mapreduce_parallelism', type=int, default=1,
                     help='number of parallel processes in mapreduce')
-    config_template = __add_arg_to_config(config_template, ag, 'mapreduce_chunksize')
+    config_template = __add_arg_to_config(config_template, ag, 'mapreduce_parallelism')
     # -- 999. The Question Template at the End of Prompt
     ag.add_argument('--ask', '-A', type=str, default=defaults.QUESTIONS[':none'],
                     help="Question template to append at the end of the prompt. "
@@ -502,8 +504,9 @@ def mapreduce_super_long_context(ag) -> str:
     chunks = debian.mapreduce_load_any_astext(ag.mapreduce,
                                               ag.mapreduce_chunksize)
     console.print(f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}')
-    for i, chunk in enumerate(chunks):
-        console.print(f'  [bold]Chunk {i}[/bold]: {chunk.split("\n")[:1]}...')
+    if ag.verbose:
+        for i, chunk in enumerate(chunks):
+            console.print(f'  [bold]Chunk {i}[/bold]: {chunk.split("\n")[:1]}...')
     # TODO: parse special questions like does in gather_information_ordered()
     if ag.ask:
         user_question = ag.ask
@@ -553,9 +556,31 @@ def mapreduce_super_long_context(ag) -> str:
     
     # start the reduce of chunks from super long context
     if ag.mapreduce_parallelism > 1:
-        raise NotImplementedError('parallelism is not implemented yet')
+        '''
+        parallel processing. Note, you may easily exceed the TPM limit set
+        by your service provider.
+
+        Example error:
+
+        openai.RateLimitError: Error code: 429 - {'error': {'message': ...
+        '''
+        with concurrent.futures.ThreadPoolExecutor(max_workers=ag.mapreduce_parallelism) as executor:
+            results = list(track(executor.map(lambda x: _process_chunk(x, user_question), chunks),
+                                total=len(chunks), description='MapReduce: first pass'))
+        while len(results) > 1:
+            console.print(f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
+            pairs = list(zip(results[::2], results[1::2]))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=ag.mapreduce_parallelism) as executor:
+                new_results = list(track(executor.map(lambda x: _process_two_results(x, user_question), pairs),
+                                         total=len(pairs), description='Mapreduce: intermediate pass'))
+            if len(results) % 2 == 1:
+                new_results.append(results[-1])
+            results = new_results
+        aggregated_result = results[0] 
     else:
-        # serial processing for debugging
+        '''
+        serial processing
+        '''
         # mapreduce::first pass
         results = []
         for chunk in track(chunks, total=len(chunks), description='MapReduce: first pass'):
