@@ -21,8 +21,6 @@ dependencies = [
     'requests',
     'bs4',
     'tomli',
-# 'anthropic',  # todo: https://github.com/anthropics/anthropic-sdk-python
-# 'google-generativeai',
 ]
 authors = [
   {name = "Mo Zhou", email = "lumin@debian.org"},
