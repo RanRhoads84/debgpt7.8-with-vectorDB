@@ -377,10 +377,10 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     # -- 998. The special query buider for mapreduce chunks
     ag.add_argument('--mapreduce', '-x', type=str, 
                     help='load any file or directory for an answer')
-    ag.add_argument('--mapreduce_chunksize', type=int, default=8192,
+    ag.add_argument('--mapreduce_chunksize', type=int, default=conf['mapreduce_chunksize'],
                     help='context chunk size for mapreduce')
     config_template = __add_arg_to_config(config_template, ag, 'mapreduce_chunksize')
-    ag.add_argument('--mapreduce_parallelism', type=int, default=1,
+    ag.add_argument('--mapreduce_parallelism', type=int, default=conf['mapreduce_parallelism'],
                     help='number of parallel processes in mapreduce')
     config_template = __add_arg_to_config(config_template, ag, 'mapreduce_parallelism')
     # -- 999. The Question Template at the End of Prompt
@@ -566,13 +566,13 @@ def mapreduce_super_long_context(ag) -> str:
         '''
         with concurrent.futures.ThreadPoolExecutor(max_workers=ag.mapreduce_parallelism) as executor:
             results = list(track(executor.map(lambda x: _process_chunk(x, user_question), chunks),
-                                total=len(chunks), description='MapReduce: first pass'))
+                                 total=len(chunks), description=f'MapReduce[{ag.mapreduce_parallelism}]: initial pass'))
         while len(results) > 1:
             console.print(f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results')
             pairs = list(zip(results[::2], results[1::2]))
             with concurrent.futures.ThreadPoolExecutor(max_workers=ag.mapreduce_parallelism) as executor:
-                new_results = list(track(executor.map(lambda x: _process_two_results(x, user_question), pairs),
-                                         total=len(pairs), description='Mapreduce: intermediate pass'))
+                new_results = list(track(executor.map(lambda x: _process_two_results(*x, user_question), pairs),
+                                         total=len(pairs), description=f'Mapreduce[{ag.mapreduce_parallelism}]: intermediate pass'))
             if len(results) % 2 == 1:
                 new_results.append(results[-1])
             results = new_results
@@ -583,7 +583,7 @@ def mapreduce_super_long_context(ag) -> str:
         '''
         # mapreduce::first pass
         results = []
-        for chunk in track(chunks, total=len(chunks), description='MapReduce: first pass'):
+        for chunk in track(chunks, total=len(chunks), description='MapReduce: initial pass'):
             results.append(_process_chunk(chunk, user_question))
         # mapreduce::recursive processing
         while len(results) > 1:
