@@ -503,7 +503,8 @@ def mapreduce_super_long_context(ag) -> str:
     console.print(f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}')
     if ag.verbose:
         for i, chunk in enumerate(chunks):
-            console.print(f'  [bold]Chunk {i}[/bold]: {chunk.split("\n")[:1]}...')
+            firstline = chunk.split('\n')[:1]
+            console.print(f'  [bold]Chunk {i}[/bold]: {firstline}...')
     # TODO: parse special questions like does in gather_information_ordered()
     if ag.ask:
         user_question = ag.ask
