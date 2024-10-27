@@ -311,10 +311,14 @@ class GeminiFrontend(AbstractFrontend):
             console.log(f'{self.NAME}> model={repr(args.gemini_model)}, ' +
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
-    def oneshot(self, message: str) -> str:
-        response = self.client.generate_content(message,
-                                                generation_config=self.kwargs)
-        return response.text
+    def oneshot(self, message: str, *, retry: bool = True) -> str:
+        def _func():
+            _callable = self.client.generate_content
+            result = _callable(message, generation_config=self.kwargs)
+            return result.text
+        from google.api_core.exceptions import ResourceExhausted
+        func = retry_ratelimit(_func, ResourceExhausted) if retry else _func
+        return func()
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
