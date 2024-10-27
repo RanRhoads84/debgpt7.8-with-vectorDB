@@ -183,7 +183,7 @@ class AnthropicFrontend(AbstractFrontend):
     NAME = 'AnthropicFrontend'
     debug: bool = False
     stream: bool = True
-    max_tokens: int = 4096
+    max_tokens: int = 8192
 
     def __init__(self, args):
         super().__init__(args)
@@ -195,6 +195,12 @@ class AnthropicFrontend(AbstractFrontend):
         if args.verbose:
             console.log(f'{self.NAME}> model={repr(self.model)}, '
                         + f'temperature={args.temperature}, top_p={args.top_p}.')
+
+    def oneshot(self, message: str) -> str:
+        completion = self.client.messages.create(
+            model=self.model, messages=[{"role": "user", "content": message}],
+            max_tokens=self.max_tokens, **self.kwargs)
+        return completion.content[0].text
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
