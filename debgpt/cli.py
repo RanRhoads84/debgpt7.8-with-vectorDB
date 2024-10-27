@@ -243,7 +243,7 @@ https://platform.openai.com/docs/api-reference/ \
     config_template = __add_arg_to_config(config_template, ag, 'temperature')
 
     ag.add_argument('--top_p', '-P', type=float, default=conf['top_p'])
-    # TODO: add this in config template
+    config_template = __add_arg_to_config(config_template, ag, 'top_p')
 
     # Specific to OpenAI Frontend
     config_template += '''\n
