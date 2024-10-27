@@ -523,7 +523,7 @@ def mapreduce_super_long_context(ag) -> str:
 
     # skip mapreduce if there is only one chunk
     if len(chunks) == 1:
-        return _pad_chunk(chunks[0], user_question)+ '\n'
+        return debian.file(ag.mapreduce)
 
     def _process_chunk(chunk: str, question: str) -> str:
         '''
