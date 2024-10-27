@@ -184,6 +184,13 @@ Debian Policy document, and `:sbuild` will load the latest sbuild log.
 See https://salsa.debian.org/deeplearning-team/debgpt/-/issues/6 for some
 examples with their corresponding outputs.
 
+There are two important arguments for the `--mapreduce|-x` feature:
+(1) `--mapreduce_chunksize <int>` which decides the chunk size (in bytes) for
+processing the bulky inputs;
+(2) `--mapreduce_parallelism <int>`: how many API query workers to run in parallel.
+You may need to adjust them to adapt to your hardware or service provider
+limitations.
+
 Note, this functionality is very quota-consuming if you are going to deal
 with long texts. Please keep an eye on your bill when you try this.
 
