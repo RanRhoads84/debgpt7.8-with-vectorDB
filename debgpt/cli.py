@@ -491,6 +491,9 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     default=[],
                     action='append',
                     help='load Arch Wiki. e.g., "Archiving_and_compression"')
+    # -- 12. PDF File
+    _g.add_argument('--pdf', type=str, default=[], action='append',
+                    help='load texts from PDF file(s)')
     # -- 998. The special query buider for mapreduce chunks
     _g.add_argument('--mapreduce',
                     '-x',
@@ -630,6 +633,7 @@ def parse_args_order(argv) -> List[str]:
         _match_l(item, '--html', order)
         _match_l(item, '--pynew', order)
         _match_l(item, '--archw', order)
+        _match_l(item, '--pdf', order)
         _match_ls(item, '--mapreduce', '-x', order)
     return order
 
@@ -802,7 +806,7 @@ def gather_information_ordered(msg: Optional[str], ag,
     # following the argument order, dispatch to debian.* functions with
     # different function signatures
     for key in ag_order:
-        if key in ('file', 'tldr', 'man', 'buildd', 'pynew', 'archw'):
+        if key in ('file', 'tldr', 'man', 'buildd', 'pynew', 'archw', 'pdf'):
             spec = getattr(ag, key).pop(0)
             func = getattr(debian, key)
             msg = _append_info(msg, func(spec))
