@@ -510,6 +510,9 @@ REFERENCES
 [1] Access large language models from the command-line
 : https://github.com/simonw/llm
 
+[2] Turn your task descriptions into precise shell commands
+: https://github.com/sderev/shellgenius
+
 LICENSE
 =======
 
