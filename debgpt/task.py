@@ -46,7 +46,12 @@ def task_backend(ag) -> None:
 
 def task_replay(ag) -> None:
     from . import replay
-    replay.replay(ag.json_file_path)
+    if ag.json_file_path is None:
+        json_path = debian._latest_glob(os.path.join(ag.debgpt_home, '*.json'))
+        console.log('found the latest json:', json_path)
+    else:
+        json_path = ag.json_file_path
+    replay.replay(json_path)
     exit(0)
 
 

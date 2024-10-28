@@ -573,6 +573,7 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                                  help='replay a conversation from a JSON file')
     ps_replay.add_argument('json_file_path',
                            type=str,
+                           nargs='?',
                            help='path to the JSON file')
     ps_replay.set_defaults(func=task_replay)
 

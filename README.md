@@ -182,7 +182,8 @@ debgpt -T 1.0 -QA 'Greet with me, and tell me a joke.'
 
 After each session, the chatting history will be saved in `~/.debgpt` as a
 json file in a unique name. The command `debgpt replay <file_name>` can be
-used to replay the session in specified file.
+used to replay the session in specified file. When `<file_name>` is not given,
+`debgpt replay` will replay the last session.
 
 During the interactive mode, you may press `/` and see a list of available
 escaped commands that will not be seen as LLM prompt.
