@@ -508,7 +508,7 @@ REFERENCES
 ==========
 
 [1] Access large language models from the command-line
-: `https://github.com/simonw/llm`
+: https://github.com/simonw/llm
 
 LICENSE
 =======
