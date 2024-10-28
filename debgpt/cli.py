@@ -228,7 +228,8 @@ it to web-based LLMs in that case.")
                     action='store_true',
                     default=conf['render_markdown'],
                     help='render the LLM output as markdown with rich.')
-    config_template = __add_arg_to_config(config_template, _g, 'render_markdown')
+    config_template = __add_arg_to_config(config_template, _g, 'render_markdown',
+                                          formatter=lambda x: str(x).lower())
 
 
     # LLM Inference Arguments
