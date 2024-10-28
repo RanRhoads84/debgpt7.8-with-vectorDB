@@ -296,7 +296,8 @@ class AnthropicFrontend(AbstractFrontend):
                     with Live(Markdown('')) as live:
                         for chunk in stream.text_stream:
                             chunks.append(chunk)
-                            live.update(Markdown(''.join(chunks)), refresh=True)
+                            live.update(Markdown(''.join(chunks)),
+                                        refresh=True)
                 else:
                     for chunk in stream.text_stream:
                         chunks.append(chunk)

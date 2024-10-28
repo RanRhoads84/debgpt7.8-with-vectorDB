@@ -36,16 +36,16 @@ def process_entry(entry):
         title = 'User Input'
         border_style = 'cyan'
         content = Panel(escape(entry['content']),
-                      title=title,
-                      border_style=border_style)
+                        title=title,
+                        border_style=border_style)
     elif entry['role'] == 'assistant':
         content = Markdown(entry['content'])
     elif entry['role'] == 'system':
         title = 'System Message'
         border_style = 'red'
         content = Panel(escape(entry['content']),
-                      title=title,
-                      border_style=border_style)
+                        title=title,
+                        border_style=border_style)
     else:
         raise ValueError(f'unknown role in {entry}')
     console.print(content)
