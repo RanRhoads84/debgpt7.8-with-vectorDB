@@ -23,6 +23,7 @@ SOFTWARE.
 '''
 from rich.markup import escape
 from rich.panel import Panel
+from rich.markdown import Markdown
 import json
 import argparse
 import rich
@@ -34,19 +35,20 @@ def process_entry(entry):
     if entry['role'] == 'user':
         title = 'User Input'
         border_style = 'cyan'
+        content = Panel(escape(entry['content']),
+                      title=title,
+                      border_style=border_style)
     elif entry['role'] == 'assistant':
-        title = 'LLM Response'
-        border_style = 'green'
+        content = Markdown(entry['content'])
     elif entry['role'] == 'system':
         title = 'System Message'
         border_style = 'red'
+        content = Panel(escape(entry['content']),
+                      title=title,
+                      border_style=border_style)
     else:
         raise ValueError(f'unknown role in {entry}')
-
-    panel = Panel(escape(entry['content']),
-                  title=title,
-                  border_style=border_style)
-    console.print(panel)
+    console.print(content)
 
 
 def replay(path):
