@@ -159,24 +159,33 @@ example and gradually move to the next one.
 
 #### 1. Quick Start by Chatting with LLM
 
-When no arguments are given, `debgpt` degenerates into a general terminal
+When no arguments are given, `debgpt` leads you into a general terminal
 chatting client with LLM backends. Use `debgpt -h` to see detailed usage.
 
 ```
 debgpt
 ```
 
-If you want to quit (`-Q`) after receiving the first response from LLM regarding the question (`-A`):
+The first prompt can be provided through argument (`--ask|-A|-a`):
 
 ```
-debgpt -Q -A "who are you?"
+debgpt -A "Who are you? And what can LLM do?"
+```
+
+By specifying the `--quit|-Q` option, the program will quit after receiving
+the first response from LLM. For instance, we can let it mimic `fortune`
+with temperature 1.0 ('--temperature|-T 1.0') for higher randomness:
+
+```
+debgpt -T 1.0 -QA 'Greet with me, and tell me a joke.'
 ```
 
 After each session, the chatting history will be saved in `~/.debgpt` as a
-json file in a unique name.  You can use `debgpt replay <file_name>` to replay the history.
+json file in a unique name. The command `debgpt replay <file_name>` can be
+used to replay the session in specified file.
 
-There are a few tips for using the interactive mode.  Press `/` and you will
-see a list of available commands that will not be sent to the LLM.
+During the interactive mode, you may press `/` and see a list of available
+escaped commands that will not be seen as LLM prompt.
 
 * `/save <path.txt>`: save the last LLM response to the specified file.
 
@@ -358,22 +367,7 @@ debgpt git commit --amend
 ```
 
 
-Let LLM tell you a fortune:
 
-```
-debgpt -T 1.0 fortune :joke
-debgpt -T 1.0 fortune :math
-```
-
-Use `debgpt fortune :` to lookup available tags. Or you can just specify the
-type of fortune you want:
-
-```
-debgpt -T 1.0 fortune 'tell me something very funny about linux'
-```
-
-We need to raise the temperature (`-T`) to `1.0` because otherwise it leads
-to less randomness, and LLM will tend to say the same thing every time.
 
 
 #### 99. You Name It
