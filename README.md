@@ -160,11 +160,18 @@ example and gradually move to the next one.
 #### 1. Quick Start by Chatting with LLM
 
 When no arguments are given, `debgpt` leads you into a general terminal
-chatting client with LLM backends. Use `debgpt -h` to see detailed usage.
+chatting client with LLM backends. Use `debgpt -h` to see detailed options.
 
 ```
 debgpt
 ```
+
+During the interactive chatting mode, you may press `/` and see a list of
+available escaped commands that will not be seen as LLM prompt.
+
+* `/save <path.txt>`: save the last LLM response to the specified file.
+
+* `/reset`: clear the context. So you can start a new conversation without quiting.
 
 The first prompt can be provided through argument (`--ask|-A|-a`):
 
@@ -184,13 +191,6 @@ After each session, the chatting history will be saved in `~/.debgpt` as a
 json file in a unique name. The command `debgpt replay <file_name>` can be
 used to replay the session in specified file. When `<file_name>` is not given,
 `debgpt replay` will replay the last session.
-
-During the interactive mode, you may press `/` and see a list of available
-escaped commands that will not be seen as LLM prompt.
-
-* `/save <path.txt>`: save the last LLM response to the specified file.
-
-* `/reset`: clear the context. So you can start a new conversation without quiting.
 
 #### 2. Special MapReduce Prompt Composer for Any Length Context
 
