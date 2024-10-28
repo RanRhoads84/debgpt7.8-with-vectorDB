@@ -94,27 +94,3 @@ or
                             border_style='green'))
 
     exit(0)
-
-
-def task_fortune(ag):
-    '''
-    Fortune mode. Note, it is very recommended to set --temperature to a value
-    larger than 1.0, or LLM will give you the same thing across multiple runs.
-    '''
-    # create prompt
-    if ag.ask.startswith(':'):
-        try:
-            # use a template from defaults.FORTUNE_QUESTIONS
-            msg = defaults.FORTUNE_QUESTIONS[ag.ask]
-        except KeyError:
-            console.print(
-                'Available question templates for argument -A/--ask:')
-            defaults.print_fortune_question_templates()
-            exit(1)
-    else:
-        msg = ag.ask
-    # let frontend work
-    f = ag.frontend_instance
-    frontend.query_once(f, msg)
-    # exit
-    exit(0)

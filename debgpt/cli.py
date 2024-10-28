@@ -25,7 +25,7 @@ SOFTWARE.
 import textwrap
 import rich
 import shlex
-from .task import task_backend, task_git, task_git_commit, task_replay, task_fortune
+from .task import task_backend, task_git, task_git_commit, task_replay
 from . import defaults
 from . import debian
 from . import frontend
@@ -581,18 +581,6 @@ Their prices vary. See https://platform.openai.com/docs/models .')
         'stdin',
         help='read stdin as the first prompt. Should combine with -Q.')
     ps_stdin.set_defaults(func=lambda ag: debian.stdin())
-
-    # Task: fortune
-    ps_fortune = subps.add_parser('fortune',
-                                  help='fortune mode. Note, it is \
-very recommended to set --temperature to a value larger than 1.0, or LLM will \
-give you the same thing across multiple runs.')
-    ps_fortune.add_argument('ask',
-                            type=str,
-                            nargs='?',
-                            default=':fun',
-                            help='specify what type of fortune you want')
-    ps_fortune.set_defaults(func=task_fortune)
 
     # Task: genconfig
     ps_genconfig = subps.add_parser('genconfig',
