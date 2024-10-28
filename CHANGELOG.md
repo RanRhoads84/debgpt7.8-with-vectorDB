@@ -1,6 +1,35 @@
 Changelog
 =========
 
+v0.5.92 -- 2024-10-28
+---------------------
+
+Major feature updates:
+
+* Add support for rendering LLM response markdown text with rich.
+  Not enabled by default. Use `render_markdown = true` in the config file
+  to enable it all the time.
+  Example: `debgpt --render -a 'write a c++ hello world program'`
+
+* PDF file support is added for both `--pdf` and `--mapreduce` arguments.
+  Example: `debgpt -H --pdf ./some.pdf -a 'what is this?'`
+
+Minor updates and bugfixes:
+
+* Update readme with references and examples.
+* render LLM response as markdown in replay.
+* 4768d41 cli: make json file optional for replay command
+* cce8d2f cli: remove fortune mode (deprecated)
+* 9ffadf3 pyproject: add optional dependencies
+* d6bf0c1 make: add pylint and simplify linting targets
+* d09b9fa cli: add short aliases for mapreduce arguments
+* readme: update installation instructions
+* cace664 cli: do not print first-install-guide for first-time genconfig
+* c6429e8 improve debugging message
+* 9a1a724 cli: increase default mapreduce parallelism to 8
+* d7536f6 mapreduce: simplify file type handling for text files.
+  If mime type detect failed, just read as plain text.
+
 v0.5.91 -- 2024-10-27
 ---------------------
 
