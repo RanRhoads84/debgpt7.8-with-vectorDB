@@ -223,6 +223,13 @@ it to web-based LLMs in that case.")
                                           _g,
                                           'monochrome',
                                           formatter=lambda x: str(x).lower())
+    _g.add_argument('--render_markdown',
+                    '--render',
+                    action='store_true',
+                    default=conf['render_markdown'],
+                    help='render the LLM output as markdown with rich.')
+    config_template = __add_arg_to_config(config_template, _g, 'render_markdown')
+
 
     # LLM Inference Arguments
     config_template += '''\n
@@ -929,6 +936,10 @@ def main(argv=sys.argv[1:]):
     # initialize the frontend
     f = frontend.create_frontend(ag)
     ag.frontend_instance = f
+
+    # TODO: fix markdown rendering with streaming
+    if ag.render_markdown:
+        f.stream = False
 
     # create task-specific prompts. note, some special tasks will exit()
     # in their subparser default function when then finished, such as backend,

@@ -25,6 +25,7 @@ from typing import List, Dict, Union
 from rich.status import Status
 from rich.panel import Panel
 from rich.markup import escape
+from rich.markdown import Markdown
 import argparse
 import os
 import json
@@ -90,6 +91,7 @@ class AbstractFrontend():
         self.session = []
         self.debgpt_home = args.debgpt_home
         self.monochrome = args.monochrome
+        self.render_markdown = args.render_markdown
         if args.subparser_name not in ('genconfig', 'genconf', 'config.toml'):
             # in order to avoid including the frontend and UUID into the
             # configuration file.
@@ -104,6 +106,8 @@ class AbstractFrontend():
     def oneshot(self, message: str) -> str:
         '''
         Generate response text from the given question, without history.
+        And do not print anything. Just return the response text silently.
+
         Args:
             message: a string, the question.
         Returns:
@@ -209,6 +213,10 @@ class OpenAIFrontend(AbstractFrontend):
                 sys.stdout.flush()
         else:
             generated_text = completion.choices[0].message.content
+            if self.render_markdown:
+                console.print(Markdown(generated_text))
+            else:
+                console.print(escape(generated_text))
         new_message = {'role': 'assistant', 'content': generated_text}
         self.update_session(new_message)
         if self.debug:
@@ -288,6 +296,10 @@ class AnthropicFrontend(AbstractFrontend):
                 stream=self.stream,
                 **self.kwargs)
             generated_text = completion.content[0].text
+            if self.render_markdown:
+                console.print(Markdown(generated_text))
+            else:
+                console.print(escape(generated_text))
         new_message = {'role': 'assistant', 'content': generated_text}
         self.update_session(new_message)
         if self.debug:
@@ -350,6 +362,10 @@ class GeminiFrontend(AbstractFrontend):
             response = self.chat.send_message(self.session[-1]['content'],
                                               generation_config=self.kwargs)
             generated_text = response.text
+            if self.render_markdown:
+                console.print(Markdown(generated_text))
+            else:
+                console.print(escape(generated_text))
         new_message = {'role': 'assistant', 'content': generated_text}
         self.update_session(new_message)
         if self.debug:
@@ -494,12 +510,10 @@ def query_once(f: AbstractFrontend, text: str) -> None:
         else:
             lprompt = f'[bold green]LLM[{1+len(f.session)}]>[/bold green] '
             console.print(lprompt, end='')
-        reply = f(text)
+        _ = f(text)
     else:
         with Status('LLM', spinner='line'):
-            reply = f(text)
-        console.print(Panel(escape(reply), title='LLM Reply'))
-    # console.print('LLM>', reply)
+            _ = f(text)
 
 
 if __name__ == '__main__':

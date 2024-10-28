@@ -50,6 +50,7 @@ class Config(object):
             'frontend': 'openai',
             'debgpt_home': HOME,
             'monochrome': False,
+            'render_markdown': False,
             # LLM Inference Parameters
             'temperature': 0.5,
             'top_p': 1.0,
