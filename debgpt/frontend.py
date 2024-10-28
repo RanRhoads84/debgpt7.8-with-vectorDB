@@ -26,6 +26,7 @@ from rich.status import Status
 from rich.panel import Panel
 from rich.markup import escape
 from rich.markdown import Markdown
+from rich.live import Live
 import argparse
 import os
 import json
@@ -202,8 +203,18 @@ class OpenAIFrontend(AbstractFrontend):
                                                          **self.kwargs)
         if self.stream:
             chunks = []
-            for chunk in completion:
-                if chunk.choices[0].delta.content is not None:
+            if self.render_markdown:
+                with Live(Markdown('')) as live:
+                    for chunk in completion:
+                        if chunk.choices[0].delta.content is None:
+                            continue
+                        piece = chunk.choices[0].delta.content
+                        chunks.append(piece)
+                        live.update(Markdown(''.join(chunks)), refresh=True)
+            else:
+                for chunk in completion:
+                    if chunk.choices[0].delta.content is None:
+                        continue
                     piece = chunk.choices[0].delta.content
                     chunks.append(piece)
                     print(piece, end="", flush=True)
@@ -281,9 +292,15 @@ class AnthropicFrontend(AbstractFrontend):
                                              messages=self.session,
                                              max_tokens=self.max_tokens,
                                              **self.kwargs) as stream:
-                for chunk in stream.text_stream:
-                    chunks.append(chunk)
-                    print(chunk, end="", flush=True)
+                if self.render_markdown:
+                    with Live(Markdown('')) as live:
+                        for chunk in stream.text_stream:
+                            chunks.append(chunk)
+                            live.update(Markdown(''.join(chunks)), refresh=True)
+                else:
+                    for chunk in stream.text_stream:
+                        chunks.append(chunk)
+                        print(chunk, end="", flush=True)
             generated_text = ''.join(chunks)
             if not generated_text.endswith('\n'):
                 print()
@@ -354,9 +371,15 @@ class GeminiFrontend(AbstractFrontend):
             response = self.chat.send_message(self.session[-1]['content'],
                                               stream=True,
                                               generation_config=self.kwargs)
-            for chunk in response:
-                chunks.append(chunk.text)
-                print(chunk.text, end="", flush=True)
+            if self.render_markdown:
+                with Live(Markdown('')) as live:
+                    for chunk in response:
+                        chunks.append(chunk.text)
+                        live.update(Markdown(''.join(chunks)), refresh=True)
+            else:
+                for chunk in response:
+                    chunks.append(chunk.text)
+                    print(chunk.text, end="", flush=True)
             generated_text = ''.join(chunks)
         else:
             response = self.chat.send_message(self.session[-1]['content'],

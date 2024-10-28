@@ -937,10 +937,6 @@ def main(argv=sys.argv[1:]):
     f = frontend.create_frontend(ag)
     ag.frontend_instance = f
 
-    # TODO: fix markdown rendering with streaming
-    if ag.render_markdown:
-        f.stream = False
-
     # create task-specific prompts. note, some special tasks will exit()
     # in their subparser default function when then finished, such as backend,
     # version, etc. They will exit.
