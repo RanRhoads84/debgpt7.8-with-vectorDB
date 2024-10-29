@@ -1,3 +1,22 @@
+debgpt (0.5.93) unstable; urgency=medium
+
+  * v0.5.93 -- 2024-10-29
+    + add google search support for context loading (--mapreduce|-x)
+    * change `:sbuild` into `sbuild:` for mapreduce
+    * change :policy and :devref into policy: and devref: for mapreduce
+    * cli: enable markdown rendering by default
+    * misc minor improvements.
+    * Overhaul README with new examples and usage instructions.
+  * v0.5.92 -- 2024-10-28
+    + Add support for rendering LLM response markdown text with rich.
+    + PDF file support is added for both `--pdf` and `--mapreduce` arguments.
+    * misc minor updates and bugfixes.
+  * v0.5.91 -- 2024-10-27
+    + Add retry mechanism for rate limit exceeded errors.
+    + mapreduce functionality now supports loading text from URLs.
+
+ -- Mo Zhou <lumin@debian.org>  Tue, 29 Oct 2024 12:10:29 -0400
+
 debgpt (0.5.90) unstable; urgency=medium
 
   * Release v0.5.90

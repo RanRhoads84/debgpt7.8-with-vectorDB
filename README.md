@@ -215,6 +215,11 @@ debgpt -Hx . -a 'teach me how to use this software. Is there any hidden function
 debgpt -Hx ./debian -A 'how is this package built? how many binary packages will be produced?'
 ```
 
+* Load a **URL** and ask a question
+```
+debgpt -Hx 'https://www.debian.org/doc/debian-policy/policy.txt' -A 'what is the purpose of the archive?'
+```
+
 * Load **Debian Policy** (plain text) and ask a question
 ```
 debgpt -Hx policy: -A 'what is the changes of the latest version compared to the previous version?'
@@ -361,6 +366,15 @@ Load the debhelper manpage and ask it to extract a part of it.
 ```
 debgpt -HQ --man debhelper-compat-upgrade-checklist -A "what's the change between compat 13 and compat 14?"
 debgpt -HQ --tldr curl --cmd 'curl -h' -A "download https://localhost/bigfile.iso to /tmp/workspace, in silent mode"
+```
+
+
+**[--pdf]**
+
+Load a PDF file and ask a question.
+
+```
+debgpt -H --pdf ./some.pdf -a 'what is this?'
 ```
 
 
