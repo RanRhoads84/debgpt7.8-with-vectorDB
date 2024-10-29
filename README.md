@@ -12,31 +12,8 @@ DebGPT - Chatting LLM with Debian-Specific Knowledge
 SYNOPSIS
 ========
 
-`debgpt [GENERAL-OPTIONS] [LOADERS] [--frontend {dryrun,zmq,openai}] [--ask ASK]`
-`debgpt [SUBCOMMAND] ...`
-
-[GENERAL-OPTIONS]
-
-`-h, --help`
-: show this help message and exit
-
-`--monochrome <true|false>`
-: disable colorized output during the conversation
-
-[LOADERS]
-
-`-f FILE, --file FILE`
-: load specified file(s) in prompt. A special syntax is supported: "--file filename:start_line:end_line"
-
-`--cmd CMD`
-: add the command line output to the prompt
-
-[SUBCOMMAND]
-
-`debgpt genconfig`
-
-`debgpt git commit [--amend]`
-
+`debgpt [CLI-behavior-options] [frontend-options] [prompt-composers] [subcommands]`
+`debgpt --help|-h`
 
 DESCRIPTION
 ===========
@@ -60,28 +37,28 @@ automatically generate the git commit message and commit the changes for you.
 This tool supports multiple frontends, including OpenAI and ZMQ.
 The ZMQ frontend/backend are provided in this tool to make it self-contained.
 
-INSTALLATION
-============
+QUICK START
+===========
 
-Install from PyPI or Git repository:
+First, install `DebGPT` from PyPI or Git repository:
 
 ```
 pip3 install debgpt
 pip3 install git+https://salsa.debian.org/deeplearning-team/debgpt.git
 ```
 
-Install from source:
+The following command will start a chatting session with the OpenAI API
+without going through the configuration process.
 
 ```
-git clone https://salsa.debian.org/deeplearning-team/debgpt.git
-cd debgpt
-pip3 install -e .
+export OPENAI_API_KEY="your-api-key"
+debgpt -A "Who are you? And what can LLM do?"
+debgpt -Hx policy: -a "what is the latest changes in this policy?"
 ```
 
-By default, it will only pull the dependencies needed to run the OpenAI
-and the ZMQ frontends. The dependencies for other frontends such as
-Anthropic, Gemini, are not installed by default. The dependencies for
-the self-included LLM backend are also not automatically installed.
+This depends on the commercial OpenAI API service. If you want to switch
+to a different service provider or self-hosted LLM backend, please
+read the following sections and configure the software before use.
 
 CONFIGURATION
 =============
@@ -191,6 +168,18 @@ After each session, the chatting history will be saved in `~/.debgpt` as a
 json file in a unique name. The command `debgpt replay <file_name>` can be
 used to replay the session in specified file. When `<file_name>` is not given,
 `debgpt replay` will replay the last session.
+
+The program can write the last LLM response to a file through `-o <file>`,
+and read question from `stdin`:
+
+```
+debgpt -Qa 'write a hello world in rakudo for me' -o hello.raku
+debgpt -HQ stdin < question.txt | tee result.txt
+```
+
+After gettting familiarized with the fundamental usage and its CLI behavior,
+we can directly move on to the most important feature of this tool, namely the
+special prompt composer -- `MapReduce`.
 
 #### 2. Special MapReduce Prompt Composer for Any Length Context
 
@@ -368,14 +357,7 @@ debgpt -H --html 'https://www.debian.org/vote/2022/vote_003' -A :diff --openai_m
 In this example, we had to switch to a model supporting a long context (the
 HTML page has roughly 5k tokens).
 
-#### 4. Command Line Behavior
 
-Let LLM write some code for you and save the output to a file:
-
-```
-debgpt -Qa 'write a hello world in rakudo for me' -o hello.raku
-debgpt -HQ stdin < question.txt | tee result.txt
-```
 
 #### 5. External Command Wrapper and Subcommands
 
