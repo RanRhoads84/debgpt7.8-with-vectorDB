@@ -155,7 +155,8 @@ def _latest_glob(pattern: str) -> str:
 def _load_url(url: str) -> List[str]:
     headers = {
         'User-Agent': 'Mozilla/5.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        'Accept':
+        'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
     }
     req = Request(url, headers=headers)
     with urlopen(req) as response:
@@ -598,7 +599,8 @@ def mapreduce_load_any(
         if args.verbose:
             console.log(f'Google Search Results for {repr(query)}:', urls)
         else:
-            console.log(f'Got {len(urls)} Google Search Results for {repr(query)}.')
+            console.log(
+                f'Got {len(urls)} Google Search Results for {repr(query)}.')
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = {
                 executor.submit(_load_url_parsed, url): url
@@ -627,7 +629,7 @@ def mapreduce_load_any(
 
 
 def mapreduce_load_any_astext(
-    path: Union[str|List[str]],
+    path: Union[str | List[str]],
     chunk_size: int = 8192,
     *,
     user_question: str = '',
@@ -638,10 +640,12 @@ def mapreduce_load_any_astext(
     '''
     # if list, reduce and concur recursively
     if isinstance(path, list):
-        texts = [mapreduce_load_any_astext(p,
-                                           chunk_size=chunk_size,
-                                           user_question=user_question,
-                                           args=args) for p in path]
+        texts = [
+            mapreduce_load_any_astext(p,
+                                      chunk_size=chunk_size,
+                                      user_question=user_question,
+                                      args=args) for p in path
+        ]
         texts = ft.reduce(list.__add__, texts)
         return texts
     # if str, deal with the concrete loading
