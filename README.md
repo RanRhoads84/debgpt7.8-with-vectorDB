@@ -215,11 +215,11 @@ debgpt -Hx resume.pdf -A 'Does this person know AI? To what extent?'
 debgpt -Hx ./debian -A 'how is this package built? how many binary packages will be produced?'
 
 # Load Debian Policy (plain text) and ask a question
-debgpt -Hx :policy -A 'what is the changes of the latest version compared to the previous version?'
-debgpt -Hx :policy -A 'what package should enter contrib instead of main or non-free?'
+debgpt -Hx policy: -A 'what is the changes of the latest version compared to the previous version?'
+debgpt -Hx policy: -A 'what package should enter contrib instead of main or non-free?'
 
 # Load Debian Developer Reference (plain text) and ask a question
-debgpt -Hx :devref -A 'How can I become a debian developer?'
+debgpt -Hx devref: -A 'How can I become a debian developer?'
 
 # Load the latest sbuild log file and ask a question
 debgpt -Hx sbuild: -A 'why does the build fail? do you have any suggestion?'

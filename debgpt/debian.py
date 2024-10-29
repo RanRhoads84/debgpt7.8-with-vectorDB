@@ -532,12 +532,12 @@ def mapreduce_parse_path(path: str, debgpt_home: str) -> str:
     '''
     parse the path string and return the actual path or URL.
 
-    e.g. :policy -> <debgpt_home>/policy.txt
+    e.g. policy: -> <debgpt_home>/policy.txt
     '''
     if path.startswith(':'):
-        if path == ':policy':
+        if path == 'policy:':
             return os.path.join(debgpt_home, 'policy.txt')
-        elif path == ':devref':
+        elif path == 'devref:':
             return os.path.join(debgpt_home, 'devref.txt')
         else:
             raise ValueError(f'Undefined special path {path}')
@@ -561,25 +561,23 @@ def mapreduce_load_any(
     '''
     load file or directory and return the chunked contents
     '''
-    if path.startswith(':'):
-        if path == ':policy':
-            lines = debgpt_policy.DebianPolicy(
-                os.path.join(args.debgpt_home, 'policy.txt')).lines
-            return _mapreduce_chunk_lines('Debian Policy',
-                                          0,
-                                          len(lines),
-                                          lines,
-                                          chunk_size=chunk_size)
-        elif path == ':devref':
-            lines = debgpt_policy.DebianDevref(
-                os.path.join(args.debgpt_home, 'devref.txt')).lines
-            return _mapreduce_chunk_lines('Debian Developer Reference',
-                                          0,
-                                          len(lines),
-                                          lines,
-                                          chunk_size=chunk_size)
-        else:
-            raise ValueError(f'Undefined special path {path}')
+    if path == 'policy:':
+        lines = debgpt_policy.DebianPolicy(
+            os.path.join(args.debgpt_home, 'policy.txt')).lines
+        return _mapreduce_chunk_lines('Debian Policy',
+                                      0,
+                                      len(lines),
+                                      lines,
+                                      chunk_size=chunk_size)
+
+    elif path == 'devref:':
+        lines = debgpt_policy.DebianDevref(
+            os.path.join(args.debgpt_home, 'devref.txt')).lines
+        return _mapreduce_chunk_lines('Debian Developer Reference',
+                                      0,
+                                      len(lines),
+                                      lines,
+                                      chunk_size=chunk_size)
 
     elif path == 'sbuild:':
         '''
