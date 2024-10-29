@@ -510,6 +510,7 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     _g.add_argument('--mapreduce',
                     '--map',
                     '-x',
+                    action='append',
                     type=str,
                     help='load any file or directory for an answer')
     _g.add_argument('--mapreduce_chunksize',
@@ -802,6 +803,7 @@ def gather_information_ordered(msg: Optional[str], ag,
     the specified information into the first prompt. If none specified,
     return None.
     '''
+    __has_done_mapreduce = False
 
     def _append_info(msg: str, info: str) -> str:
         msg = '' if msg is None else msg
@@ -828,7 +830,11 @@ def gather_information_ordered(msg: Optional[str], ag,
             func = getattr(debian, key)
             msg = _append_info(msg, func(spec, debgpt_home=ag.debgpt_home))
         elif key == 'mapreduce':
+            # but we only do once for mapreduce
+            if __has_done_mapreduce:
+                continue
             msg = _append_info(msg, mapreduce_super_long_context(ag))
+            __has_done_mapreduce = True
         else:
             raise NotImplementedError(key)
 

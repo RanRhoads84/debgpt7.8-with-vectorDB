@@ -28,6 +28,7 @@ from . import policy as debgpt_policy
 from bs4 import BeautifulSoup
 import os
 import subprocess
+import functools as ft
 import sys
 import glob
 import rich
@@ -626,7 +627,7 @@ def mapreduce_load_any(
 
 
 def mapreduce_load_any_astext(
-    path: str,
+    path: Union[str|List[str]],
     chunk_size: int = 8192,
     *,
     user_question: str = '',
@@ -635,6 +636,15 @@ def mapreduce_load_any_astext(
     '''
     load file or directory and return the contents as a list of lines
     '''
+    # if list, reduce and concur recursively
+    if isinstance(path, list):
+        texts = [mapreduce_load_any_astext(p,
+                                           chunk_size=chunk_size,
+                                           user_question=user_question,
+                                           args=args) for p in path]
+        texts = ft.reduce(list.__add__, texts)
+        return texts
+    # if str, deal with the concrete loading
     chunkdict = mapreduce_load_any(path,
                                    chunk_size=chunk_size,
                                    user_question=user_question,

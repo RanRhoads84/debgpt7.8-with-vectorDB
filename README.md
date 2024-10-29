@@ -220,6 +220,9 @@ debgpt -Hx ./debian -A 'how is this package built? how many binary packages will
 debgpt -Hx policy: -A 'what is the changes of the latest version compared to the previous version?'
 debgpt -Hx policy: -A 'what package should enter contrib instead of main or non-free?'
 
+# If you don't really bother to read anything, for instance:
+debgpt -H -x policy: -x devref: -a 'which document talk about Multi-Arch: ?'
+
 # Load Debian Developer Reference (plain text) and ask a question
 debgpt -Hx devref: -A 'How can I become a debian developer?'
 debgpt -Hx devref: -a 'how does general resolution work?'
