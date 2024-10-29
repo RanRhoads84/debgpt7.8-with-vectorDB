@@ -60,9 +60,10 @@ debgpt
 debgpt -Hx policy: -a "what is the latest changes in this policy?"
 ```
 
-This depends on the commercial OpenAI API service. If you want to switch
-to a different service provider or self-hosted LLM backend, please
-read the following sections and configure the software before use.
+This depends on the [commercial OpenAI API service](https://platform.openai.com/api-keys).
+If you want to switch to a
+different service provider or self-hosted LLM backend, please read the
+following sections and configure the software before use.
 
 CONFIGURATION
 =============
