@@ -194,6 +194,8 @@ used to replay the session in specified file. When `<file_name>` is not given,
 
 #### 2. Special MapReduce Prompt Composer for Any Length Context
 
+> This `MapReduce` is a key feature of DebGPT.
+
 Generally, LLMs have a limited context length. If you want to ask a question
 regarding a very long context, you can split the context into multiple parts,
 and extract the relevant information from each part. Then, you can ask the
