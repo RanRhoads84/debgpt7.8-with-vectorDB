@@ -297,6 +297,7 @@ Similarly, we can also let LLM read the Policy section 4.9.1, and ask it to
 write some code:
 
 ```
+debgpt -Hf README.md -a 'very briefly teach me how to use this software.'
 debgpt -H -f pytorch/debian/rules --policy 4.9.1 -A "Implement the support for the 'nocheck' tag based on the example provided in the policy document."
 ```
 
