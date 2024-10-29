@@ -251,17 +251,20 @@ To further tweak the mapreduce behavior, you may want to check the
 
 #### 3. Standard Query Composers for Texts that Fit in Context Window
 
+> This section is WIP and messy currently.
+
 Ask LLM to summarize the BTS page for `src:pytorch`.
 
 ```
-debgpt -HQ --bts src:pytorch -A :summary_table
+debgpt -HQ --bts src:pytorch -A 'Please summarize the above information. Make a table to organize it.'
 debgpt -HQ --bts 1056388 -A :summary
+    'Please summarize the above information.',
 ```
 
 Lookup the build status for package `glibc` and summarize as a table.
 
 ```
-debgpt -HQ --buildd glibc -A :summary_table
+debgpt -HQ --buildd glibc -A 'Please summarize the above information. Make a table to organize it.'
 ```
 
 When the argument to `-A/--ask` is a tag starting with a colon sign `:`, such
@@ -277,6 +280,7 @@ Load a section of debian policy document, such as section "4.6", and ask a quest
 ```
 debgpt -H --policy 7.2 -A "what is the difference between Depends: and Pre-Depends: ?"
 debgpt -H --devref 5.5 -A :summary
+    'Please summarize the above information.',
 ```
 
 
@@ -336,27 +340,29 @@ debgpt -Hf pyproject.toml -A 'what is the purpose of this file'
 
 You can also specify the line range in a special grammar for `-f/--file`:
 ```
-debgpt -H -f pyproject.toml:3-10 -A :what  # select the [3,10) lines
-debgpt -H -f pyproject.toml:-10 -A :what   # select from beginning to 10th (excluding 10th)
-debgpt -H -f pyproject.toml:3- -A :what  # select from 3th line (including) to end of file
+debgpt -H -f pyproject.toml:3-10 -A 'explain it'  # select the [3,10) lines
+debgpt -H -f pyproject.toml:-10 -A 'explain it'   # select from beginning to 10th (excluding 10th)
+debgpt -H -f pyproject.toml:3- -A 'explain it'  # select from 3th line (including) to end of file
 ```
 
 Mimicking `licensecheck`:
 
 ```
-debgpt -H -f debgpt/llm.py -A :licensecheck
+debgpt -H -f debgpt/llm.py -A 'What is the license of this file? Just tell me the SPDX identifier, and answer in the shortest format.'
 ```
 
 Make the mailing list long story short:
 
 ```
 debgpt -H --html 'https://lists.debian.org/debian-project/2023/12/msg00029.html' -A :summary
+    'Please summarize the above information.',
 ```
 
 Explain the differences among voting options:
 
 ```
 debgpt -H --html 'https://www.debian.org/vote/2022/vote_003' -A :diff --openai_model gpt-3.5-turbo-16k
+    'Please explain the differences among the above choices.',
 ```
 
 In this example, we had to switch to a model supporting a long context (the
