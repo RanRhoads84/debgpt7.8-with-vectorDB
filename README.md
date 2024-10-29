@@ -227,9 +227,9 @@ debgpt -Hx devref: -A 'How can I become a debian developer?'
 debgpt -Hx devref: -a 'how does general resolution work?'
 ```
 
-* If you don't really bother to read anything, for instance:
+* If you don't really bother to read `policy:` and `devref:`, or forgot which one is talking about the question in you mind, for instance:
 ```
-debgpt -H -x policy: -x devref: -a 'which document talk about Multi-Arch: ?'
+debgpt -H -x policy: -x devref: -a 'which document (and which section) talk about Multi-Arch: ?'
 ```
 
 * Load the latest sbuild log file and ask a question
@@ -262,8 +262,6 @@ API service.
 
 #### 3. Standard Prompt Composers for Texts that Fit in Context Window
 
-> This section is WIP and messy currently.
-
 Prompt Composer is a function that reads the plain text contents from the
 specified resource, and wrap them as a part of a prompt for the LLM. In the
 previous section we have seens the special prompt composer `MapReduce`, which
@@ -271,12 +269,14 @@ works differently from the standard prompt composers that will be introduced
 here. Note, the query composers (including special one) can be arbitrarily
 combined together through command line arguments.
 
+
 **[-f|--file]**
 
 The first to introduce is the very general `--file|-f` query composer,
 which loads a text file from the specified path.
 
 ```
+debgpt -Hf README.md -a 'very briefly teach me how to use this software.'
 debgpt -Hf debgpt/policy.py -A 'explain this file'  # --file|-f for small file
 debgpt -Hx debgpt/cli.py -a 'explain this file'     # Use --mapreduce|-x if file too large
 
@@ -292,17 +292,20 @@ debgpt -Hf pyproject.toml:-10  -A 'explain it'  # select the [0,10) lines
 debgpt -Hf pyproject.toml:3-   -A 'explain it'  # select the [3,end) lines
 ```
 
+The rest prompt composers are ordered alphabetically.
 
 
-
-
+**[--bts]**
 
 Ask LLM to summarize the BTS page for `src:pytorch`.
 
 ```
 debgpt -HQ --bts src:pytorch -A 'Please summarize the above information. Make a table to organize it.'
-debgpt -HQ --bts 1056388 -A 'Please summarize the above information.',
+debgpt -HQ --bts 1056388 -A 'Please summarize the above information.'
 ```
+
+
+**[--buildd]**
 
 Lookup the build status for package `glibc` and summarize as a table.
 
@@ -311,41 +314,7 @@ debgpt -HQ --buildd glibc -A 'Please summarize the above information. Make a tab
 ```
 
 
-Load a section of debian policy document, such as section "4.6", and ask a question
-
-```
-debgpt -H --policy 7.2 -A "what is the difference between Depends: and Pre-Depends: ?"
-debgpt -H --devref 5.5 -A :summary
-    'Please summarize the above information.',
-```
-
-
-Load the debhelper manpage and ask it to extract a part of it.
-
-```
-debgpt -HQ --man debhelper-compat-upgrade-checklist -A "what's the change between compat 13 and compat 14?"
-debgpt -HQ --tldr curl --cmd 'curl -h' -A "download https://localhost/bigfile.iso to /tmp/workspace, in silent mode"
-```
-
-
-We can add code file and Debian Policy simultaneously. The combination
-is actually very flexible, and you can put anything in the prompt.
-In the following example, we put the `debian/control` file from the
-PyTorch package, as well as the Debian Policy section 7.4, and asks the LLM
-to explain some details:
-
-```
-debgpt -H -f pytorch/debian/control --policy 7.4 -A "Explain what Conflicts+Replaces means in pytorch/debian/control based on the provided policy document"
-```
-
-Similarly, we can also let LLM read the Policy section 4.9.1, and ask it to
-write some code:
-
-```
-debgpt -Hf README.md -a 'very briefly teach me how to use this software.'
-debgpt -H -f pytorch/debian/rules --policy 4.9.1 -A "Implement the support for the 'nocheck' tag based on the example provided in the policy document."
-```
-
+**[--cmd]**
 
 Being able to pipe the inputs and outputs among different programs is one of
 the reasons why I love the UNIX philosophy.
@@ -364,32 +333,68 @@ based on the currently staged changes:
 debgpt -HQ --cmd 'git diff --staged' -A 'Briefly describe the change as a git commit message.'
 ```
 
-This looks interesting, right? In the next example, we have something even
-more convenient!
+This looks interesting, right? `debgpt` has a git wrapper that automatically
+generates the git commit message for the staged contents and commit the message.
+Just try `debgpt git commit --amend` to see how it works. This will also be
+mentioned in the subcommands section.
 
 
-
+**[--html]**
 
 Make the mailing list long story short:
 
 ```
-debgpt -H --html 'https://lists.debian.org/debian-project/2023/12/msg00029.html' -A :summary
-    'Please summarize the above information.',
+debgpt -H --html 'https://lists.debian.org/debian-project/2023/12/msg00029.html' -A 'Please summarize the above information.',
 ```
 
 Explain the differences among voting options:
 
 ```
-debgpt -H --html 'https://www.debian.org/vote/2022/vote_003' -A :diff --openai_model gpt-3.5-turbo-16k
-    'Please explain the differences among the above choices.',
+debgpt -H --html 'https://www.debian.org/vote/2022/vote_003' -A 'Please explain the differences among the above choices.'
 ```
 
-In this example, we had to switch to a model supporting a long context (the
-HTML page has roughly 5k tokens).
+
+**[--man, --tldr]**
+
+Load the debhelper manpage and ask it to extract a part of it.
+
+```
+debgpt -HQ --man debhelper-compat-upgrade-checklist -A "what's the change between compat 13 and compat 14?"
+debgpt -HQ --tldr curl --cmd 'curl -h' -A "download https://localhost/bigfile.iso to /tmp/workspace, in silent mode"
+```
 
 
+**[--policy, --devref]**
 
-#### 5. External Command Wrapper and Subcommands
+Load a section of debian policy document, such as section "7.2", and ask a question
+
+```
+debgpt -H --policy 7.2 -A "what is the difference between Depends: and Pre-Depends: ?"
+debgpt -H --devref 5.5 -A :summary
+    'Please summarize the above information.',
+```
+
+
+**Arbitrary Combination of Prompt Composers**
+
+We can add code file and Debian Policy simultaneously. 
+In the following example, we put the `debian/control` file from the
+PyTorch package, as well as the Debian Policy section 7.4, and asks the LLM
+to explain some details:
+
+```
+debgpt -H -f pytorch/debian/control --policy 7.4 -A "Explain what Conflicts+Replaces means in pytorch/debian/control based on the provided policy document"
+```
+
+Similarly, we can also let LLM read the Policy section 4.9.1, and ask it to
+write some code:
+
+```
+debgpt -H -f pytorch/debian/rules --policy 4.9.1 -A "Implement the support for the 'nocheck' tag based on the example provided in the policy document."
+```
+
+
+#### 4. External Command Wrapper and Subcommands
 
 Let LLM automatically generate the git commit message, and call git to commit it:
 
@@ -397,8 +402,26 @@ Let LLM automatically generate the git commit message, and call git to commit it
 debgpt git commit --amend
 ```
 
+If you don't even want to `git commit --amend` the commited message, just
+remove `--amend` from it.
 
 
+#### 5. Prompt Engineering
+
+An important aspect of using LLMs is prompt engineering. The way you ask a
+question significantly impacts the quality of the results you will get.
+Make sure to provide as much information as possible. The following are some
+references on this topic:
+
+1. OpenAI's Guide https://platform.openai.com/docs/guides/prompt-engineering
+2. Chain-of-Thought (CoT): https://arxiv.org/pdf/2205.11916.pdf
+
+
+#### 6. Frequently Seen Issues
+
+* Context overlength: If the result from query composers is too long, you
+  can switch to the `--mapreduce|-x` special composer, or switch to a model
+  or backend or service provider that supports longer context.
 
 
 #### 99. You Name It
@@ -407,16 +430,6 @@ The usage of LLM is limited by our imaginations. I am glad to hear from you if
 you have more good ideas on how we can make LLMs useful for Debian development:
 https://salsa.debian.org/deeplearning-team/debgpt/-/issues
 
-
-HINTS: PROMPT ENGINEERING
-=========================
-
-When you chat with LLM, note that the way you ask a question significant
-impacts the quality of the results you will get. make sure to provide as much
-information as possible. The following are some references on this topic:
-
-1. OpenAI's Guide https://platform.openai.com/docs/guides/prompt-engineering
-2. Chain-of-Thought (CoT): https://arxiv.org/pdf/2205.11916.pdf
 
 
 SELF-CONTAINED BACKEND
@@ -519,7 +532,6 @@ TODO
 
 The following is the current **TODO List**.Some ideas might be a little bit far away.
 
-1. add `--google` search option. should dive into the links from search results with depth 1.
 1. https://github.com/openai/chatgpt-retrieval-plugin
 1. implement `--archwiki` `--gentoowiki` `--debianwiki` `--fedorawiki` `--wikipedia` (although the LLM have already read the wikipedia dump many times)
 1. analyze udd, ddpo, contributors, nm
