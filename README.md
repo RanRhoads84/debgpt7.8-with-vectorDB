@@ -208,41 +208,38 @@ simply assume that you want to summarize the provided information.
 Some usage examples are as follows:
 
 ```
-debgpt -Hx <path-specifier> -A <your-question>
-debgpt -Hx ./debian -A 'how is this package built? how many binary packages will be produced?'
-debgpt -Hx :policy -A 'what is the changes of the latest version compared to the previous version?'
-debgpt -Hx :policy -A 'what package should enter contrib instead of main or non-free?'
-debgpt -Hx :devref -A 'How can I become a debian developer?'
-debgpt -Hx :sbuild -A 'why does the build fail? do you have any suggestion?'
+# Load a file and ask a question
 debgpt -Hx resume.pdf -A 'Does this person know AI? To what extent?'
 
-# Google search: "-x google:<search_query>" will load the searched pages.
+# Load a directory and ask a question
+debgpt -Hx ./debian -A 'how is this package built? how many binary packages will be produced?'
+
+# Load Debian Policy (plain text) and ask a question
+debgpt -Hx :policy -A 'what is the changes of the latest version compared to the previous version?'
+debgpt -Hx :policy -A 'what package should enter contrib instead of main or non-free?'
+
+# Load Debian Developer Reference (plain text) and ask a question
+debgpt -Hx :devref -A 'How can I become a debian developer?'
+
+# Load the latest sbuild log file and ask a question
+debgpt -Hx sbuild: -A 'why does the build fail? do you have any suggestion?'
+
+# Google search: `-x google:<search_query>` will load the searched pages.
 debgpt -Hx 'google:debian packaging' -a 'how to learn debian packaging?'
 
-# Google search: "-x google:" will use the argument for "-a" as the search query.
+# Google search: `-x google:` will use the argument for "-a" as the search query.
 debgpt -Hx google: -a 'python programming'
 ```
 
-See https://salsa.debian.org/deeplearning-team/debgpt/-/issues/6 for some
-examples with their corresponding outputs.
-
-Here is the list of supported paths specifiers:
-
-* `:policy`: Load the Debian Policy document (plain text).
-* `:devref`: Load the Debian Developer Reference document (plain text).
-* `:sbuild`: Load the latest sbuild log file from the parent directory.
-* `<file_path>`: Load the file as plain text. Non-text formats including PDF are supported.
-* `<directory_path>`: Load every file from the given directory.
+The idea behind this is fairly simple: binary split the gathered information
+texts until the chunk size is smaller than a pre-defined size, and then pairwise
+reduce those results using LLM until there is only one chunk left.  As a
+result, this functionality can be very quota-consuming if you are going to deal
+with long texts. Please keep an eye on your bill when you try this on a paied
+API service.
 
 To further tweak the mapreduce behavior, you may want to check the
 `--mapreduce_chunksize <int>` and `--mapreduce_parallelism <int>` arguments.
-
-The idea behind this is fairly simple: binary split the input text until the
-chunk size is smaller than a pre-defined size, and then pairwise reduce those
-results using LLM until there is only one chunk left.  As a result, this
-functionality can be very quota-consuming if you are going to deal with long
-texts. Please keep an eye on your bill when you try this on a paied API
-service.
 
 #### 3. Standard Query Composers for Texts that Fit in Context Window
 

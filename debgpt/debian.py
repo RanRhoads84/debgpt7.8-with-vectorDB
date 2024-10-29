@@ -539,14 +539,14 @@ def mapreduce_parse_path(path: str, debgpt_home: str) -> str:
             return os.path.join(debgpt_home, 'policy.txt')
         elif path == ':devref':
             return os.path.join(debgpt_home, 'devref.txt')
-        elif path == ':sbuild':
-            if not os.path.exists('./debian'):
-                raise FileNotFoundError(
-                    './debian directory not found. Are you in the right directory?'
-                )
-            return _latest_glob('../*.build')
         else:
             raise ValueError(f'Undefined special path {path}')
+    elif path == 'sbuild:':
+        if not os.path.exists('./debian'):
+            raise FileNotFoundError(
+                './debian directory not found. Are you in the right directory?'
+            )
+        return _latest_glob('../*.build')
     else:
         return path
 
@@ -578,19 +578,21 @@ def mapreduce_load_any(
                                           len(lines),
                                           lines,
                                           chunk_size=chunk_size)
-        elif path == ':sbuild':
-            '''
-            load the latest sbuild buildlog. we will automatically figure out the
-            latest buildlog file in the parent directory.
-            '''
-            if not os.path.exists('./debian'):
-                raise FileNotFoundError(
-                    './debian directory not found. Are you in the right directory?'
-                )
-            latest_build_log = _latest_glob('../*.build')
-            return mapreduce_load_file(latest_build_log, chunk_size)
         else:
             raise ValueError(f'Undefined special path {path}')
+
+    elif path == 'sbuild:':
+        '''
+        load the latest sbuild buildlog. we will automatically figure out the
+        latest buildlog file in the parent directory.
+        '''
+        if not os.path.exists('./debian'):
+            raise FileNotFoundError(
+                './debian directory not found. Are you in the right directory?'
+            )
+        latest_build_log = _latest_glob('../*.build')
+        return mapreduce_load_file(latest_build_log, chunk_size)
+
     elif path.startswith('google:'):
         query = path[7:] if len(path) > 7 else user_question
         urls = google_search(query)
@@ -614,6 +616,7 @@ def mapreduce_load_any(
                                            lines,
                                            chunk_size=chunk_size))
         return chunkdict
+
     elif any(path.startswith(x) for x in ('file://', 'http://', 'https://')):
         return mapreduce_load_url(path, chunk_size=chunk_size)
     elif os.path.isdir(path):
