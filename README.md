@@ -181,7 +181,7 @@ debgpt -A "Who are you? And what can LLM do?"
 
 By specifying the `--quit|-Q` option, the program will quit after receiving
 the first response from LLM. For instance, we can let it mimic `fortune`
-with temperature 1.0 ('--temperature|-T 1.0') for higher randomness:
+with temperature 1.0 (`--temperature|-T 1.0`) for higher randomness:
 
 ```
 debgpt -T 1.0 -QA 'Greet with me, and tell me a joke.'
@@ -201,8 +201,8 @@ LLM to answer the question based on the extracted information.
 
 We have implemented it as a special feature in the `debgpt` tool. You can use
 this functionality through the `--mapreduce|-x` argument.  We need the
-`--ask|-A` argument to tell LLM what kind of question we want to ask so it can
-extract the right information. If `--ask|-A` is not provided, the tool will
+`--ask|-A|-a` argument to tell LLM what kind of question we want to ask so it can
+extract the right information. If `--ask|-A|-a` is not provided, the tool will
 simply assume that you want to summarize the provided information.
 
 Some usage examples are as follows:
@@ -220,6 +220,7 @@ debgpt -Hx policy: -A 'what package should enter contrib instead of main or non-
 
 # Load Debian Developer Reference (plain text) and ask a question
 debgpt -Hx devref: -A 'How can I become a debian developer?'
+debgpt -Hx devref: -a 'how does general resolution work?'
 
 # Load the latest sbuild log file and ask a question
 debgpt -Hx sbuild: -A 'why does the build fail? do you have any suggestion?'
