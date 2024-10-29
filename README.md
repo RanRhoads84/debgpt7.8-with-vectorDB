@@ -46,12 +46,17 @@ pip3 install debgpt
 pip3 install git+https://salsa.debian.org/deeplearning-team/debgpt.git
 ```
 
-The following command will start a chatting session with the OpenAI API
-without going through the configuration process.
+The following commands allows you to try DebGPT without going through
+any configuration immediately after installation.
 
 ```
+# The minimum `configuration` required to make debgpt work
 export OPENAI_API_KEY="your-api-key"
-debgpt -A "Who are you? And what can LLM do?"
+
+# start a chat with LLM
+debgpt
+
+# try the most important feature of debgpt
 debgpt -Hx policy: -a "what is the latest changes in this policy?"
 ```
 
