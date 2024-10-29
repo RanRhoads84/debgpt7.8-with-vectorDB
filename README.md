@@ -13,7 +13,6 @@ SYNOPSIS
 ========
 
 `debgpt [CLI-behavior-options] [frontend-options] [prompt-composers] [subcommands]`
-`debgpt --help|-h`
 
 DESCRIPTION
 ===========
