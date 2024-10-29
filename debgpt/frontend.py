@@ -179,7 +179,7 @@ class OpenAIFrontend(AbstractFrontend):
             console.log(f'{self.NAME}> model={repr(self.model)}, ' +
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
-    def oneshot(self, message: str, *, retry: bool = True) -> str:
+    def oneshot(self, message: str) -> str:
 
         def _func() -> str:
             _callable = self.client.chat.completions.create
@@ -192,8 +192,7 @@ class OpenAIFrontend(AbstractFrontend):
             return completions.choices[0].message.content
 
         from openai import RateLimitError
-        func = retry_ratelimit(_func, RateLimitError) if retry else _func
-        return func()
+        return retry_ratelimit(_func, RateLimitError)()
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
@@ -267,7 +266,7 @@ class AnthropicFrontend(AbstractFrontend):
             console.log(f'{self.NAME}> model={repr(self.model)}, ' +
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
-    def oneshot(self, message: str, *, retry: bool = True) -> str:
+    def oneshot(self, message: str) -> str:
 
         def _func():
             _callable = self.client.messages.create
@@ -281,8 +280,7 @@ class AnthropicFrontend(AbstractFrontend):
             return completion.content[0].text
 
         from anthropic import RateLimitError
-        func = retry_ratelimit(_func, RateLimitError) if retry else _func
-        return func()
+        return retry_ratelimit(_func, RateLimitError)()
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
@@ -362,8 +360,7 @@ class GeminiFrontend(AbstractFrontend):
             return result.text
 
         from google.api_core.exceptions import ResourceExhausted
-        func = retry_ratelimit(_func, ResourceExhausted) if retry else _func
-        return func()
+        return retry_ratelimit(_func, ResourceExhausted)()
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         # add the message into the session
