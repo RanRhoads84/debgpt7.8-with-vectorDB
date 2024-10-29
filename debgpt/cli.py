@@ -530,13 +530,12 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     config_template = __add_arg_to_config(config_template, _g,
                                           'mapreduce_parallelism')
     # -- 999. The Question Template at the End of Prompt
-    _g.add_argument(
-        '--ask',
-        '-A',
-        '-a',
-        type=str,
-        default='',
-        help="User question to append at the end of the prompt. ")
+    _g.add_argument('--ask',
+                    '-A',
+                    '-a',
+                    type=str,
+                    default='',
+                    help="User question to append at the end of the prompt. ")
 
     # Task Specific Subparsers
     subps = ag.add_subparsers(dest='subparser_name',
