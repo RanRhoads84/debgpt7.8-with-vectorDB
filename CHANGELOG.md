@@ -1,6 +1,27 @@
 Changelog
 =========
 
+v0.5.93 -- 2024-10-29
+---------------------
+
+New feature:
+
+* 214c1c3 cli: add google search support for context loading (mapreduce)
+
+Major changes:
+
+* 34def61 debian: change `:sbuild` into `sbuild:` for mapreduce
+* 1d20dee debian: change :policy and :devref into policy: and devref: for mapreduce
+* cca73a8 cli: enable markdown rendering by default
+
+Minor updates, documentation, and bugfixes:
+
+* 5bb734c cli: allow specifying --mapreduce multiple times.
+* 56aebed defaults: deprecate the default question templates. Difficult to remember and hence useless
+* Improve readme.
+* 816a7e3 do not remove left prompt when rendering LLM response as markdown
+* 69a8a8a frontend: always retry in oneshot methods
+
 v0.5.92 -- 2024-10-28
 ---------------------
 
