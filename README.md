@@ -212,6 +212,8 @@ Some usage examples are as follows:
 debgpt -Hx resume.pdf -A 'Does this person know AI? To what extent?'
 
 # Load a directory and ask a question
+debgpt -Hx . -a 'which file implemented mapreduce? how does it work?'
+debgpt -Hx . -a 'teach me how to use this software. Is there any hidden functionality that is not written in its readme?'
 debgpt -Hx ./debian -A 'how is this package built? how many binary packages will be produced?'
 
 # Load Debian Policy (plain text) and ask a question
