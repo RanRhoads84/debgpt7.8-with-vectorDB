@@ -59,6 +59,9 @@ def retry_ratelimit(func: callable,
                     retry_interval: int = 15):
     '''
     a decorator to retry the function call when exception occurs.
+
+    OpenAI API doc provides some other methods to retry:
+    https://platform.openai.com/docs/guides/rate-limits/error-mitigation
     '''
 
     @ft.wraps(func)
