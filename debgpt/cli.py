@@ -746,7 +746,7 @@ def mapreduce_super_long_context(ag) -> str:
                                    chunks),
                       total=len(chunks),
                       description=
-                      f'MapReduce[{ag.mapreduce_parallelism}]: initial pass',
+                      f'MapReduce[{ag.mapreduce_parallelism}]:',
                       transient=True))
         while len(results) > 1:
             console.print(
@@ -762,7 +762,7 @@ def mapreduce_super_long_context(ag) -> str:
                             pairs),
                         total=len(pairs),
                         description=
-                        f'Mapreduce[{ag.mapreduce_parallelism}]: intermediate pass',
+                        f'Mapreduce[{ag.mapreduce_parallelism}]:',
                         transient=True))
             if len(results) % 2 == 1:
                 new_results.append(results[-1])
