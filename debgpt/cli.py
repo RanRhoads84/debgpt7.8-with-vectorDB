@@ -656,9 +656,16 @@ def mapreduce_super_long_context(ag) -> str:
       3. reduce (aggregate) the results using LLM
       4. return the aggregated LLM output
     '''
+    # TODO: parse special questions like does in gather_information_ordered()
+    if ag.ask:
+        user_question = ag.ask
+    else:
+        user_question = 'summarize the above contents.'
+
     chunks = debian.mapreduce_load_any_astext(ag.mapreduce,
                                               ag.mapreduce_chunksize,
-                                              debgpt_home=ag.debgpt_home)
+                                              user_question=user_question,
+                                              args=ag)
     console.print(
         f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}'
     )
@@ -666,11 +673,6 @@ def mapreduce_super_long_context(ag) -> str:
         for i, chunk in enumerate(chunks):
             firstline = chunk.split('\n')[:1]
             console.print(f'  [bold]Chunk {i}[/bold]: {firstline}...')
-    # TODO: parse special questions like does in gather_information_ordered()
-    if ag.ask:
-        user_question = ag.ask
-    else:
-        user_question = 'summarize the above contents.'
 
     def _shorten(s: str, maxlen: int = 100) -> str:
         return textwrap.shorten(s[::-1], width=maxlen,

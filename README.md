@@ -215,6 +215,12 @@ debgpt -Hx :policy -A 'what package should enter contrib instead of main or non-
 debgpt -Hx :devref -A 'How can I become a debian developer?'
 debgpt -Hx :sbuild -A 'why does the build fail? do you have any suggestion?'
 debgpt -Hx resume.pdf -A 'Does this person know AI? To what extent?'
+
+# Google search: "-x google:<search_query>" will load the searched pages.
+debgpt -Hx 'google:debian packaging' -a 'how to learn debian packaging?'
+
+# Google search: "-x google:" will use the argument for "-a" as the search query.
+debgpt -Hx google: -a 'python programming'
 ```
 
 See https://salsa.debian.org/deeplearning-team/debgpt/-/issues/6 for some

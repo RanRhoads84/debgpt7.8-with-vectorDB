@@ -21,6 +21,7 @@ dependencies = [
     'requests',
     'bs4',
     'tomli',
+    'tenacity'
 ]
 authors = [
   {name = "Mo Zhou", email = "lumin@debian.org"},

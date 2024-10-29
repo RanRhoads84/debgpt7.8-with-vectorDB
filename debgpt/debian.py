@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-from typing import List, Union, Dict, Tuple
+from typing import List, Union, Dict, Tuple, Optional
 import re
 import requests
 from . import policy as debgpt_policy
@@ -32,7 +32,10 @@ import sys
 import glob
 import rich
 import mimetypes
-from urllib.request import urlopen
+import tenacity
+import concurrent.futures
+from urllib.request import urlopen, Request
+from urllib.parse import quote
 
 console = rich.get_console()
 
@@ -146,12 +149,30 @@ def _latest_glob(pattern: str) -> str:
     return _latest_file(glob.glob(pattern))
 
 
+@tenacity.retry(stop=tenacity.stop_after_attempt(3),
+                wait=tenacity.wait_fixed(5))
 def _load_url(url: str) -> List[str]:
-    with urlopen(url) as response:
-        content = response.read().decode('utf-8')
+    headers = {
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    }
+    req = Request(url, headers=headers)
+    with urlopen(req) as response:
+        try:
+            content = response.read().decode('utf-8')
+        except UnicodeDecodeError:
+            console.log(f'Failed to read {repr(url)} as utf-8. Giving up.')
+            return ['']
         lines = content.splitlines()
     lines = [x.rstrip() for x in lines]
     return lines
+
+
+def _load_url_parsed(url: str) -> str:
+    content = '\n'.join(_load_url(url))
+    soup = BeautifulSoup(content, features="html.parser")
+    text = soup.get_text().strip()
+    return text.split('\n')
 
 
 def _load_pdf(file_path: str) -> list[str]:
@@ -179,6 +200,37 @@ def _load_pdf(file_path: str) -> list[str]:
             text += page.extract_text()
 
     return text.split('\n')
+
+
+@tenacity.retry(stop=tenacity.stop_after_attempt(3),
+                wait=tenacity.wait_fixed(5))
+def google_search(query: str) -> List[str]:
+    # Format the query for URL
+    query = quote(query)
+
+    # Send request to Google
+    url = f"https://www.google.com/search?q={query}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
+                + "AppleWebKit/537.36 (KHTML, like Gecko) " \
+                + "Chrome/91.0.4472.124 Safari/537.36"
+    }
+    response = requests.get(url, headers=headers)
+
+    # Parse the response
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    # Find search results
+    search_results = soup.find_all('div', class_='g')
+
+    results = []
+    for result in search_results:
+        title = result.find('h3')
+        link = result.find('a')
+        if title and link:
+            results.append(link.get('href'))
+
+    return results
 
 
 #####################################
@@ -503,7 +555,8 @@ def mapreduce_load_any(
     path: str,
     chunk_size: int = 8192,
     *,
-    debgpt_home: str = '.',
+    user_question: str = '',
+    args: Optional[object] = None,
 ) -> Dict[Tuple[str, int, int], List[str]]:
     '''
     load file or directory and return the chunked contents
@@ -511,7 +564,7 @@ def mapreduce_load_any(
     if path.startswith(':'):
         if path == ':policy':
             lines = debgpt_policy.DebianPolicy(
-                os.path.join(debgpt_home, 'policy.txt')).lines
+                os.path.join(args.debgpt_home, 'policy.txt')).lines
             return _mapreduce_chunk_lines('Debian Policy',
                                           0,
                                           len(lines),
@@ -519,7 +572,7 @@ def mapreduce_load_any(
                                           chunk_size=chunk_size)
         elif path == ':devref':
             lines = debgpt_policy.DebianDevref(
-                os.path.join(debgpt_home, 'devref.txt')).lines
+                os.path.join(args.debgpt_home, 'devref.txt')).lines
             return _mapreduce_chunk_lines('Debian Developer Reference',
                                           0,
                                           len(lines),
@@ -538,6 +591,29 @@ def mapreduce_load_any(
             return mapreduce_load_file(latest_build_log, chunk_size)
         else:
             raise ValueError(f'Undefined special path {path}')
+    elif path.startswith('google:'):
+        query = path[7:] if len(path) > 7 else user_question
+        urls = google_search(query)
+        if args.verbose:
+            console.log(f'Google Search Results for {repr(query)}:', urls)
+        else:
+            console.log(f'Got {len(urls)} Google Search Results for {repr(query)}.')
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {
+                executor.submit(_load_url_parsed, url): url
+                for url in urls
+            }
+            chunkdict = {}
+            for future in concurrent.futures.as_completed(futures):
+                url = futures[future]
+                lines = future.result()
+                chunkdict.update(
+                    _mapreduce_chunk_lines(url,
+                                           0,
+                                           len(lines),
+                                           lines,
+                                           chunk_size=chunk_size))
+        return chunkdict
     elif any(path.startswith(x) for x in ('file://', 'http://', 'https://')):
         return mapreduce_load_url(path, chunk_size=chunk_size)
     elif os.path.isdir(path):
@@ -552,14 +628,16 @@ def mapreduce_load_any_astext(
     path: str,
     chunk_size: int = 8192,
     *,
-    debgpt_home: str = '.',
+    user_question: str = '',
+    args: Optional[object] = None,
 ) -> List[str]:
     '''
     load file or directory and return the contents as a list of lines
     '''
     chunkdict = mapreduce_load_any(path,
                                    chunk_size=chunk_size,
-                                   debgpt_home=debgpt_home)
+                                   user_question=user_question,
+                                   args=args)
     texts = []
     for (path, start, end), lines in chunkdict.items():
         txt = f'File: {path} (lines {start}-{end})\n'
