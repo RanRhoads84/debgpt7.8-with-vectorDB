@@ -535,10 +535,8 @@ Their prices vary. See https://platform.openai.com/docs/models .')
         '-A',
         '-a',
         type=str,
-        default=defaults.QUESTIONS[':none'],
-        help="Question template to append at the end of the prompt. " +
-        "Specify ':' for printing all available templates. " +
-        "Or a customized string not starting with the colon.")
+        default='',
+        help="User question to append at the end of the prompt. ")
 
     # Task Specific Subparsers
     subps = ag.add_subparsers(dest='subparser_name',
@@ -839,21 +837,7 @@ def gather_information_ordered(msg: Optional[str], ag,
     # --ask should be processed as the last one
     if ag.ask:
         msg = '' if msg is None else msg
-        # append customized question template to the prompt
-        if ag.ask in ('?', ':', ':?'):
-            # ":?" means to print available options and quit
-            console.print(
-                'Available question templates for argument -A/--ask:')
-            defaults.print_question_templates()
-            exit(0)
-        if ag.ask.startswith(':'):
-            # specifies a question template from defaults.QUESTIONS
-            question = defaults.QUESTIONS[ag.ask]
-            msg += '\n' + question
-        else:
-            # is a user-specified question in the command line
-            question = ag.ask
-            msg += ('' if not msg else '\n') + question
+        msg += ('' if not msg else '\n') + ag.ask
 
     return msg
 

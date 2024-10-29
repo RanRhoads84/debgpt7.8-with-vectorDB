@@ -72,7 +72,7 @@ def task_git_commit(ag) -> None:
     msg += debian.command_line('git diff --staged')
     msg += "```\n"
     msg += "\n"
-    msg += defaults.QUESTIONS[':git-commit']
+    msg += 'Write a good git commit message subject line for the change diff shown above, using the project style visible in previous commits titles above.'
     frontend.query_once(f, msg)
     tmpfile = tempfile.mktemp()
     commit_message = f.session[-1]['content']
