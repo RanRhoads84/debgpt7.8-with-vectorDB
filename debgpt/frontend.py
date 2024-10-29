@@ -121,7 +121,9 @@ class AbstractFrontend():
 
     def query(self, messages: List[Dict]) -> str:
         '''
-        Generate response text from the given chat history.
+        Generate response text from the given chat history. This function
+        will also handle printing and rendering.
+
         Args:
             messages: a list of dict, each dict contains a message.
         Returns:
@@ -528,12 +530,13 @@ def query_once(f: AbstractFrontend, text: str) -> None:
     text: the text to be sent to LLM.
     '''
     if f.stream:
+        end = '' if not f.render_markdown else '\n'
         if f.monochrome:
             lprompt = escape(f'LLM[{1+len(f.session)}]> ')
-            console.print(lprompt, end='', highlight=False, markup=False)
+            console.print(lprompt, end=end, highlight=False, markup=False)
         else:
             lprompt = f'[bold green]LLM[{1+len(f.session)}]>[/bold green] '
-            console.print(lprompt, end='')
+            console.print(lprompt, end=end)
         _ = f(text)
     else:
         with Status('LLM', spinner='line'):
