@@ -12,7 +12,7 @@ DebGPT - Chatting LLM with Debian-Specific Knowledge
 SYNOPSIS
 ========
 
-`debgpt [CLI-behavior-options] [frontend-options] [prompt-composers] [subcommands]`
+`debgpt [CLI-behavior-options] [frontend-options] [prompt-composers] [subcommands [subcommand-args]]`
 
 DESCRIPTION
 ===========
