@@ -1,10 +1,10 @@
-% DebGPT(1) | Chatting LLM with Debian-Specific Knowledge
+% DebGPT(1) | Terminal LLM Tool with Debian/Linux-Specific Design
 % Copyright (C) 2024 Mo Zhou <lumin@debian.org>; MIT License.
 
 NAME
 ====
 
-DebGPT - Chatting LLM with Debian-Specific Knowledge
+DebGPT - Terminal LLM Tool with Debian/Linux-Specific Design
 
 > "AI" = "Artificial Idiot"
 
@@ -26,7 +26,7 @@ attempt to experiment and explore the possibility of leveraging LLMs to aid
 Debian development, in any extent.
 
 Essentially, the idea of this tool is to gather some pieces of
-Debian-specific knowledge, combine them together in a prompt, and then send
+Debian/Linux-specific knowledge, combine them together in a prompt, and then send
 them all to the LLM. This tool provides convenient functionality for
 automatically retrieving information from BTS, buildd, Debian Policy, system
 manual pages, tldr manuals, Debian Developer References, etc. It also provides

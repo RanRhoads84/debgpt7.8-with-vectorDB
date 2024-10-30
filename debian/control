@@ -26,7 +26,7 @@ Depends: ${misc:Depends}, ${python3:Depends},
 Recommends: python3-zmq, git, tldr, man-db,
 Suggests: python3-torch | python3-torch-cuda | python3-torch-rocm,
           python3-transformers,
-Description: Chatting LLM with Debian-Specific Knowledge
+Description: Terminal LLM Tool with Debian/Linux-Specific Design
  Large language models (LLMs) are newly emerged tools, which are capable of
  handling tasks that traditional software could never achieve, such as writing
  code based on the specification provided by the user. In this tool, we
