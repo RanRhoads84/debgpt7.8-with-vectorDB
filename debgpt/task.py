@@ -81,7 +81,9 @@ def task_git_commit(ag) -> None:
         # is the code automatically modified by debgpt --inplace?
         commit_message += '\n\n'
         commit_message += '\n'.join(textwrap.wrap(f"\n\nNote, the code changes are made by the command: {' '.join(sys.argv)}.", width=80))
+        commit_message += '\n'
         commit_message += '\n'.join(textwrap.wrap(f"\n\nFrontend used: {ag.frontend}.", width=80))
+        commit_message += '\n'
         if ag.frontend == "openai":
             commit_message += '\n'.join(textwrap.wrap(f"\n\nOpenAI model: {ag.openai_model}.", width=80))
         elif ag.frontend == "gemini":
