@@ -202,6 +202,7 @@ This option will toggle --quit and turn off markdown rendering.')
         help='automatically add and commit the changes to git repo.')
     _g.add_argument(
         '--inplace-git-add-p-commit',
+        '-I',
         action='store_true',
         help='automatically add -p and commit the changes to git repo.')
     _g.add_argument('--version',
