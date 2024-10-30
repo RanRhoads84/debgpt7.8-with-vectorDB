@@ -31,7 +31,7 @@ import rich
 console = rich.get_console()
 
 
-def process_entry(entry):
+def process_entry(entry, render):
     if entry['role'] == 'user':
         title = 'User Input'
         border_style = 'cyan'
@@ -39,7 +39,10 @@ def process_entry(entry):
                         title=title,
                         border_style=border_style)
     elif entry['role'] == 'assistant':
-        content = Markdown(entry['content'])
+        if render:
+            content = Markdown(entry['content'])
+        else:
+            content = entry['content']
     elif entry['role'] == 'system':
         title = 'System Message'
         border_style = 'red'
@@ -48,15 +51,21 @@ def process_entry(entry):
                         border_style=border_style)
     else:
         raise ValueError(f'unknown role in {entry}')
-    console.print(content)
+    
+    if render and entry['role'] != 'assistant':
+        console.print(content)
+    elif not render and entry['role'] == 'assistant':
+        print(content)
+    else:
+        console.print(content)
 
 
-def replay(path):
+def replay(path, render: bool = True):
     with open(path) as f:
         J = json.load(f)
 
     for entry in J:
-        process_entry(entry)
+        process_entry(entry, render)
 
 
 def main():
@@ -65,8 +74,12 @@ def main():
     parser.add_argument('input_file',
                         metavar='FILE',
                         help='JSON file containing the chat messages')
+    parser.add_argument('--render', 
+                        type=bool, 
+                        default=True, 
+                        help='Render assistant messages with rich Markdown (default: True)')
     args = parser.parse_args()
-    replay(args.input_file)
+    replay(args.input_file, args.render)
 
 
 if __name__ == '__main__':
