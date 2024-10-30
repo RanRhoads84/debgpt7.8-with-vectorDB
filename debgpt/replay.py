@@ -42,7 +42,7 @@ def process_entry(entry, render):
         if render:
             content = Markdown(entry['content'])
         else:
-            content = entry['content']
+            content = escape(entry['content'])
     elif entry['role'] == 'system':
         title = 'System Message'
         border_style = 'red'
@@ -51,7 +51,7 @@ def process_entry(entry, render):
                         border_style=border_style)
     else:
         raise ValueError(f'unknown role in {entry}')
-    
+
     if render and entry['role'] != 'assistant':
         console.print(content)
     elif not render and entry['role'] == 'assistant':
@@ -74,9 +74,9 @@ def main():
     parser.add_argument('input_file',
                         metavar='FILE',
                         help='JSON file containing the chat messages')
-    parser.add_argument('--render', 
-                        type=bool, 
-                        default=True, 
+    parser.add_argument('--render',
+                        type=bool,
+                        default=True,
                         help='Render assistant messages with rich Markdown (default: True)')
     args = parser.parse_args()
     replay(args.input_file, args.render)
