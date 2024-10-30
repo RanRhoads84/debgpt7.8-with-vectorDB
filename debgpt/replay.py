@@ -75,7 +75,7 @@ def main():
                         metavar='FILE',
                         help='JSON file containing the chat messages')
     parser.add_argument('--render',
-                        type=bool,
+                        action=argparse.BooleanOptionalAction,
                         default=True,
                         help='Render assistant messages with rich Markdown (default: True)')
     args = parser.parse_args()
