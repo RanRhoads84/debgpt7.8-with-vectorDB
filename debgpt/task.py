@@ -87,6 +87,9 @@ def task_git_commit(ag) -> None:
                 width=80))
         commit_message += '\n'
         commit_message += '\n'.join(
+            textwrap.wrap(f"\n\nThe real prompt is: {ag.ask}.", width=80))
+        commit_message += '\n'
+        commit_message += '\n'.join(
             textwrap.wrap(f"\n\nFrontend used: {ag.frontend}.", width=80))
         commit_message += '\n'
         if ag.frontend == "openai":
