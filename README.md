@@ -322,6 +322,14 @@ debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencie
 The `--inplace|-i` will mandate the `--quit|-Q` behavior, and will turn
 off markdown rendering.
 
+If working in a Git repository, we can make things more absurd:
+
+```
+debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencies.' --inplace-git-add-commit
+```
+
+The commit resulted by the above example can be seen at [this link](https://salsa.debian.org/deeplearning-team/debgpt/-/commit/968d7ab31cb3541f6733eb34bdf6cf13b6552b7d).
+
 
 **[--bts]**
 
