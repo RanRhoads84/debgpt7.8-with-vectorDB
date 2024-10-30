@@ -196,6 +196,9 @@ use Meta+Enter to accept the input instead.')
                     default='',
                     help='read file and perform inplace edit to it. \
 This option will toggle --quit and turn off markdown rendering.')
+    _g.add_argument('--inplace-git-add-commit',
+                    action='store_true',
+                    help='automatically add and commit the changes to git repo.')
     _g.add_argument('--version',
                     action='store_true',
                     help='show DebGPT software version and quit.')
@@ -1006,6 +1009,12 @@ def main(argv=sys.argv[1:]):
                                      TerminalFormatter())
         console.print(Rule('DIFFERENCE'))
         print(highlighted_diff)  # rich will render within code [] and break it
+
+        # further more, deal with git add and commit
+        if ag.inplace_git_add_commit:
+            os.system(f'git add {ag.inplace}')
+            ag.amend = False  # no git commit --amend.
+            task_git_commit(ag)
 
     # dump session to json
     f.dump()
