@@ -74,10 +74,11 @@ def main():
     parser.add_argument('input_file',
                         metavar='FILE',
                         help='JSON file containing the chat messages')
-    parser.add_argument('--render',
-                        action=argparse.BooleanOptionalAction,
-                        default=True,
-                        help='Render assistant messages with rich Markdown (default: True)')
+    parser.add_argument(
+        '--render',
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help='Render assistant messages with rich Markdown (default: True)')
     args = parser.parse_args()
     replay(args.input_file, args.render)
 

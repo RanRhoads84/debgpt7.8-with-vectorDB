@@ -196,9 +196,10 @@ use Meta+Enter to accept the input instead.')
                     default='',
                     help='read file and perform inplace edit to it. \
 This option will toggle --quit and turn off markdown rendering.')
-    _g.add_argument('--inplace-git-add-commit',
-                    action='store_true',
-                    help='automatically add and commit the changes to git repo.')
+    _g.add_argument(
+        '--inplace-git-add-commit',
+        action='store_true',
+        help='automatically add and commit the changes to git repo.')
     _g.add_argument('--version',
                     action='store_true',
                     help='show DebGPT software version and quit.')
@@ -999,13 +1000,10 @@ def main(argv=sys.argv[1:]):
         with open(ag.inplace, 'wt') as fp:
             fp.write(f.session[-1]['content'])
         # Highlight the diff using Pygments for terminal output
-        diff = difflib.unified_diff(contents_orig,
-                                    contents_edit,
-                                    'Original',
+        diff = difflib.unified_diff(contents_orig, contents_edit, 'Original',
                                     'Edited')
         diff_str = ''.join(diff)
-        highlighted_diff = highlight(diff_str,
-                                     DiffLexer(),
+        highlighted_diff = highlight(diff_str, DiffLexer(),
                                      TerminalFormatter())
         console.print(Rule('DIFFERENCE'))
         print(highlighted_diff)  # rich will render within code [] and break it
