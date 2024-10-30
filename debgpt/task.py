@@ -76,7 +76,7 @@ def task_git_commit(ag) -> None:
     frontend.query_once(f, msg)
     tmpfile = tempfile.mktemp()
     commit_message = f.session[-1]['content']
-    if hasattr(ag, 'inplace_git_add_commit'):
+    if getattr(ag, 'inplace_git_add_commit', False):
         # is the code automatically modified by debgpt --inplace?
         commit_message += f"\n\nNote, the code changes are made by `debgpt --inplace ...`."
         commit_message += f"\nThe original user instruction is: {repr(ag.ask)}\n"
