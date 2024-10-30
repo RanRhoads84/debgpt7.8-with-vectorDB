@@ -25,10 +25,6 @@ SOFTWARE.
 import textwrap
 import rich
 import shlex
-from .task import task_backend, task_git, task_git_commit, task_replay
-from . import defaults
-from . import debian
-from . import frontend
 import sys
 import os
 import re
@@ -47,6 +43,10 @@ from pygments.lexers import DiffLexer
 from pygments.formatters import TerminalFormatter
 from typing import List, Optional
 import warnings
+from .task import task_backend, task_git, task_git_commit, task_replay
+from . import defaults
+from . import debian
+from . import frontend
 
 warnings.filterwarnings("ignore")
 
