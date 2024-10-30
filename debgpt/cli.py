@@ -200,6 +200,10 @@ This option will toggle --quit and turn off markdown rendering.')
         '--inplace-git-add-commit',
         action='store_true',
         help='automatically add and commit the changes to git repo.')
+    _g.add_argument(
+        '--inplace-git-add-p-commit',
+        action='store_true',
+        help='automatically add -p and commit the changes to git repo.')
     _g.add_argument('--version',
                     action='store_true',
                     help='show DebGPT software version and quit.')
@@ -1010,8 +1014,12 @@ def main(argv=sys.argv[1:]):
         print(highlighted_diff)  # rich will render within code [] and break it
 
         # further more, deal with git add and commit
-        if ag.inplace_git_add_commit:
-            os.system(f'git add {ag.inplace}')
+        if ag.inplace_git_add_commit or ag.inplace_git_add_p_commit:
+            # let the user review the changes
+            if ag.inplace_git_add_p_commit:
+                os.system(f'git add -p {ag.inplace}')
+            else:
+                os.system(f'git add {ag.inplace}')
             ag.amend = False  # no git commit --amend.
             task_git_commit(ag)
 

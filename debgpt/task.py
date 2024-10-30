@@ -77,7 +77,7 @@ def task_git_commit(ag) -> None:
     frontend.query_once(f, msg)
     tmpfile = tempfile.mktemp()
     commit_message = f.session[-1]['content']
-    if getattr(ag, 'inplace_git_add_commit', False):
+    if getattr(ag, 'inplace_git_add_commit', False) or getattr(ag, 'inplace_git_add_p_commit', False):
         # is the code automatically modified by debgpt --inplace?
         commit_message = 'DebGPT> ' + commit_message
         commit_message += '\n\n'
