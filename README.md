@@ -186,6 +186,11 @@ After gettting familiarized with the fundamental usage and its CLI behavior,
 we can directly move on to the most important feature of this tool, namely the
 special prompt composer -- `MapReduce`.
 
+
+#### Special Retrieval Prompt Composer for Document Library
+
+> This is WIP. Leveraging the embeddings to retrieve.  Basically RAG.
+
 #### 2. Special MapReduce Prompt Composer for Any Length Context
 
 > This `MapReduce` is a key feature of DebGPT.
@@ -272,7 +277,7 @@ specified resource, and wrap them as a part of a prompt for the LLM. In the
 previous section we have seens the special prompt composer `MapReduce`, which
 works differently from the standard prompt composers that will be introduced
 here. Note, the query composers (including special one) can be arbitrarily
-combined together through command line arguments.
+combined together or specified multiple times through command line arguments.
 
 
 **[-f|--file]**
@@ -298,6 +303,24 @@ debgpt -Hf pyproject.toml:3-   -A 'explain it'  # select the [3,end) lines
 ```
 
 The rest prompt composers are ordered alphabetically.
+
+
+**[--inplace|-i]**
+
+We have a kind of special composer `--inplace|-i` (read-write) that reads
+the contents of a file like `--file|-f` (read-only), but it will also write
+the LLM response (I assume it is the file editing result) back to the file.
+It will also print the diff of the changes to the screen.
+
+The following example will ask LLM to edit the `pyproject.toml` file, adding
+`pygments` to its dependencies. This really works correctly.
+
+```
+debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencies.'
+```
+
+The `--inplace|-i` will mandate the `--quit|-Q` behavior, and will turn
+off markdown rendering.
 
 
 **[--bts]**

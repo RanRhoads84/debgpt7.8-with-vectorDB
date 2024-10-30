@@ -32,14 +32,19 @@ from . import frontend
 import sys
 import os
 import re
+import difflib
 import argparse
 import concurrent.futures
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit import PromptSession
 from rich.panel import Panel
+from rich.rule import Rule
 from rich.markup import escape
 from rich.progress import track
 from prompt_toolkit.styles import Style
+from pygments import highlight
+from pygments.lexers import DiffLexer
+from pygments.formatters import TerminalFormatter
 from typing import List, Optional
 import warnings
 
@@ -185,6 +190,12 @@ use Meta+Enter to accept the input instead.')
                     type=str,
                     default=None,
                     help='write the last LLM message to specified file')
+    _g.add_argument('--inplace',
+                    '-i',
+                    type=str,
+                    default='',
+                    help='read file and perform inplace edit to it. \
+This option will toggle --quit and turn off markdown rendering.')
     _g.add_argument('--version',
                     action='store_true',
                     help='show DebGPT software version and quit.')
@@ -599,6 +610,17 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     # -- parse and sanitize
     ag = ag.parse_args(argv)
     ag.config_template = config_template
+
+    # -- mandate argument requirements for some options
+    if ag.inplace:
+        # we will toggle --quit and turn off markdown rendering
+        ag.quit = True
+        ag.render_markdown = False
+        # we assume the user wants to edit the file inplace, and provides
+        # the editing instruction through --ask|-a. Here we will append
+        # some addition prompt to reduce LLM noise.
+        ag.ask += ' Just show me the result and do not say anything else. No need to enclose the result using "```".'
+
     return ag
 
 
@@ -630,6 +652,7 @@ def parse_args_order(argv) -> List[str]:
         _match_l(item, '--cmd', order)
         _match_l(item, '--buildd', order)
         _match_ls(item, '--file', '-f', order)
+        _match_ls(item, '--inplace', '-i', order)
         _match_l(item, '--policy', order)
         _match_l(item, '--devref', order)
         _match_l(item, '--tldr', order)
@@ -824,6 +847,11 @@ def gather_information_ordered(msg: Optional[str], ag,
             spec = getattr(ag, key).pop(0)
             func = getattr(debian, key)
             msg = _append_info(msg, func(spec, debgpt_home=ag.debgpt_home))
+        elif key == 'inplace':
+            # This is a special case. It reads the file as does by
+            # `--file` (read-only), but `--inplace` (read-write) will write
+            # the result back to the file. This serves code editing purpose.
+            msg = _append_info(msg, debian.file(ag.inplace))
         elif key == 'mapreduce':
             # but we only do once for mapreduce
             if __has_done_mapreduce:
@@ -956,6 +984,28 @@ def main(argv=sys.argv[1:]):
     # drop the user into interactive mode if specified (-i)
     if not ag.quit:
         interactive_mode(f, ag)
+
+    # inplace mode: write the LLM response back to the file
+    if ag.inplace:
+        # read original contents (for diff)
+        with open(ag.inplace, 'rt') as fp:
+            contents_orig = fp.read().splitlines(keepends=True)
+        # read the edited contents (for diff)
+        contents_edit = f.session[-1]['content'].splitlines(keepends=True)
+        # write the edited contents back to the file
+        with open(ag.inplace, 'wt') as fp:
+            fp.write(f.session[-1]['content'])
+        # Highlight the diff using Pygments for terminal output
+        diff = difflib.unified_diff(contents_orig,
+                                    contents_edit,
+                                    'Original',
+                                    'Edited')
+        diff_str = ''.join(diff)
+        highlighted_diff = highlight(diff_str,
+                                     DiffLexer(),
+                                     TerminalFormatter())
+        console.print(Rule('DIFFERENCE'))
+        print(highlighted_diff)  # rich will render within code [] and break it
 
     # dump session to json
     f.dump()
