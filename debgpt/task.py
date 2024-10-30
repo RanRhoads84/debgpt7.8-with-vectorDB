@@ -78,7 +78,7 @@ def task_git_commit(ag) -> None:
     commit_message = f.session[-1]['content']
     if getattr(ag, 'inplace_git_add_commit', False):
         # is the code automatically modified by debgpt --inplace?
-        commit_message += f"\n\nNote, the code changes are made by `debgpt --inplace ...`."
+        commit_message += f"\n\nNote, the code changes are made by the command: {' '.join(sys.argv)}."
         commit_message += f"\nThe original user instruction is: {repr(ag.ask)}\n"
     else:
         commit_message += "\n\n<Explain why change was made.>"
