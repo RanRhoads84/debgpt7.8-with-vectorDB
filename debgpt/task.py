@@ -80,7 +80,7 @@ def task_git_commit(ag) -> None:
     if getattr(ag, 'inplace_git_add_commit', False):
         # is the code automatically modified by debgpt --inplace?
         commit_message += '\n\n'
-        commit_message += '\n'.join(textwrap.wrap(f"\n\nNote, the code changes are made by the command: {' '.join(sys.argv)}.", width=80))
+        commit_message += '\n'.join(textwrap.wrap(f"\n\nNote, the code changes are made by the command: {repr(sys.argv)}.", width=80))
         commit_message += '\n'
         commit_message += '\n'.join(textwrap.wrap(f"\n\nFrontend used: {ag.frontend}.", width=80))
         commit_message += '\n'
