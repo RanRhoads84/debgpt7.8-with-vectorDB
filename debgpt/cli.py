@@ -997,8 +997,9 @@ def main(argv=sys.argv[1:]):
         # read the edited contents (for diff)
         contents_edit = f.session[-1]['content'].splitlines(keepends=True)
         # write the edited contents back to the file
+        lastnewline = '' if contents_edit[-1].endswith('\n') else '\n'
         with open(ag.inplace, 'wt') as fp:
-            fp.write(f.session[-1]['content'])
+            fp.write(f.session[-1]['content'] + lastnewline)
         # Highlight the diff using Pygments for terminal output
         diff = difflib.unified_diff(contents_orig, contents_edit, 'Original',
                                     'Edited')
