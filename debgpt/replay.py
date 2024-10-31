@@ -27,11 +27,21 @@ from rich.markdown import Markdown
 import json
 import argparse
 import rich
+from typing import Dict, Any
 
 console = rich.get_console()
 
+def process_entry(entry: Dict[str, Any], render: bool) -> None:
+    """
+    Processes a single chat entry and prints it to the console.
 
-def process_entry(entry, render):
+    Args:
+        entry (Dict[str, Any]): A dictionary representing a chat entry with keys 'role' and 'content'.
+        render (bool): A flag indicating whether to render assistant messages with rich Markdown.
+    
+    Raises:
+        ValueError: If the entry role is unknown.
+    """
     if entry['role'] == 'user':
         title = 'User Input'
         border_style = 'cyan'
@@ -59,16 +69,24 @@ def process_entry(entry, render):
     else:
         console.print(content)
 
+def replay(path: str, render: bool = True) -> None:
+    """
+    Replays chat messages from a JSON file.
 
-def replay(path, render: bool = True):
+    Args:
+        path (str): The file path to the JSON file containing chat messages.
+        render (bool): A flag indicating whether to render assistant messages with rich Markdown.
+    """
     with open(path) as f:
         J = json.load(f)
 
     for entry in J:
         process_entry(entry, render)
 
-
-def main():
+def main() -> None:
+    """
+    The main function to parse command-line arguments and initiate the replay of chat messages.
+    """
     parser = argparse.ArgumentParser(
         description='Replay chat messages from a JSON file.')
     parser.add_argument('input_file',
@@ -81,7 +99,6 @@ def main():
         help='Render assistant messages with rich Markdown (default: True)')
     args = parser.parse_args()
     replay(args.input_file, args.render)
-
 
 if __name__ == '__main__':
     main()
