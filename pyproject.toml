@@ -22,7 +22,8 @@ dependencies = [
     'bs4',
     'tomli',
     'tenacity',
-    'pygments'
+    'pygments',
+    'urwid'
 ]
 authors = [
   {name = "Mo Zhou", email = "lumin@debian.org"},
