@@ -45,7 +45,7 @@ from typing import List, Optional
 import warnings
 from .task import task_backend, task_git, task_git_commit, task_replay
 from . import defaults
-from . import debian
+from . import composer
 from . import frontend
 from . import configurator
 
@@ -555,7 +555,7 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     ps_stdin = subps.add_parser(
         'stdin',
         help='read stdin as the first prompt. Should combine with -Q.')
-    ps_stdin.set_defaults(func=lambda ag: debian.stdin())
+    ps_stdin.set_defaults(func=lambda ag: composer.stdin())
 
     # Task: genconfig
     ps_genconfig = subps.add_parser('genconfig',
@@ -644,7 +644,7 @@ def mapreduce_super_long_context(ag) -> str:
     else:
         user_question = 'summarize the above contents.'
 
-    chunks = debian.mapreduce_load_any_astext(ag.mapreduce,
+    chunks = composer.mapreduce_load_any_astext(ag.mapreduce,
                                               ag.mapreduce_chunksize,
                                               user_question=user_question,
                                               args=ag)
@@ -673,17 +673,17 @@ def mapreduce_super_long_context(ag) -> str:
 
     # skip mapreduce if there is only one chunk
     if len(chunks) == 1:
-        filepath = debian.mapreduce_parse_path(ag.mapreduce,
+        filepath = composer.mapreduce_parse_path(ag.mapreduce,
                                                debgpt_home=ag.debgpt_home)
         if any(
                 filepath.startswith(x)
                 for x in ('file://', 'http://', 'https://')):
-            return debian.url(filepath)
+            return composer.url(filepath)
         else:
             if filepath.endswith('.pdf'):
-                return debian.pdf(filepath)
+                return composer.pdf(filepath)
             else:
-                return debian.file(filepath)
+                return composer.file(filepath)
 
     def _process_chunk(chunk: str, question: str) -> str:
         '''
@@ -788,31 +788,31 @@ def gather_information_ordered(msg: Optional[str], ag,
         msg = '' if msg is None else msg
         return msg + '\n' + info
 
-    # following the argument order, dispatch to debian.* functions with
+    # following the argument order, dispatch to composer.* functions with
     # different function signatures
     for key in ag_order:
         if key in ('file', 'tldr', 'man', 'buildd', 'pynew', 'archw', 'pdf'):
             spec = getattr(ag, key).pop(0)
-            func = getattr(debian, key)
+            func = getattr(composer, key)
             msg = _append_info(msg, func(spec))
         elif key == 'cmd':
             cmd_line = ag.cmd.pop(0)
-            msg = _append_info(msg, debian.command_line(cmd_line))
+            msg = _append_info(msg, composer.command_line(cmd_line))
         elif key == 'bts':
             bts_id = ag.bts.pop(0)
-            msg = _append_info(msg, debian.bts(bts_id, raw=ag.bts_raw))
+            msg = _append_info(msg, composer.bts(bts_id, raw=ag.bts_raw))
         elif key == 'html':
             url = ag.html.pop(0)
-            msg = _append_info(msg, debian.html(url, raw=False))
+            msg = _append_info(msg, composer.html(url, raw=False))
         elif key in ('policy', 'devref'):
             spec = getattr(ag, key).pop(0)
-            func = getattr(debian, key)
+            func = getattr(composer, key)
             msg = _append_info(msg, func(spec, debgpt_home=ag.debgpt_home))
         elif key == 'inplace':
             # This is a special case. It reads the file as does by
             # `--file` (read-only), but `--inplace` (read-write) will write
             # the result back to the file. This serves code editing purpose.
-            msg = _append_info(msg, debian.file(ag.inplace))
+            msg = _append_info(msg, composer.file(ag.inplace))
         elif key == 'mapreduce':
             # but we only do once for mapreduce
             if __has_done_mapreduce:

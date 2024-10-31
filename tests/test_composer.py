@@ -22,53 +22,53 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 import pytest
-from debgpt import debian
+from debgpt import composer
 import os
 
 
 @pytest.mark.parametrize('idx', ('src:pytorch', '1056388'))
 def test_debian_bts(idx: str):
-    print(debian.bts(idx))
+    print(composer.bts(idx))
 
 
 @pytest.mark.parametrize('section', ('1', '4.6', '4.6.1'))
 def test_policy(section, tmp_path):
-    print(debian.policy(section, debgpt_home=tmp_path))
+    print(composer.policy(section, debgpt_home=tmp_path))
 
 
 @pytest.mark.parametrize('section', ('5.5', '1'))
 def test_devref(section, tmp_path):
-    print(debian.devref(section, debgpt_home=tmp_path))
+    print(composer.devref(section, debgpt_home=tmp_path))
 
 
 @pytest.mark.parametrize('p', ('pytorch',))
 def test_buildd(p):
-    print(debian.buildd(p))
+    print(composer.buildd(p))
 
 @pytest.mark.parametrize('url', (
     'https://lists.debian.org/debian-project/2023/12/msg00029.html',
     ))
 def test_html(url):
-    print(debian.html(url, raw=False))
+    print(composer.html(url, raw=False))
 
 def test_mapreduce_load_file(tmp_path):
     policypath = os.path.join(tmp_path, 'policy.txt')
     # just download the policy text file
-    debian.policy('1', debgpt_home=tmp_path)
-    chunks = debian.mapreduce_load_file(policypath)
+    composer.policy('1', debgpt_home=tmp_path)
+    chunks = composer.mapreduce_load_file(policypath)
     for k, v in chunks.items():
         encoded = '\n'.join(v).encode('utf-8')
         print(k, len(encoded))
         print(encoded.decode())
 
 def test_mapreduce_load_directory(tmp_path):
-    chunks = debian.mapreduce_load_directory('./debian')
+    chunks = composer.mapreduce_load_directory('./debian')
     for k, v in chunks.items():
         encoded = '\n'.join(v).encode('utf-8')
         print(k, len(encoded))
         print(encoded.decode())
 
 def test_mapreduce_load_any_astext():
-    chunks = debian.mapreduce_load_any_astext('./debian')
+    chunks = composer.mapreduce_load_any_astext('./debian')
     for v in chunks:
         print(v)

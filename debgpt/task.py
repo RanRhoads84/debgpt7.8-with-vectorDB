@@ -25,7 +25,7 @@ import rich
 import os
 import sys
 from . import frontend
-from . import debian
+from . import composer
 from . import defaults
 from rich.panel import Panel
 import tempfile
@@ -48,7 +48,7 @@ def task_backend(ag) -> None:
 def task_replay(ag) -> None:
     from . import replay
     if ag.json_file_path is None:
-        json_path = debian._latest_glob(os.path.join(ag.debgpt_home, '*.json'))
+        json_path = composer._latest_glob(os.path.join(ag.debgpt_home, '*.json'))
         console.log('found the latest json:', json_path)
     else:
         json_path = ag.json_file_path
@@ -65,12 +65,12 @@ def task_git_commit(ag) -> None:
     f = ag.frontend_instance
     msg = "Previous commit titles:\n"
     msg += "```"
-    msg += debian.command_line('git log --pretty=format:%s --max-count=10')
+    msg += composer.command_line('git log --pretty=format:%s --max-count=10')
     msg += "```"
     msg += "\n"
     msg += "Change diff:\n"
     msg += "```\n"
-    msg += debian.command_line('git diff --staged')
+    msg += composer.command_line('git diff --staged')
     msg += "```\n"
     msg += "\n"
     msg += 'Write a good git commit message subject line for the change diff shown above, using the project style visible in previous commits titles above.'
