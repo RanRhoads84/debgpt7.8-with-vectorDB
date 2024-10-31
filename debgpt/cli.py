@@ -47,6 +47,7 @@ from .task import task_backend, task_git, task_git_commit, task_replay
 from . import defaults
 from . import debian
 from . import frontend
+from . import configurator
 
 warnings.filterwarnings("ignore")
 
@@ -65,70 +66,6 @@ def generate_config_file(ag) -> None:
     special task: generate config template, print and quit
     '''
     console.print(ag.config_template)
-    exit(0)
-
-
-def fresh_install_guide(ag) -> None:
-    '''
-    special task: print fresh install guide, then quit
-    '''
-    __doc__ = '''\
-DebGPT Fresh Install Guide
-==========================
-
-To use DebGPT, you need to configure a frontend to connect to the LLM backend.
-There are several frontends available, including:
-
-   (DEFAULT, commercial, proprietary, need-api-key, OpenAI-API)
- * `openai`: a frontend that connects to the OpenAI API. You need to obtain an
-   API key from https://platform.openai.com/api-keys and set it in the
-   `--openai_api_key` argument or the `OPENAI_API_KEY` environment variable.
-   Note, this is a commercial proprietary service that needs to be paied for.
-
-   (commercial, proprietary, need-api-key, Anthropic-API)
- * `anthropic`: Connects with Anthropic service. You need to specify
-   `--anthropic_api_key` or environt variable `ANTHROPIC_API_KEY` to use this.
-
-   (commercial, proprietary, need-api-key, Google-API)
- * `gemini`: Connects with Google's Gemini service. You need to specify
-   `--gemini_api_key` to use this.
-
-   (self-hosted, open-source, OpenAI-API)
- * `llamafile`: a frontend that connects to the llamafile JSON API service.
-   Please read the instructions at https://github.com/Mozilla-Ocho/llamafile
-   to setup the self-hosted llamafile service.
-
-   (self-hosted, open-source, OpenAI-API)
- * `ollama`: a frontend that connects to the Ollama JSON API service.
-   Please read the instructions at https://ollama.com/ to setup the
-   self-hosted Ollama service.
-
-   (self-hosted, open-source, need-api-key, OpenAI-API)
- * `vllm`: a frontend that connects to a vLLM service instance.
-   See https://docs.vllm.ai/en/latest/ for more information.
-   This is a OpenAI-API compatible self-hosted service. You need an API key
-   that matches to the one used in the vLLM service.
-
-   (self-hosted, open-source, transformers, debugging)
- * `zmq`: a frontend that connects to a self-hosted LLM inference server.
-   This pairs with the self-contained primitive backend implementation
-   of debgpt, which is directly based on `transformers`.
-
-   (debugging)
- * `dryrun`: a fake frontend that will do nothing other than printing the
-   generated prompt. This is only useful for debugging.
-
-The frontend is specified by the `-F|--frontend` argument. For convenience,
-you can also specify the frontend in the `~/.debgpt/config.toml` file.
-
-You may use the following command to generate a template `config.toml` file:
-
- $ debgpt genconfig > ~/.debgpt/config.toml
-
-The important flags for each of the frontends are provided in the template.
-
-Enjoy DebGPT!'''
-    console.print(__doc__)
     exit(0)
 
 
@@ -953,7 +890,8 @@ def main(argv=sys.argv[1:]):
         ag.subparser_name not in ('genconfig', 'genconf', 'config.toml'),
     ])
     if whether_show_fresh_install_guide:
-        fresh_install_guide(ag)
+        configurator.fresh_install_guide(
+                os.path.expanduser('~/.debgpt/config.toml'))
         exit(0)
 
     # parse argument order
