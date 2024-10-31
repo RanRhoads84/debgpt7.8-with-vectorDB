@@ -27,17 +27,15 @@ development, in any extent.
 With DebGPT, you can ask LLM to read a file, summarize a document, answer a
 question based on a long context, edit a file, generate a git commit message
 for staged files, as long as you can imagine and provide the necessary
-information for it.
+information for it.  The information sources supported by this tool include
+but are not limited to files, directories, URLs, PDFs, Debian BTS, Debian
+buildd, Debian Policy, system manual pages, tldr manuals, Debian Developer
+References, command lines, Google search results, retrieval results (for
+retrieval-augmented generation), and more.
 
 Essentially, the idea of this tool is to gather information that might be
 relevant to the user instruction, including some Debian/Linux-specific
 knowledge, and combine them together in a prompt to be sent to LLM.
-
-The information sources supported by this tool include but are not limited to
-files, directories, URLs, PDFs, Debian BTS, Debian buildd, Debian Policy,
-system manual pages, tldr manuals, Debian Developer References, command lines,
-Google search results, retrieval results (for retrieval-augmented generation),
-and more.
 
 DebGPT supports various LLM service providers, either commercial or
 self-hosted, including OpenAI, Anthropic, Google Gemini, Ollama, LlamaFile,
