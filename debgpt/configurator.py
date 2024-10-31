@@ -140,72 +140,77 @@ def _request_frontend_specific_config(frontend: str) -> dict:
     conf = dict()
 
     if frontend == 'openai':
+        value = SingleEdit(_TITLE, "Enter the OpenAI base url:",
+                           default['openai_base_url'], "Keep the default as is, if you do not intend to use this API on a different compatible service.",
+                           "Press Esc to abort.").run()
+        conf['openai_base_url'] = value
         value = SingleEdit(_TITLE, "Enter the OpenAI API key:",
-                           default['openai_api_key'], "help message",
+                           default['openai_api_key'],
+                           "Typically your key can be found here: https://platform.openai.com/settings/organization/api-keys",
                            "Press Esc to abort.").run()
         conf['openai_api_key'] = value
         value = SingleEdit("DebGPT Configurator",
                            "Enter the OpenAI API model name:",
-                           default['openai_model'], 'help message',
+                           default['openai_model'], 'If not sure, just keep the default. Available options: https://platform.openai.com/docs/models',
                            'Press Esc to abort.').run()
         conf['openai_model'] = value
     elif frontend == 'anthropic':
         value = SingleEdit("DebGPT Configurator",
                            "Enter the Anthropic API key:",
-                           default['anthropic_api_key'], "help message",
+                           default['anthropic_api_key'], "Typicall your key can be found here: https://console.anthropic.com/settings/keys",
                            "Press Esc to abort.").run()
         conf['anthropic_api_key'] = value
         value = SingleEdit("DebGPT Configurator",
                            "Enter the Anthropic model name:",
-                           default['anthropic_model'], "help message",
+                           default['anthropic_model'], "If not sure, just keep the default. Available options: https://docs.anthropic.com/en/docs/about-claude/models",
                            "Press Esc to abort.").run()
         conf['anthropic_model'] = value
     elif frontend == 'gemini':
         value = SingleEdit("DebGPT Configurator",
                            "Enter the Google Gemini API key:",
-                           default['gemini_api_key'], "help message",
+                           default['gemini_api_key'], "Typically found here: https://aistudio.google.com/app/apikey",
                            "Press Esc to abort.").run()
         conf['gemini_api_key'] = value
         value = SingleEdit("DebGPT Configurator",
                            "Enter the Google model name:",
-                           default['gemini_model'], "help message",
+                           default['gemini_model'], "If not sure, just keep the default. Available options: https://ai.google.dev/gemini-api/docs/models/gemini",
                            "Press Esc to abort.").run()
         conf['gemini_model'] = value
     elif frontend == 'ollama':
         value = SingleEdit("DebGPT Configurator",
                            "Enter the Ollama service url:",
-                           default['ollama_base_url'], "help message",
+                           default['ollama_base_url'], "Reference: https://github.com/ollama/ollama/blob/main/README.md",
                            "Press Esc to abort.").run()
         conf['ollama_base_url'] = value
         value = SingleEdit("DebGPT Configurator",
                            "Enter the Ollama model name:",
-                           default['ollama_model'], "help message",
+                           default['ollama_model'], "Reference: https://github.com/ollama/ollama/blob/main/README.md",
                            "Press Esc to abort.").run()
         conf['ollama_model'] = value
     elif frontend == 'llamafile':
         value = SingleEdit("DebGPT Configurator",
                            "Enter the LlamaFile service url:",
-                           default['llamafile_base_url'], "help message",
+                           default['llamafile_base_url'], "Reference: https://github.com/Mozilla-Ocho/llamafile",
                            "Press Esc to abort.").run()
         conf['llamafile_base_url'] = value
     elif frontend == 'vllm':
         value = SingleEdit("DebGPT Configurator",
                            "Enter the vLLM service url:",
-                           default['vllm_base_url'], "help message",
+                           default['vllm_base_url'], "Reference: https://docs.vllm.ai/en/stable/",
                            "Press Esc to abort.").run()
         conf['vllm_base_url'] = value
         value = SingleEdit("DebGPT Configurator", "Enter the vLLM API key:",
-                           default['vllm_api_key'], "help message",
+                           default['vllm_api_key'], "Reference: https://docs.vllm.ai/en/stable/",
                            "Press Esc to abort.").run()
         conf['vllm_api_key'] = value
         value = SingleEdit("DebGPT Configurator", "Enter the vLLM model name:",
-                           default['vllm_model'], "help message",
+                           default['vllm_model'], "Reference: https://docs.vllm.ai/en/stable/",
                            "Press Esc to abort.").run()
         conf['vllm_model'] = value
     elif frontend == 'zmq':
         value = SingleEdit("DebGPT Configurator",
                            "Enter the DebGPT ZMQ Backend URL:",
-                           default['zmq_backend'], "help message",
+                           default['zmq_backend'], "The service endpoint where you launched debgpt backend.",
                            "Press Esc to abort.").run()
         conf['zmq_backend'] = value
     elif frontend == 'dryrun':
