@@ -75,8 +75,7 @@ def reconfigure(ag) -> None:
     Force rewrite.
     '''
     configurator.fresh_install_guide(
-            os.path.expanduser('~/.debgpt/config.toml'),
-            True)
+            os.path.expanduser('~/.debgpt/config.toml'))
     exit(0)
 
 

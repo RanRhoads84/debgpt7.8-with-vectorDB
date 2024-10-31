@@ -231,18 +231,28 @@ produces fancy terminal printing with markdown stream.",
     return conf
 
 
-def fresh_install_guide(dest: Optional[str] = None,
-                        force: bool = False) -> dict:
+def _request_overwrite_config(dest: str) -> bool:
+    '''
+    ask the user whether to overwrite the existing configuration file
+    '''
+    value = SingleChoice("DebGPT Configurator",
+                         f"Configuration file {repr(dest)} already exists. \
+Overwrite?", ['no', 'yes'], "Press Esc to abort.",
+                         "Press Esc to abort.").run()
+    return value == 'yes'
+
+
+def fresh_install_guide(dest: Optional[str] = None) -> dict:
     '''
     This function is a configuration guide for fresh installation of DebGPT.
     '''
     conf = dict()
 
-    if dest:
-        if os.path.exists(dest) and not force:
-            raise FileExistsError(
-                f"Configuration file {repr(dest)} already exists. Aborting configurator."
-            )
+    if dest and os.path.exists(dest):
+        overwrite = _request_overwrite_config(dest)
+        if not overwrite:
+            print('Aborted.')
+            exit(1)
 
     # step 1: select a frontend
     frontends = [
@@ -287,16 +297,16 @@ using the `--frontend|-F` argument.", "Press Esc to abort.").run()
 
     # final: write configuration to specified destination
     if dest:
-        if (os.path.exists(dest) and force) or not os.path.exists(dest):
-            with open(dest, 'wt') as f:
-                for k, v in conf.items():
-                    if isinstance(v, bool):
-                        v = 'true' if v else 'false'
-                        f.write('{} = {}\n'.format(k, v))
-                    else:
-                        f.write('{} = {}\n'.format(k, repr(v)))
-            rich.print('Config written to:', dest)
-            rich.print('[white on violet]>_< Enjoy DebGPT!')
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        with open(dest, 'wt') as f:
+            for k, v in conf.items():
+                if isinstance(v, bool):
+                    v = 'true' if v else 'false'
+                    f.write('{} = {}\n'.format(k, v))
+                else:
+                    f.write('{} = {}\n'.format(k, repr(v)))
+        rich.print('Config written to:', dest)
+        rich.print('[white on violet]>_< Enjoy DebGPT!')
     else:
         # verbose print
         rich.print('Minimal Configuration (config.toml):')
