@@ -36,8 +36,9 @@ automatically generate the git commit message and commit the changes for you.
 This tool supports multiple frontends, including OpenAI and ZMQ.
 The ZMQ frontend/backend are provided in this tool to make it self-contained.
 
-QUICK START
-===========
+
+QUICK START AND CONFIGURATION
+=============================
 
 First, install `DebGPT` from PyPI or Git repository:
 
@@ -46,13 +47,13 @@ pip3 install debgpt
 pip3 install git+https://salsa.debian.org/deeplearning-team/debgpt.git
 ```
 
-The following commands allows you to try DebGPT without going through
-any configuration immediately after installation.
+Upon fresh installation or not configured at all, running `debgpt` command
+will launch a configuration wizard. Follow the guide to setup. If you want
+to reconfigure, use `$ debgpt config`.
+The configuration file is placed at `$HOME/.debgpt/config.toml`.
+After that, you can start using the tool.
 
 ```
-# The minimum `configuration` required to make debgpt work
-export OPENAI_API_KEY="your-api-key"
-
 # start a chat with LLM
 debgpt
 
@@ -60,78 +61,13 @@ debgpt
 debgpt -Hx policy: -a "what is the latest changes in this policy?"
 ```
 
-This depends on the [commercial OpenAI API service](https://platform.openai.com/api-keys).
-If you want to switch to a
-different service provider or self-hosted LLM backend, please read the
-following sections and configure the software before use.
+Tips: The bare minimum "configuration" required to make `debgpt` work is
+`export OPENAI_API_KEY="your-api-key"`.
 
-CONFIGURATION
-=============
+Tips: For advanced usage such as switching to different frontends using 
+`--frontend|-F`, you may use `debgpt genconfig` or `debgpt config.toml`
+to generate a config template.
 
-Upon fresh installation or not configured at all, running `debgpt` command
-will simply print the fresh install instructions. Follow the guide to setup.
-
-By default, the configuration file is placed at `$HOME/.debgpt/config.toml`.
-Use `debgpt genconfig` or `debgpt config.toml` to generate a config template.
-System-wide configuration file location is not supported.
-
-The minimum configuration needed for `debgpt` to work only involves one
-line: `openai_api_key = "your-api-key"`. You can also export the API key
-in the environment variable `OPENAI_API_KEY`.
-
-FRONTENDS
-=========
-
-Frontend is a client which communicates with an LLM inference backend.
-The frontend is responsible for sending the user input to the backend,
-and receive the response from the backend, while maintaining a history.
-
-The tool currently have the following list of frontend implementations.
-They are specified through the `-F | --frontend` argument.
-
-* `openai`: Connects with a OpenAI API-compatible
-  server. For instance, by specifying `--openai_base_url`, you can switch to
-  a different service provider than the default OpenAI API server.
-
-* `anthropic`: Connects with Anthropic service. You need to specify
-  `--anthropic_api_key` or environt variable `ANTHROPIC_API_KEY` to use this.
-
-* `gemini`: Connects with Google's Gemini service. You need to specify
-  `--gemini_api_key` to use this.
-
-* `llamafile`: Connects with a llamafile (single-file LLM distribution).
-  See https://github.com/Mozilla-Ocho/llamafile for more information.
-  This frontend is implemented in the OpenAI-API compatible way.
-  Setting up `--llamafile_base_url` to point to the llamafile service you want
-  to use should be enough.
-
-* `ollama`: Connects with ollama service instance.
-  See https://github.com/ollama/ollama for more information.
-  We currently implement this frontend in the OpenAI-API compatible way.
-  Make sure to specify `--ollama_model` to the one being served by the ollama
-  service you point to with `--ollama_base_url`.
-
-* `vllm`: Connects with a vllm service instance.
-  See https://docs.vllm.ai/en/latest/ for more information.
-  This is a OpenAI-API compatible self-hosted service.
-
-* `zmq`: Connects with the built-in ZMQ backend.
-  The ZMQ backend is provided for self-hosted LLM inference server. This
-  implementation is very light weight, and not compatible with the OpenAI API.
-  To use this frontend, you may need to set up a corresponding ZMQ backend.
-
-* `dryrun`: Fake frontend that does nothing.
-  Instead, we will simply print the generated initial prompt to the screen,
-  so the user can can copy it, and paste into web-based LLMs, including but
-  not limited to ChatGPT (OpenAI), Claude (Anthropic), Bard (google),
-  Gemini (google), HuggingChat (HuggingFace), Perplexity AI, etc.
-  This frontend does not need to connect with any backend.
-
-**DISCLAIMER:** Unless you connect to a self-hosted LLM Inference backend, we
-are uncertain how the third-party API servers will handle the data you created.
-Please refer their corresponding user agreements before adopting one of them.
-Be aware of such risks, and refrain from sending confidential information such
-like paid API keys to LLM.
 
 TUTORIAL
 ========
@@ -476,9 +412,63 @@ you have more good ideas on how we can make LLMs useful for Debian development:
 https://salsa.debian.org/deeplearning-team/debgpt/-/issues
 
 
+FRONTEND
+========
 
-SELF-CONTAINED BACKEND
-======================
+Frontend is a client which communicates with an LLM inference backend.
+The frontend is responsible for sending the user input to the backend,
+and receive the response from the backend, while maintaining a history.
+
+The tool currently have the following list of frontend implementations.
+They are specified through the `-F | --frontend` argument.
+
+* `openai`: Connects with a OpenAI API-compatible server. 
+  By specifying `--openai_base_url`, you can switch to
+  a different service provider than the default OpenAI API server.
+
+* `anthropic`: Connects with Anthropic service. You need to specify
+  `--anthropic_api_key` or environt variable `ANTHROPIC_API_KEY` to use this.
+
+* `gemini`: Connects with Google's Gemini service. You need to specify
+  `--gemini_api_key` to use this.
+
+* `llamafile`: Connects with a llamafile (single-file LLM distribution).
+  See https://github.com/Mozilla-Ocho/llamafile for more information.
+  This frontend is implemented in the OpenAI-API compatible way.
+  Setting up `--llamafile_base_url` to point to the llamafile service you want
+  to use should be enough.
+
+* `ollama`: Connects with ollama service instance.
+  See https://github.com/ollama/ollama for more information.
+  We currently implement this frontend in the OpenAI-API compatible way.
+  Make sure to specify `--ollama_model` to the one being served by the ollama
+  service you point to with `--ollama_base_url`.
+
+* `vllm`: Connects with a vllm service instance.
+  See https://docs.vllm.ai/en/latest/ for more information.
+  This is a OpenAI-API compatible self-hosted service.
+
+* `zmq`: Connects with the built-in ZMQ backend.
+  The ZMQ backend is provided for self-hosted LLM inference server. This
+  implementation is very light weight, and not compatible with the OpenAI API.
+  To use this frontend, you may need to set up a corresponding ZMQ backend.
+
+* `dryrun`: Fake frontend that does nothing.
+  Instead, we will simply print the generated initial prompt to the screen,
+  so the user can can copy it, and paste into web-based LLMs, including but
+  not limited to ChatGPT (OpenAI), Claude (Anthropic), Bard (google),
+  Gemini (google), HuggingChat (HuggingFace), Perplexity AI, etc.
+  This frontend does not need to connect with any backend.
+
+**DISCLAIMER:** Unless you connect to a self-hosted LLM Inference backend, we
+are uncertain how the third-party API servers will handle the data you created.
+Please refer their corresponding user agreements before adopting one of them.
+Be aware of such risks, and refrain from sending confidential information such
+like paid API keys to LLM.
+
+
+BACKEND
+=======
 
 ## Available Backend Implementations
 
