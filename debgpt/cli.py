@@ -69,6 +69,17 @@ def generate_config_file(ag) -> None:
     exit(0)
 
 
+def reconfigure(ag) -> None:
+    '''
+    re-run the configurator.fresh_install_guide() to reconfigure.
+    Force rewrite.
+    '''
+    configurator.fresh_install_guide(
+            os.path.expanduser('~/.debgpt/config.toml'),
+            True)
+    exit(0)
+
+
 def parse_args(argv):
     '''
     argparse with subparsers. Generate a config.toml template as byproduct.
@@ -552,6 +563,11 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                                     aliases=['genconf', 'config.toml'],
                                     help='generate config.toml file template')
     ps_genconfig.set_defaults(func=generate_config_file)
+
+    # Task: config or reconfigure
+    ps_config = subps.add_parser('config',
+                                 help='reconfigure debgpt with a wizard')
+    ps_config.set_defaults(func=reconfigure)
 
     # -- parse and sanitize
     ag = ag.parse_args(argv)
