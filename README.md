@@ -12,29 +12,36 @@ DebGPT - Terminal LLM Tool with Debian/Linux-Specific Design
 SYNOPSIS
 ========
 
-`debgpt [CLI-behavior-options] [frontend-options] [prompt-composers] [subcommands [subcommand-args]]`
+`debgpt [CLI-options] [frontend-options] [composers] [subcommands [subcommand-args]]`
 
 DESCRIPTION
 ===========
 
-*This tool is currently experimental.*
+Large Language Models (LLMs) are capable of handling tasks that traditional
+software could never achieve or even imagine, such as writing/editing code
+based on user instruction. DebGPT is a light-weight (depend on as less Python
+libraries as possible) terminal tool designed for general daily usage of LLM in
+terminal, as well as exploring the possibility of leveraging LLMs to aid Debian
+development, in any extent.
 
-Large language models (LLMs) are newly emerged tools, which are capable of
-handling tasks that traditional software could never achieve, such as writing
-code based on the specification provided by the user. With this tool, we
-attempt to experiment and explore the possibility of leveraging LLMs to aid
-Debian development, in any extent.
+With DebGPT, you can ask LLM to read a file, summarize a document, answer a
+question based on a long context, edit a file, generate a git commit message
+for staged files, as long as you can imagine and provide the necessary
+information for it.
 
-Essentially, the idea of this tool is to gather some pieces of
-Debian/Linux-specific knowledge, combine them together in a prompt, and then send
-them all to the LLM. This tool provides convenient functionality for
-automatically retrieving information from BTS, buildd, Debian Policy, system
-manual pages, tldr manuals, Debian Developer References, etc. It also provides
-convenient wrappers for external tools such as git, where debgpt can
-automatically generate the git commit message and commit the changes for you.
+Essentially, the idea of this tool is to gather information that might be
+relevant to the user instruction, including some Debian/Linux-specific
+knowledge, and combine them together in a prompt to be sent to LLM.
 
-This tool supports multiple frontends, including OpenAI and ZMQ.
-The ZMQ frontend/backend are provided in this tool to make it self-contained.
+The information sources supported by this tool include but are not limited to
+files, directories, URLs, PDFs, Debian BTS, Debian buildd, Debian Policy,
+system manual pages, tldr manuals, Debian Developer References, command lines,
+Google search results, retrieval results (for retrieval-augmented generation),
+and more.
+
+DebGPT supports various LLM service providers, either commercial or
+self-hosted, including OpenAI, Anthropic, Google Gemini, Ollama, LlamaFile,
+vLLM, and ZMQ (DebGPT's built-in backend to make it self-contained). 
 
 
 QUICK START AND CONFIGURATION
@@ -54,10 +61,13 @@ The configuration file is placed at `$HOME/.debgpt/config.toml`.
 After that, you can start using the tool.
 
 ```
-# start a chat with LLM
+# Make a quick question
+debgpt -Qa 'translate "unix is user-friendly" to chinese'
+
+# start an interactive chat with LLM
 debgpt
 
-# try the most important feature of debgpt
+# let LLM read long documents and answer question
 debgpt -Hx policy: -a "what is the latest changes in this policy?"
 ```
 
