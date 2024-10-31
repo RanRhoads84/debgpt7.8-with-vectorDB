@@ -600,6 +600,18 @@ REFERENCES
 [2] Turn your task descriptions into precise shell commands
 : https://github.com/sderev/shellgenius
 
+[3] the AI-native open-source embedding database
+: https://github.com/chroma-core/chroma
+
+[4] LangChain: Build context-aware reasoning applications
+: https://python.langchain.com/docs/introduction/
+
+[5] Ollama: Embedding Models
+: https://ollama.com/blog/embedding-models
+
+[6] OpenAI: Embedding Models
+: https://platform.openai.com/docs/guides/embeddings
+
 LICENSE and ACKNOWLEDGEMENT
 ===========================
 
