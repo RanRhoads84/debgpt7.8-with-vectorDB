@@ -1,6 +1,30 @@
 Changelog
 =========
 
+v0.6 -- 2024-10-31
+------------------
+
+Major features and changes:
+
+[Inplace Code Editing]
+
+* d3382e4 feature: inplace file/code editing by LLM. It works.
+* c9190f2 inplace: if commiting automatically, also record frontend and model
+* f048e58 further add --inplace-git-add-commit option for git add+commit after inplace code edit.
+
+[Configurator TUI]
+
+* e43d8ed configurator: implement debgpt.configurator based on urwid for TUI fresh install guide
+* 8e70c4d cli: let `debgpt config` (re)configure with the wizard
+* a9c0050 cli: replace text fresh install guide with TUI.
+
+Minor changes:
+
+* 24449f5 update short description of the DebGPT project
+* Improve the README, print message, and doc in the code.
+* 37c1b07 feat: add render option to replay function for assistant messages
+* 003da6d assets: generate a new logo for debgpt using DALLE3
+
 v0.5.93 -- 2024-10-29
 ---------------------
 
