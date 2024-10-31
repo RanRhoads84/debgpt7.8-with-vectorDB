@@ -241,7 +241,7 @@ def fresh_install_guide(dest: Optional[str] = None,
     if dest:
         if os.path.exists(dest) and not force:
             raise FileExistsError(
-                f"Configuration file {repr(dest)} already exists. Aborting configurator. If you want to overwrite that file, please specify --force option."
+                f"Configuration file {repr(dest)} already exists. Aborting configurator."
             )
 
     # step 1: select a frontend
