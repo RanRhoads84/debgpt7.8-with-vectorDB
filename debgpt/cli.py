@@ -146,12 +146,12 @@ This option will toggle --quit and turn off markdown rendering.')
     _g.add_argument(
         '--inplace-git-add-commit',
         action='store_true',
-        help='automatically add and commit the changes to git repo.')
+        help='automatically `git add` (no human review) and `git commit` the changes to git repo.')
     _g.add_argument(
         '--inplace-git-add-p-commit',
         '-I',
         action='store_true',
-        help='automatically add -p and commit the changes to git repo.')
+        help='automatically `git add -p` (with human review) and `git commit commit` the changes to git repo.')
     _g.add_argument('--version',
                     action='store_true',
                     help='show DebGPT software version and quit.')
