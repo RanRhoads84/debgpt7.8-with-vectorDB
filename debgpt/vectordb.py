@@ -25,6 +25,7 @@ from typing import Union, List
 import sqlite3
 import argparse
 import numpy as np
+import lz4.frame
 from .defaults import console
 
 
@@ -45,7 +46,7 @@ class VectorDB:
             CREATE TABLE IF NOT EXISTS vectors (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 source TEXT NOT NULL,
-                text TEXT NOT NULL,
+                text BLOB NOT NULL,
                 model TEXT NOT NULL,
                 vector BLOB NOT NULL
             )
@@ -56,20 +57,22 @@ class VectorDB:
                    vector: Union[list, np.ndarray]):
         # Convert vector to bytes for storage
         vector_bytes = np.array(vector, dtype=self.__dtype).tobytes()
+        text_compressed = lz4.frame.compress(text.encode())
         self.cursor.execute(
             'INSERT INTO vectors (source, text, model, vector) VALUES (?, ?, ?, ?)',
             (
                 source,
-                text,
+                text_compressed,
                 model,
                 vector_bytes,
             ))
         self.connection.commit()
 
     def _decode_row(self, row: List):
-        idx, source, text, model, vector_bytes = row
+        idx, source, text_compressed, model, vector_bytes = row
         vector_np = np.frombuffer(vector_bytes, dtype=self.__dtype)
-        return [idx, source, text, model, vector_np]
+        text_uncompressed = lz4.frame.decompress(text_compressed).decode()
+        return [idx, source, text_uncompressed, model, vector_np]
 
     def get_vector(self, vector_id) -> List[Union[str, np.ndarray]]:
         self.cursor.execute('SELECT * FROM vectors WHERE id = ?',
@@ -152,6 +155,7 @@ if __name__ == '__main__':
             print(f'[{idx}]', f'source={repr(source)},',
                   f'model={repr(model)},', f'len(vector)={len(vector)}')
             print('vector=', vector)
+            print('text=', text)
         else:
             print(f'Vector with id={args.id} not found')
         db.close()
