@@ -52,26 +52,32 @@ pip3 install debgpt
 pip3 install git+https://salsa.debian.org/deeplearning-team/debgpt.git
 ```
 
-Upon fresh installation or not configured at all, running `debgpt` command
-will launch a configuration wizard. Follow the guide to setup. If you want
-to reconfigure, use `$ debgpt config`.
+Upon fresh installation, running `debgpt` or `debgpt config` command will
+launch a configuration wizard. Follow the guide to setup, and it will create
+a minimal config file. If you want to reconfigure, use `$ debgpt config`.
 The configuration file is placed at `$HOME/.debgpt/config.toml`.
-After that, you can start using the tool.
 
 ```
-# Make a quick question
-debgpt -Qa 'translate "unix is user-friendly" to chinese'
+# configure or re-configure the tool through a TUI wizard
+debgpt config
+```
 
-# start an interactive chat with LLM
+After that you can start using the tool. Here are some quick examples:
+
+```
+# Make a quick question and quit
+debgpt -qa 'translate "unix is user-friendly" to chinese'
+
+# Start interactive chat with LLM
 debgpt
 ```
 
 Tips: The bare minimum "configuration" required to make `debgpt` work is
-`export OPENAI_API_KEY="your-api-key"`.
+`export OPENAI_API_KEY="your-api-key"`. This can even skip `debgpt config`.
 
 Tips: For advanced usage such as switching to different frontends using 
 `--frontend|-F`, you may use `debgpt genconfig` or `debgpt config.toml`
-to generate a config template.
+to generate a complete config template.
 
 
 TUTORIAL
