@@ -66,22 +66,23 @@ class VectorDB:
             ))
         self.connection.commit()
 
+    def _decode_row(self, row: List):
+        idx, source, text, model, vector_bytes = row
+        vector_np = np.frombuffer(vector_bytes, dtype=self.__dtype)
+        return [idx, source, text, model, vector_np]
+
     def get_vector(self, vector_id) -> List[Union[str, np.ndarray]]:
         self.cursor.execute('SELECT * FROM vectors WHERE id = ?',
                             (vector_id, ))
         result = self.cursor.fetchone()
         if result:
-            print('DEBUG:', result)
-            idx, source, text, model, vector_bytes = result
-            vector_np = np.frombuffer(vector_bytes, dtype=self.__dtype)
-            return [idx, source, text, model, vector_np]
+            return self._decode_row(result)
         return None
 
     def get_all_vectors(self):
         self.cursor.execute('SELECT * FROM vectors')
         results = self.cursor.fetchall()
-        return [(row[0], row[1], row[2], row[3],
-                 np.frombuffer(row[4], dtype=self.__dtype)) for row in results]
+        return [self._decode_row(row) for row in results]
 
     def delete_vector(self, vector_id):
         self.cursor.execute('DELETE FROM vectors WHERE id = ?', (vector_id, ))
@@ -97,6 +98,8 @@ if __name__ == '__main__':
     parser_demo = subparsers.add_parser('demo')
     parser_create = subparsers.add_parser('create')
     parser_ls = subparsers.add_parser('ls')
+    parser_show = subparsers.add_parser('show')
+    parser_show.add_argument('id', type=int, help='ID of the vector to show')
     parser_rm = subparsers.add_parser('rm')
     parser_rm.add_argument('id', type=int, help='ID of the vector to remove')
     args = parser.parse_args()
@@ -140,6 +143,17 @@ if __name__ == '__main__':
             idx, source, text, model, vector = v
             print(f'[{idx}]', f'source={repr(source)},',
                   f'model={repr(model)},', f'len(vector)={len(vector)}')
+        db.close()
+    elif args.action == 'show':
+        db = VectorDB()
+        vector = db.get_vector(args.id)
+        if vector:
+            idx, source, text, model, vector = vector
+            print(f'[{idx}]', f'source={repr(source)},',
+                  f'model={repr(model)},', f'len(vector)={len(vector)}')
+            print('vector=', vector)
+        else:
+            print(f'Vector with id={args.id} not found')
         db.close()
     elif args.action == 'rm':
         db = VectorDB()
