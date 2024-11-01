@@ -12,7 +12,7 @@ exclude = ["doc*", "tests*"]
 [project]
 dynamic = ["version"]
 name = 'debgpt'
-description = "DebGPT -- Terminal LLM Tool with Debian/Linux-Specific Design"
+description = "DebGPT -- General Purpose Terminal LLM Tool with Some Debian-Specific Design"
 requires-python = ">= 3.9"
 dependencies = [
     'rich',

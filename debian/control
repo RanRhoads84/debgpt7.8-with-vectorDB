@@ -26,7 +26,7 @@ Depends: ${misc:Depends}, ${python3:Depends},
 Recommends: python3-zmq, git, tldr, man-db,
 Suggests: python3-torch | python3-torch-cuda | python3-torch-rocm,
           python3-transformers,
-Description: Terminal LLM Tool with Debian/Linux-Specific Design
+Description: General Purpose Terminal LLM Tool with Some Debian-Specific Design
  Large Language Models (LLMs) are capable of handling tasks that traditional
  software could never achieve or even imagine, such as writing/editing code
  based on user instruction. DebGPT is a light-weight (depend on as less Python

@@ -1,10 +1,10 @@
-% DebGPT(1) | Terminal LLM Tool with Debian/Linux-Specific Design
+% DebGPT(1) | General Purpose Terminal LLM Tool with Some Debian-Specific Design
 % Copyright (C) 2024 Mo Zhou <lumin@debian.org>; MIT License.
 
 NAME
 ====
 
-DebGPT - Terminal LLM Tool with Debian/Linux-Specific Design
+DebGPT - General Purpose Terminal LLM Tool with Some Debian-Specific Design
 
 > "AI" = "Artificial Idiot"
 
