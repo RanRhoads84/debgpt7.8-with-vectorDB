@@ -27,6 +27,7 @@ from rich.panel import Panel
 from rich.markup import escape
 from rich.markdown import Markdown
 from rich.live import Live
+from rich.console import Console
 import argparse
 import os
 import json
@@ -37,7 +38,8 @@ import time
 import functools as ft
 from . import defaults
 
-console = rich.get_console()
+console = defaults.console
+console_stdout = Console()
 
 
 def _check(messages: List[Dict]):
@@ -229,9 +231,9 @@ class OpenAIFrontend(AbstractFrontend):
         else:
             generated_text = completion.choices[0].message.content
             if self.render_markdown:
-                console.print(Markdown(generated_text))
+                console_stdout.print(Markdown(generated_text))
             else:
-                console.print(escape(generated_text))
+                console_stdout.print(escape(generated_text))
         new_message = {'role': 'assistant', 'content': generated_text}
         self.update_session(new_message)
         if self.debug:
@@ -318,9 +320,9 @@ class AnthropicFrontend(AbstractFrontend):
                 **self.kwargs)
             generated_text = completion.content[0].text
             if self.render_markdown:
-                console.print(Markdown(generated_text))
+                console_stdout.print(Markdown(generated_text))
             else:
-                console.print(escape(generated_text))
+                console_stdout.print(escape(generated_text))
         new_message = {'role': 'assistant', 'content': generated_text}
         self.update_session(new_message)
         if self.debug:
@@ -389,9 +391,9 @@ class GeminiFrontend(AbstractFrontend):
                                               generation_config=self.kwargs)
             generated_text = response.text
             if self.render_markdown:
-                console.print(Markdown(generated_text))
+                console_stdout.print(Markdown(generated_text))
             else:
-                console.print(escape(generated_text))
+                console_stdout.print(escape(generated_text))
         new_message = {'role': 'assistant', 'content': generated_text}
         self.update_session(new_message)
         if self.debug:

@@ -51,7 +51,7 @@ from . import configurator
 
 warnings.filterwarnings("ignore")
 
-console = rich.get_console()
+console = defaults.console
 
 
 def version() -> None:
@@ -65,7 +65,7 @@ def generate_config_file(ag) -> None:
     '''
     special task: generate config template, print and quit
     '''
-    console.print(ag.config_template)
+    print(ag.config_template)  # should go to stdout
     exit(0)
 
 

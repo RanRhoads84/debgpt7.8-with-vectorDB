@@ -24,21 +24,20 @@ SOFTWARE.
 from typing import List, Union, Dict, Tuple, Optional
 import re
 import requests
-from . import policy as debgpt_policy
 from bs4 import BeautifulSoup
 import os
 import subprocess
 import functools as ft
 import sys
 import glob
-import rich
 import mimetypes
 import tenacity
 import concurrent.futures
 from urllib.request import urlopen, Request
 from urllib.parse import quote
+from . import policy as debgpt_policy
+from .defaults import console
 
-console = rich.get_console()
 
 __doc__ = '''
 This file is in charge of organizaing (debian specific) functions for loading

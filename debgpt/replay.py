@@ -28,8 +28,8 @@ import json
 import argparse
 import rich
 from typing import Dict, Any
+from .defaults import console
 
-console = rich.get_console()
 
 def process_entry(entry: Dict[str, Any], render: bool) -> None:
     """

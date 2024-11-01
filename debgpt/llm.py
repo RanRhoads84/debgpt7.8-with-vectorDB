@@ -32,9 +32,7 @@ from transformers import TextStreamer
 import torch as th
 from typing import Union, List, Dict
 import argparse
-import rich
-
-console = rich.get_console()
+from .defaults import console
 
 
 class AbstractLLM(object):

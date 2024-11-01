@@ -28,6 +28,7 @@ import rich
 from . import defaults
 
 default = defaults.Config(verbose=True)
+console = defaults.console
 
 
 class SingleChoice(object):
@@ -310,11 +311,11 @@ using the `--frontend|-F` argument.", "Press Esc to abort.").run()
                     f.write('{} = {}\n'.format(k, v))
                 else:
                     f.write('{} = {}\n'.format(k, repr(v)))
-        rich.print('Config written to:', dest)
-        rich.print('[white on violet]>_< Enjoy DebGPT!')
+        console.print('Config written to:', dest)
+        console.print('[white on violet]>_< Enjoy DebGPT!')
     else:
         # verbose print
-        rich.print('Minimal Configuration (config.toml):')
+        console.print('Minimal Configuration (config.toml):')
         print('```')
         for k, v in conf.items():
             if isinstance(v, bool):

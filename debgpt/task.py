@@ -21,17 +21,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-import rich
 import os
 import sys
-from . import frontend
-from . import composer
-from . import defaults
 from rich.panel import Panel
 import tempfile
 import textwrap
+from . import frontend
+from . import composer
+from . import defaults
 
-console = rich.get_console()
+console = defaults.console
 
 
 def task_backend(ag) -> None:

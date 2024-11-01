@@ -25,11 +25,10 @@ from rich.status import Status
 from typing import List, Dict
 import argparse
 import zmq
-from . import llm
 import rich
 import torch as th
-
-console = rich.get_console()
+from . import llm
+from .defaults import console
 
 
 class AbstractBackend:

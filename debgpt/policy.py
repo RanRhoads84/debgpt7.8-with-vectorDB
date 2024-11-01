@@ -23,9 +23,7 @@ SOFTWARE.
 '''
 import os
 import requests
-import rich
-
-console = rich.get_console()
+from .defaults import console
 
 
 class DebianPolicy(object):
