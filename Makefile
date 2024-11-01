@@ -15,7 +15,7 @@ yapf:
 	find debgpt -type f -name '*.py' -exec yapf -i '{}' \;
 
 pytest:
-	PYTHONPATH=. pytest -v
+	PYTHONPATH=. pytest --cov=debgpt -v
 
 lint:
 	find . -type f -name '*.py' -exec pyflakes '{}' \;

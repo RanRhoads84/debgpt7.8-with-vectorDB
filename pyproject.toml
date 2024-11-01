@@ -53,8 +53,10 @@ anthropic = [
 ]
 test = [
     "pytest>=7.0",
+    "pytest-cov",
 ]
 dev = [
+    "debgpt[test]",
     "pyflakes",
     "pylint",
 ]

@@ -140,6 +140,18 @@ class VectorDB:
         return documents
 
 
+def vdb_ls(vdb: VectorDB):
+    '''
+    List all vectors in the database.
+    '''
+    vectors = vdb.get_all_rows()
+    for v in vectors:
+        idx, source, text, model, vector = v
+        console.log(f'[{idx:4d}]',f'model={repr(model)},', f'len(vector)={len(vector)}',
+             f'source={repr(source)},')
+    return vectors
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db', type=str, default='VectorDB.sqlite',
@@ -155,57 +167,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.action == 'demo':
-        # Example usage, and create a database for debugging purposes
+        # create a database for demo purposes
         db = VectorDB(args.db)
-
         # Adding vectors
         for i in range(10):
             v = np.random.rand(256)
             db.add_vector(f'vector_{i}', str(v), f'model_name', v)
-
         # make sure there is at least one vector with cosine=1 for normalized ones(256)
         db.add_vector(f'ones', str(v), f'model_name', np.ones(256))
-
-        # Retrieve a vector
-        vector = db.get_vector(2)
-        print(f'Vector with ID 2: {vector}')
-
-        # Retrieve all rows
-        vectors = db.get_all_rows()
-        print('All rows:', len(vectors))
-
-        # Delete a vector
-        db.delete_vector(1)
-        print('id 1 deleted')
-
-        # Retrieve all rows
-        vectors = db.get_all_rows()
-        print('All rows:', len(vectors))
-
-        # Retrieve all vectors
-        all_vectors = db.get_all_vectors()
-        print('All vectors:', len(all_vectors))
-
-        # make a query
-        query_vector = np.ones(256)
-        documents = db.retrieve(query_vector)
-        print('Query result:')
-        for doc in documents:
-            sim, source, text = doc
-            print(f'sim {sim:.3f}', 'len(text)', len(text), 'source', source, )
-
-        # Closing the database connection
-        db.close()
-    elif args.action == 'create':
-        db = VectorDB(args.db)
         db.close()
     elif args.action == 'ls':
         db = VectorDB(args.db)
-        vectors = db.get_all_rows()
-        for v in vectors:
-            idx, source, text, model, vector = v
-            print(f'[{idx:4d}]',f'model={repr(model)},', f'len(vector)={len(vector)}',
-                 f'source={repr(source)},')
+        vdb_ls(db)
         db.close()
     elif args.action == 'show':
         db = VectorDB(args.db)
