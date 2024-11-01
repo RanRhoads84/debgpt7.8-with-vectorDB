@@ -263,7 +263,6 @@ def main(argv: List[str]) -> None:
                         help='Database file name')
     subparsers = parser.add_subparsers(dest='action')
     parser_demo = subparsers.add_parser('demo')
-    parser_create = subparsers.add_parser('create')
     parser_ls = subparsers.add_parser('ls')
     parser_show = subparsers.add_parser('show')
     parser_show.add_argument('id', type=int, help='ID of the vector to show')
