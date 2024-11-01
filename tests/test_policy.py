@@ -21,20 +21,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
+import os
 import pytest
 from debgpt.policy import DebianPolicy
 from debgpt.policy import DebianDevref
 
 
 @pytest.mark.parametrize('section', ('1', '4.6', '4.9.1'))
-def test_policy(section: str) -> None:
+def test_policy(tmpdir: str, section: str) -> None:
     """
     Test the DebianPolicy class by checking specific sections.
 
     Args:
+        tmpdir (str): The temporary directory to use for testing.
         section (str): The section of the Debian Policy to test.
     """
-    policy = DebianPolicy()
+    policy = DebianPolicy(os.path.join(tmpdir, 'policy.txt'))
     # Print the specific section of the policy
     print(policy[section])
     # Convert the entire policy to a string
@@ -44,14 +46,15 @@ def test_policy(section: str) -> None:
 
 
 @pytest.mark.parametrize('section', ('2', '2.1', '3.1.1'))
-def test_devref(section: str) -> None:
+def test_devref(tmpdir: str, section: str) -> None:
     """
     Test the DebianDevref class by checking specific sections.
 
     Args:
+        tmpdir (str): The temporary directory to use for testing.
         section (str): The section of the Debian Developer's Reference to test.
     """
-    devref = DebianDevref()
+    devref = DebianDevref(os.path.join(tmpdir, 'devref.txt'))
     # Print the specific section of the developer's reference
     print(devref[section])
     # Convert the entire developer's reference to a string
