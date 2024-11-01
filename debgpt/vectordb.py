@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 import sys
-from typing import Union, List
+from typing import Union, List, Tuple
 import sqlite3
 import argparse
 import numpy as np
@@ -42,12 +42,12 @@ class VectorDB:
         truncation.
         '''
         console.log('Connecting to database:', db_name)
-        self.connection = sqlite3.connect(db_name)
-        self.cursor = self.connection.cursor()
+        self.connection: sqlite3.Connection = sqlite3.connect(db_name)
+        self.cursor: sqlite3.Cursor = self.connection.cursor()
         self._create_table()
-        self.dim = dimension
+        self.dim: int = dimension
 
-    def _create_table(self):
+    def _create_table(self) -> None:
         # Create table if it doesn't exist
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS vectors (
@@ -61,7 +61,7 @@ class VectorDB:
         self.connection.commit()
 
     def add_vector(self, source: str, text: str, model: str,
-                   vector: Union[list, np.ndarray]):
+                   vector: Union[list, np.ndarray]) -> None:
         '''
         Add a vector to the database.
         Upon storage, we force the norm of the vector to be 1.
@@ -76,13 +76,12 @@ class VectorDB:
         '''
         # Convert vector to bytes for storage
         assert len(vector) >= self.dim
-        vector_np = np.array(vector, dtype=self.__dtype)
-        vector_np_reduction = vector_np[:self.dim]
+        vector_np: np.ndarray = np.array(vector, dtype=self.__dtype)
+        vector_np_reduction: np.ndarray = vector_np[:self.dim]
         # normalize the vector
-        vector_np_reduction = vector_np_reduction / np.linalg.norm(
-            vector_np_reduction)
-        vector_bytes = vector_np_reduction.tobytes()
-        text_compressed = lz4.frame.compress(text.encode())
+        vector_np_reduction = vector_np_reduction / np.linalg.norm(vector_np_reduction)
+        vector_bytes: bytes = vector_np_reduction.tobytes()
+        text_compressed: bytes = lz4.frame.compress(text.encode())
         self.cursor.execute(
             'INSERT INTO vectors (source, text, model, vector) VALUES (?, ?, ?, ?)',
             (
@@ -93,45 +92,44 @@ class VectorDB:
             ))
         self.connection.commit()
 
-    def _decode_row(self, row: List):
+    def _decode_row(self, row: List) -> List[Union[int, str, np.ndarray]]:
         idx, source, text_compressed, model, vector_bytes = row
-        vector_np = np.frombuffer(vector_bytes, dtype=self.__dtype)
-        text_uncompressed = lz4.frame.decompress(text_compressed).decode()
+        vector_np: np.ndarray = np.frombuffer(vector_bytes, dtype=self.__dtype)
+        text_uncompressed: str = lz4.frame.decompress(text_compressed).decode()
         return [idx, source, text_uncompressed, model, vector_np]
 
-    def get_vector(self, vector_id: int) -> List[Union[str, np.ndarray]]:
-        self.cursor.execute('SELECT * FROM vectors WHERE id = ?',
-                            (vector_id, ))
-        result = self.cursor.fetchone()
+    def get_vector(self, vector_id: int) -> List[Union[int, str, np.ndarray]]:
+        self.cursor.execute('SELECT * FROM vectors WHERE id = ?', (vector_id,))
+        result: Tuple = self.cursor.fetchone()
         if result:
             return self._decode_row(result)
         raise ValueError(f'Vector with id={vector_id} not found')
 
-    def get_all_rows(self):
+    def get_all_rows(self) -> List[List[Union[int, str, np.ndarray]]]:
         self.cursor.execute('SELECT * FROM vectors')
-        results = self.cursor.fetchall()
+        results: List[Tuple] = self.cursor.fetchall()
         return [self._decode_row(row) for row in results]
 
-    def get_all_vectors(self):
+    def get_all_vectors(self) -> List[Tuple[int, np.ndarray]]:
         self.cursor.execute('SELECT id, vector FROM vectors')
-        results = self.cursor.fetchall()
+        results: List[Tuple[int, bytes]] = self.cursor.fetchall()
         return [(idx, np.frombuffer(vector, dtype=self.__dtype))
                 for idx, vector in results]
 
-    def get_all(self) -> List[np.ndarray]:
+    def get_all(self) -> Tuple[np.ndarray, np.ndarray]:
         idxs, vectors = list(zip(*self.get_all_vectors()))
-        idxs = np.array(idxs)
-        matrix = np.stack(vectors)
-        return idxs, matrix
+        idxs_array: np.ndarray = np.array(idxs)
+        matrix: np.ndarray = np.stack(vectors)
+        return idxs_array, matrix
 
-    def delete_vector(self, vector_id: int):
-        self.cursor.execute('DELETE FROM vectors WHERE id = ?', (vector_id, ))
+    def delete_vector(self, vector_id: int) -> None:
+        self.cursor.execute('DELETE FROM vectors WHERE id = ?', (vector_id,))
         self.connection.commit()
 
-    def close(self):
+    def close(self) -> None:
         self.connection.close()
 
-    def retrieve(self, vector: np.ndarray, topk: int = 3):
+    def retrieve(self, vector: np.ndarray, topk: int = 3) -> List[List[Union[float, str]]]:
         '''
         Retrieve the nearest vector from the database.
         '''
@@ -139,24 +137,20 @@ class VectorDB:
         assert matrix.ndim == 2
         assert vector.ndim == 1
         vector = vector / np.linalg.norm(vector)
-        cosine = (matrix @ vector.reshape(-1, 1)).flatten()
-        #print('cosine', cosine)
-        argsort = np.argsort(cosine)[::-1][:topk]
-        #print('argsort', argsort)
-        #print('idxs[argsort]', idxs[argsort])
-        #print('cosine[argsort]', cosine[argsort])
-        documents = []
+        cosine: np.ndarray = (matrix @ vector.reshape(-1, 1)).flatten()
+        argsort: np.ndarray = np.argsort(cosine)[::-1][:topk]
+        documents: List[List[Union[float, str]]] = []
         for idx, sim in zip(idxs[argsort], cosine[argsort]):
             _, source, text, _, _ = self.get_vector(int(idx))
-            doc = [sim, source, text]
+            doc: List[Union[float, str]] = [sim, source, text]
             documents.append(doc)
         return documents
 
-    def ls(self):
+    def ls(self) -> List[List[Union[int, str, np.ndarray]]]:
         '''
         List all vectors in the database.
         '''
-        vectors = self.get_all_rows()
+        vectors: List[List[Union[int, str, np.ndarray]]] = self.get_all_rows()
         for v in vectors:
             idx, source, text, model, vector = v
             console.log(f'[{idx:4d}]', f'model={repr(model)},',
@@ -164,11 +158,11 @@ class VectorDB:
                         f'source={repr(source)},')
         return vectors
 
-    def show(self, idx: int):
+    def show(self, idx: int) -> None:
         '''
         Show the vector with the given index.
         '''
-        vector = self.get_vector(idx)
+        vector: List[Union[int, str, np.ndarray]] = self.get_vector(idx)
         idx, source, text, model, vector = vector
         print(
             f'[{idx:4d}]',
@@ -180,7 +174,7 @@ class VectorDB:
         print('text=', text)
 
 
-def main(argv: List[str]):
+def main(argv: List[str]) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--db',
                         type=str,
@@ -201,7 +195,7 @@ def main(argv: List[str]):
         db = VectorDB(args.db)
         # Adding vectors
         for i in range(10):
-            v = np.random.rand(256)
+            v: np.ndarray = np.random.rand(256)
             db.add_vector(f'vector_{i}', str(v), f'model_name', v)
         # make sure there is at least one vector with cosine=1 for normalized ones(256)
         db.add_vector(f'ones', str(np.ones(256)), f'model_name', np.ones(256))
