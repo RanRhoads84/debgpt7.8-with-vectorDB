@@ -224,4 +224,4 @@ def main(argv: List[str]):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    main(sys.argv)
+    main(sys.argv[1:])
