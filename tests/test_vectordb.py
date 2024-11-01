@@ -66,7 +66,10 @@ def test_vectordb_get_vector(tmpdir):
     assert text == str(np.ones(256))
     assert model == 'model_name'
     assert np.allclose(vector, expected_vec)
+    with pytest.raises(ValueError):
+        vdb.get_vector(999)
     vdb.close()
+
 
 def test_get_all_rows(tmpdir):
     vdb = _prepare_vdb(tmpdir)
@@ -83,6 +86,7 @@ def test_get_all_rows(tmpdir):
         assert isinstance(row[4], np.ndarray)
     vdb.close()
 
+
 def test_get_all_vectors(tmpdir):
     vdb = _prepare_vdb(tmpdir)
     # get all rows
@@ -95,6 +99,7 @@ def test_get_all_vectors(tmpdir):
         assert isinstance(row[1], np.ndarray)
     vdb.close()
 
+
 def test_get_all(tmpdir):
     vdb = _prepare_vdb(tmpdir)
     # get all rows
@@ -103,6 +108,7 @@ def test_get_all(tmpdir):
     assert isinstance(matrix, np.ndarray)
     assert matrix.shape == (11, 256)
     vdb.close()
+
 
 def test_delete_vector(tmpdir):
     vdb = _prepare_vdb(tmpdir)
@@ -115,6 +121,7 @@ def test_delete_vector(tmpdir):
     allrows = vdb.get_all_rows()
     assert len(allrows) == 10
     vdb.close()
+
 
 def test_retrieve(tmpdir):
     vdb = _prepare_vdb(tmpdir)
@@ -133,7 +140,50 @@ def test_retrieve(tmpdir):
             assert np.isclose(sim, 1.0)
     vdb.close()
 
+
 def test_vdb_ls(tmpdir):
     vdb = _prepare_vdb(tmpdir)
-    vectordb.vdb_ls(vdb)
+    vdb.ls()
     vdb.close()
+
+
+def test_vdb_show(tmpdir):
+    vdb = _prepare_vdb(tmpdir)
+    vdb.show(1)
+    vdb.close()
+
+
+def test_main_demo(tmpdir):
+    temp_file = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+    path = os.path.join(tmpdir, temp_file.name)
+    vectordb.main(['--db', path, 'demo'])
+
+
+def test_main_ls(tmpdir):
+    temp_file = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+    path = os.path.join(tmpdir, temp_file.name)
+    vectordb.main(['--db', path, 'ls'])
+
+
+def test_main_show(tmpdir):
+    temp_file = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+    path = os.path.join(tmpdir, temp_file.name)
+    vectordb.main(['--db', path, 'demo'])
+    vectordb.main(['--db', path, 'show', '1'])
+    with pytest.raises(ValueError):
+        vectordb.main(['--db', path, 'show', '999'])
+
+
+def test_main_rm(tmpdir):
+    temp_file = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+    path = os.path.join(tmpdir, temp_file.name)
+    vectordb.main(['--db', path, 'demo'])
+    vectordb.main(['--db', path, 'rm', '1'])
+
+
+def test_main_help(tmpdir):
+    temp_file = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+    path = os.path.join(tmpdir, temp_file.name)
+    vectordb.main([])
+    with pytest.raises(SystemExit):
+        vectordb.main(['--help'])

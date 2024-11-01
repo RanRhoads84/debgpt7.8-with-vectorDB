@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
+import sys
 from typing import Union, List
 import sqlite3
 import argparse
@@ -34,9 +35,7 @@ class VectorDB:
     # default data type for vectors
     __dtype = np.float32
 
-    def __init__(self,
-                 db_name: str='VectorDB.sqlite',
-                 dimension: int = 256):
+    def __init__(self, db_name: str = 'VectorDB.sqlite', dimension: int = 256):
         '''
         Initialize a VectorDB object.
         We assume the embedding model supports dimension reduction by
@@ -63,12 +62,25 @@ class VectorDB:
 
     def add_vector(self, source: str, text: str, model: str,
                    vector: Union[list, np.ndarray]):
+        '''
+        Add a vector to the database.
+        Upon storage, we force the norm of the vector to be 1.
+
+        Args:
+            source: source of the vector, e.g., file path, url
+            text: original text content corresponding to the vector
+            model: embedding model name for the vector
+            vector: the vector to store
+        Returns:
+            None
+        '''
         # Convert vector to bytes for storage
-        assert len( vector ) >= self.dim 
+        assert len(vector) >= self.dim
         vector_np = np.array(vector, dtype=self.__dtype)
         vector_np_reduction = vector_np[:self.dim]
         # normalize the vector
-        vector_np_reduction = vector_np_reduction / np.linalg.norm(vector_np_reduction)
+        vector_np_reduction = vector_np_reduction / np.linalg.norm(
+            vector_np_reduction)
         vector_bytes = vector_np_reduction.tobytes()
         text_compressed = lz4.frame.compress(text.encode())
         self.cursor.execute(
@@ -103,7 +115,8 @@ class VectorDB:
     def get_all_vectors(self):
         self.cursor.execute('SELECT id, vector FROM vectors')
         results = self.cursor.fetchall()
-        return [(idx, np.frombuffer(vector, dtype=self.__dtype)) for idx, vector in results]
+        return [(idx, np.frombuffer(vector, dtype=self.__dtype))
+                for idx, vector in results]
 
     def get_all(self) -> List[np.ndarray]:
         idxs, vectors = list(zip(*self.get_all_vectors()))
@@ -139,22 +152,39 @@ class VectorDB:
             documents.append(doc)
         return documents
 
+    def ls(self):
+        '''
+        List all vectors in the database.
+        '''
+        vectors = self.get_all_rows()
+        for v in vectors:
+            idx, source, text, model, vector = v
+            console.log(f'[{idx:4d}]', f'model={repr(model)},',
+                        f'len(vector)={len(vector)}',
+                        f'source={repr(source)},')
+        return vectors
 
-def vdb_ls(vdb: VectorDB):
-    '''
-    List all vectors in the database.
-    '''
-    vectors = vdb.get_all_rows()
-    for v in vectors:
-        idx, source, text, model, vector = v
-        console.log(f'[{idx:4d}]',f'model={repr(model)},', f'len(vector)={len(vector)}',
-             f'source={repr(source)},')
-    return vectors
+    def show(self, idx: int):
+        '''
+        Show the vector with the given index.
+        '''
+        vector = self.get_vector(idx)
+        idx, source, text, model, vector = vector
+        print(
+            f'[{idx:4d}]',
+            f'model={repr(model)},',
+            f'len(vector)={len(vector)}',
+            f'source={repr(source)},',
+        )
+        print('vector=', vector)
+        print('text=', text)
 
 
-if __name__ == '__main__':
+def main(argv: List[str]):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--db', type=str, default='VectorDB.sqlite',
+    parser.add_argument('--db',
+                        type=str,
+                        default='VectorDB.sqlite',
                         help='Database file name')
     subparsers = parser.add_subparsers(dest='action')
     parser_demo = subparsers.add_parser('demo')
@@ -164,7 +194,7 @@ if __name__ == '__main__':
     parser_show.add_argument('id', type=int, help='ID of the vector to show')
     parser_rm = subparsers.add_parser('rm')
     parser_rm.add_argument('id', type=int, help='ID of the vector to remove')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.action == 'demo':
         # create a database for demo purposes
@@ -174,30 +204,24 @@ if __name__ == '__main__':
             v = np.random.rand(256)
             db.add_vector(f'vector_{i}', str(v), f'model_name', v)
         # make sure there is at least one vector with cosine=1 for normalized ones(256)
-        db.add_vector(f'ones', str(v), f'model_name', np.ones(256))
+        db.add_vector(f'ones', str(np.ones(256)), f'model_name', np.ones(256))
         db.close()
     elif args.action == 'ls':
         db = VectorDB(args.db)
-        vdb_ls(db)
+        db.ls()
         db.close()
     elif args.action == 'show':
         db = VectorDB(args.db)
-        vector = db.get_vector(args.id)
-        if vector:
-            idx, source, text, model, vector = vector
-            print(f'[{idx:4d}]',
-                      f'model={repr(model)},', f'len(vector)={len(vector)}',
-                     f'source={repr(source)},',
-                  )
-            print('vector=', vector)
-            print('text=', text)
-        else:
-            print(f'Vector with id={args.id} not found')
+        db.show(args.id)
         db.close()
     elif args.action == 'rm':
         db = VectorDB(args.db)
         db.delete_vector(args.id)
-        db.close()
         console.log(f'Deleted vector with id={args.id}')
+        db.close()
     else:
         parser.print_help()
+
+
+if __name__ == '__main__':  # pragma: no cover
+    main(sys.argv)
