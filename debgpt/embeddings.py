@@ -94,8 +94,8 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
     def embed(self, text: str) -> np.ndarray:
         from openai import RateLimitError
         func = retry_ratelimit(self.client.embeddings.create, RateLimitError)
-        response = func(input=text, model=self.model)
-        vector = np.array(response.data[0].embedding)[:self.dim]
+        response = func(input=text, model=self.model, dimension=self.dim)
+        vector = np.array(response.data[0].embedding)
         return vector
 
     def batch_embed(self, texts: List[str]) -> np.ndarray:
@@ -104,43 +104,6 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
         response = func(input=texts, model=self.model)
         matrix = np.stack([x.embedding for x in response.data])[:, :self.dim]
         return matrix
-
-
-class Retriever(object):
-
-    def __init__(self, args: object):
-        self.model = get_embedding_model(args)
-        self.vdb = VectorDB(args.embedding_database, self.model.dim)
-
-    def retrieve(self, query: str, documents: List[str], topk: int = 3) -> List[str]:
-        '''
-        This function retrieves the top-k most relevant documents from the
-        document list given a query. It does not modify the database, nor
-        query the database.
-        '''
-        query_embedding = self.embedding.embed(query)
-        document_embeddings = self.embedding.batch_embed(documents)
-        scores = np.dot(document_embeddings, query_embedding)
-        indices = np.argsort(scores)[::-1]
-        return [documents[i] for i in indices][:topk]
-
-    def add(self, source: str, text: str) -> np.ndarray:
-        '''
-        This function computes and adds a new vector to the database.
-        '''
-        model_name = self.model.model
-        vector = self.model.embed(text)
-        self.vdb.add_vector(source, text, model_name, vector)
-        return vector
-
-    def retrieve_from_db(self, query: str, topk: int = 3) -> List[str]:
-        '''
-        This function retrieves the top-k most relevant documents from the
-        database given a query.
-        '''
-        query_embedding = self.model.embed(query)
-        scores, documents = self.vdb.retrieve(query_embedding, topk)
-        return documents
 
 
 def get_embedding_model(args: object) -> AbstractEmbeddingModel:
@@ -172,6 +135,6 @@ if __name__ == '__main__':
                         help='Embedding database')
     args = parser.parse_args()
 
-    retriever = Retriever(args)
-    vector = retriever.add('void', "Your text string goes here")
+    model = get_embedding_model(args)
+    vector = model.embed("Your text string goes here")
     print(f'embedding:', vector.shape)
