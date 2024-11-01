@@ -46,9 +46,9 @@ def _prepare_vdb(tmpdir: str, populate: bool = True) -> VectorDB:
     # Adding random vectors
     for i in range(10):
         v = np.random.rand(256)
-        vdb.add(f'vector_{i}', str(v), f'model_name', v)
+        vdb.add(f'vector_{i}', str(v), v)
     # Add a constant vector for retrieval tests
-    vdb.add(f'ones', str(np.ones(256)), f'model_name', np.ones(256))
+    vdb.add(f'ones', str(np.ones(256)), np.ones(256))
     return vdb
 
 
@@ -76,20 +76,18 @@ def test_vectordb_get_byid(tmpdir):
     vdb = _prepare_vdb(tmpdir)
     # Retrieve vector with index 11
     row = vdb.get_byid(11)
-    idx, source, text, model, vector = row
+    idx, source, text, vector = row
     expected_vec = np.ones(256) / np.linalg.norm(np.ones(256))
     assert idx == 11
     assert source == 'ones'
     assert text == str(np.ones(256))
-    assert model == 'model_name'
     assert np.allclose(vector, expected_vec)
     # Retrieve vector with index 11 using __index__ method
     row = vdb[11]
-    idx, source, text, model, vector = row
+    idx, source, text, vector = row
     assert idx == 11
     assert source == 'ones'
     assert text == str(np.ones(256))
-    assert model == 'model_name'
     assert np.allclose(vector, expected_vec)
     # Test retrieving a non-existent vector
     with pytest.raises(ValueError):
@@ -106,12 +104,11 @@ def test_get_all(tmpdir):
     assert len(allrows) == 11
     # Validate each row
     for row in allrows:
-        assert len(row) == 5
+        assert len(row) == 4
         assert isinstance(row[0], int)
         assert isinstance(row[1], str)
         assert isinstance(row[2], str)
-        assert isinstance(row[3], str)
-        assert isinstance(row[4], np.ndarray)
+        assert isinstance(row[3], np.ndarray)
     vdb.close()
 
 

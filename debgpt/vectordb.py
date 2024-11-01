@@ -68,13 +68,12 @@ class VectorDB:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 source TEXT NOT NULL,
                 text BLOB NOT NULL,
-                model TEXT NOT NULL,
                 vector BLOB NOT NULL
             )
         ''')
         self.connection.commit()
 
-    def add(self, source: str, text: str, model: str,
+    def add(self, source: str, text: str,
                    vector: Union[list, np.ndarray]) -> None:
         '''
         Add a vector to the database. The vector is normalized before storage.
@@ -82,7 +81,6 @@ class VectorDB:
         Args:
             source (str): The source of the vector, e.g., file path, URL.
             text (str): The original text content corresponding to the vector.
-            model (str): The embedding model name for the vector.
             vector (Union[list, np.ndarray]): The vector to store.
         '''
         assert len(vector) >= self.dim
@@ -92,11 +90,10 @@ class VectorDB:
         vector_bytes: bytes = vector_np_reduction.tobytes()
         text_compressed: bytes = lz4.frame.compress(text.encode())
         self.cursor.execute(
-            'INSERT INTO vectors (source, text, model, vector) VALUES (?, ?, ?, ?)',
+            'INSERT INTO vectors (source, text, vector) VALUES (?, ?, ?)',
             (
                 source,
                 text_compressed,
-                model,
                 vector_bytes,
             ))
         self.connection.commit()
@@ -111,10 +108,10 @@ class VectorDB:
         Returns:
             List[Union[int, str, np.ndarray]]: The decoded components.
         '''
-        idx, source, text_compressed, model, vector_bytes = row
+        idx, source, text_compressed, vector_bytes = row
         vector_np: np.ndarray = np.frombuffer(vector_bytes, dtype=self.__dtype)
         text_uncompressed: str = lz4.frame.decompress(text_compressed).decode()
-        return [idx, source, text_uncompressed, model, vector_np]
+        return [idx, source, text_uncompressed, vector_np]
 
     def get_byid(self, vector_id: int) -> List[Union[int, str, np.ndarray]]:
         '''
@@ -213,7 +210,7 @@ class VectorDB:
         argsort: np.ndarray = np.argsort(cosine)[::-1][:topk]
         documents: List[List[Union[float, str]]] = []
         for idx, sim in zip(idxs[argsort], cosine[argsort]):
-            _, source, text, _, _ = self.get_byid(int(idx))
+            _, source, text, _, = self.get_byid(int(idx))
             doc: List[Union[float, str]] = [sim, source, text]
             documents.append(doc)
         return documents
@@ -227,8 +224,8 @@ class VectorDB:
         '''
         vectors: List[List[Union[int, str, np.ndarray]]] = self.get_all()
         for v in vectors:
-            idx, source, text, model, vector = v
-            console.log(f'[{idx:4d}]', f'model={repr(model)},',
+            idx, source, text, vector = v
+            console.log(f'[{idx:4d}]',
                         f'len(vector)={len(vector)}',
                         f'source={repr(source)},')
         return vectors
@@ -241,10 +238,9 @@ class VectorDB:
             idx (int): The index of the vector to show.
         '''
         vector: List[Union[int, str, np.ndarray]] = self.get_byid(idx)
-        idx, source, text, model, vector = vector
+        idx, source, text, vector = vector
         print(
             f'[{idx:4d}]',
-            f'model={repr(model)},',
             f'len(vector)={len(vector)}',
             f'source={repr(source)},',
         )
@@ -278,8 +274,8 @@ def main(argv: List[str]) -> None:
         db = VectorDB(args.db)
         for i in range(10):
             v: np.ndarray = np.random.rand(256)
-            db.add(f'vector_{i}', str(v), f'model_name', v)
-        db.add(f'ones', str(np.ones(256)), f'model_name', np.ones(256))
+            db.add(f'vector_{i}', str(v), v)
+        db.add(f'ones', str(np.ones(256)), np.ones(256))
         db.close()
     elif args.action == 'ls':
         db = VectorDB(args.db)
