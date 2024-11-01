@@ -1,3 +1,8 @@
+SPHINXOPTS    ?=
+SPHINXBUILD   ?= sphinx-build
+SOURCEDIR     = debgpt
+BUILDDIR      = _build
+
 main: pytest
 
 man: debgpt.1
@@ -23,3 +28,7 @@ lint:
 
 install:
 	pip3 install .
+
+doc:
+	sphinx-apidoc -o . debgpt
+	sphinx-build . html
