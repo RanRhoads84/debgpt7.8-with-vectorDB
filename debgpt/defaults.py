@@ -98,11 +98,11 @@ class Config(object):
         # the built-in defaults will be overridden by config file
         if not os.path.exists(home):
             if verbose:
-                console.print(f'Creating directory {home}')
+                console.log(f'Creating directory {home}')
             os.mkdir(home)
         if os.path.exists(config):
             if verbose:
-                console.print(f'Loading configuration from {config}')
+                console.log(f'Loading configuration from {config}')
             with open(config, 'rb') as f:
                 content = tomllib.load(f)
                 self.toml.update(content)
