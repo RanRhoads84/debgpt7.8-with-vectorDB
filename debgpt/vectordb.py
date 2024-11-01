@@ -132,7 +132,7 @@ if __name__ == '__main__':
         db.close()
     elif args.action == 'create':
         db = VectorDB()
-        db.close
+        db.close()
     elif args.action == 'ls':
         db = VectorDB()
         vectors = db.get_all_vectors()
@@ -146,3 +146,5 @@ if __name__ == '__main__':
         db.delete_vector(args.id)
         db.close()
         console.log(f'Deleted vector with id={args.id}')
+    else:
+        parser.print_help()
