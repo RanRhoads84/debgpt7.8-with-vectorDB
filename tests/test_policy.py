@@ -30,9 +30,13 @@ from debgpt.policy import DebianDevref
 def test_policy(section):
     policy = DebianPolicy()
     print(policy[section])
+    whole = str(policy)
+    assert len(whole) > 1000
 
 
 @pytest.mark.parametrize('section', ('2', '2.1', '3.1.1'))
 def test_devref(section):
     devref = DebianDevref()
     print(devref[section])
+    whole = str(devref)
+    assert len(whole) > 1000

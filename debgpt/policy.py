@@ -26,60 +26,68 @@ import requests
 from .defaults import console
 
 
-class DebianPolicy(object):
+class DebianPolicy:
     '''
-    cache the plain text policy document.
-    and query its sections / subsections.
+    Cache the plain text policy document and query its sections / subsections.
     '''
-    NAME = 'Debian Policy'
-    URL = 'https://www.debian.org/doc/debian-policy/policy.txt'
-    SEP_SECTION = '***'
-    SEP_SUBSECTION = '==='
-    SEP_SUBSUBSECTION = '---'
+    NAME: str = 'Debian Policy'
+    URL: str = 'https://www.debian.org/doc/debian-policy/policy.txt'
+    SEP_SECTION: str = '***'
+    SEP_SUBSECTION: str = '==='
+    SEP_SUBSUBSECTION: str = '---'
 
-    def __init__(self, cache: str = 'policy.txt'):
+    def __init__(self, cache: str = 'policy.txt') -> None:
+        # Check if the cache file exists, if not, download and cache it.
         if not os.path.exists(cache):
             r = requests.get(self.URL)
             with open(cache, 'wb') as f:
                 f.write(r.content)
             console.log(f'DebianPolicy> cached {self.NAME} at {cache}')
+        
+        # Read the cached file into lines.
         with open(cache, 'rt') as f:
-            self.lines = [x.rstrip() for x in f.readlines()]
+            self.lines: list[str] = [x.rstrip() for x in f.readlines()]
 
-    def __str__(self):
+    def __str__(self) -> str:
+        # Return the entire document as a string.
         return '\n'.join(self.lines)
 
-    def __getitem__(self, index: str):
-        sep = {
+    def __getitem__(self, index: str) -> str:
+        # Retrieve a specific section, subsection, or subsubsection based on the index.
+        sep: str = {
             1: self.SEP_SECTION,
             2: self.SEP_SUBSECTION,
             3: self.SEP_SUBSUBSECTION
         }[len(index.split('.'))]
-        ret = []
-        prev = ''
-        in_range = False
+        
+        ret: list[str] = []
+        prev: str = ''
+        in_range: bool = False
+        
+        # Iterate over lines to find the specified section.
         for cursor in self.lines:
             if cursor.startswith(sep) and prev.startswith(f'{index}. '):
-                # start
+                # Start of the desired section
                 ret.append(prev)
                 ret.append(cursor)
                 in_range = True
             elif cursor.startswith(sep) and in_range:
-                # stop
+                # End of the desired section
                 ret.pop(-1)
                 in_range = False
                 break
             elif in_range:
+                # Within the desired section
                 ret.append(cursor)
-            else:
-                pass
             prev = cursor
+        
         return '\n'.join(ret)
 
 
 class DebianDevref(DebianPolicy):
-    NAME = "Debian Developer's Reference"
-    URL = 'https://www.debian.org/doc/manuals/developers-reference/developers-reference.en.txt'
+    NAME: str = "Debian Developer's Reference"
+    URL: str = 'https://www.debian.org/doc/manuals/developers-reference/developers-reference.en.txt'
 
-    def __init__(self, cache: str = 'devref.txt'):
+    def __init__(self, cache: str = 'devref.txt') -> None:
+        # Initialize the DebianDevref class, inheriting from DebianPolicy.
         super().__init__(cache)
