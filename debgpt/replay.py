@@ -69,6 +69,7 @@ def process_entry(entry: Dict[str, Any], render: bool) -> None:
     else:
         console.print(content)
 
+
 def replay(path: str, render: bool = True) -> None:
     """
     Replays chat messages from a JSON file.
@@ -82,6 +83,7 @@ def replay(path: str, render: bool = True) -> None:
 
     for entry in J:
         process_entry(entry, render)
+
 
 def main() -> None:
     """
@@ -99,6 +101,7 @@ def main() -> None:
         help='Render assistant messages with rich Markdown (default: True)')
     args = parser.parse_args()
     replay(args.input_file, args.render)
+
 
 if __name__ == '__main__':
     main()

@@ -47,7 +47,8 @@ def task_backend(ag) -> None:
 def task_replay(ag) -> None:
     from . import replay
     if ag.json_file_path is None:
-        json_path = composer._latest_glob(os.path.join(ag.debgpt_home, '*.json'))
+        json_path = composer._latest_glob(
+            os.path.join(ag.debgpt_home, '*.json'))
         console.log('found the latest json:', json_path)
     else:
         json_path = ag.json_file_path
@@ -76,7 +77,8 @@ def task_git_commit(ag) -> None:
     frontend.query_once(f, msg)
     tmpfile = tempfile.mktemp()
     commit_message = f.session[-1]['content']
-    if getattr(ag, 'inplace_git_add_commit', False) or getattr(ag, 'inplace_git_add_p_commit', False):
+    if getattr(ag, 'inplace_git_add_commit', False) or getattr(
+            ag, 'inplace_git_add_p_commit', False):
         # is the code automatically modified by debgpt --inplace?
         commit_message = 'DebGPT> ' + commit_message
         commit_message += '\n\n'

@@ -75,7 +75,7 @@ def reconfigure(ag) -> None:
     Force rewrite.
     '''
     configurator.fresh_install_guide(
-            os.path.expanduser('~/.debgpt/config.toml'))
+        os.path.expanduser('~/.debgpt/config.toml'))
     exit(0)
 
 
@@ -147,12 +147,16 @@ This option will toggle --quit and turn off markdown rendering.')
     _g.add_argument(
         '--inplace-git-add-commit',
         action='store_true',
-        help='automatically `git add` (no human review) and `git commit` the changes to git repo.')
+        help=
+        'automatically `git add` (no human review) and `git commit` the changes to git repo.'
+    )
     _g.add_argument(
         '--inplace-git-add-p-commit',
         '-I',
         action='store_true',
-        help='automatically `git add -p` (with human review) and `git commit commit` the changes to git repo.')
+        help=
+        'automatically `git add -p` (with human review) and `git commit commit` the changes to git repo.'
+    )
     _g.add_argument('--version',
                     action='store_true',
                     help='show DebGPT software version and quit.')
@@ -660,9 +664,9 @@ def mapreduce_super_long_context(ag) -> str:
         user_question = 'summarize the above contents.'
 
     chunks = composer.mapreduce_load_any_astext(ag.mapreduce,
-                                              ag.mapreduce_chunksize,
-                                              user_question=user_question,
-                                              args=ag)
+                                                ag.mapreduce_chunksize,
+                                                user_question=user_question,
+                                                args=ag)
     console.print(
         f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}'
     )
@@ -689,7 +693,7 @@ def mapreduce_super_long_context(ag) -> str:
     # skip mapreduce if there is only one chunk
     if len(chunks) == 1:
         filepath = composer.mapreduce_parse_path(ag.mapreduce,
-                                               debgpt_home=ag.debgpt_home)
+                                                 debgpt_home=ag.debgpt_home)
         if any(
                 filepath.startswith(x)
                 for x in ('file://', 'http://', 'https://')):
@@ -921,7 +925,7 @@ def main(argv=sys.argv[1:]):
     ])
     if whether_show_fresh_install_guide:
         configurator.fresh_install_guide(
-                os.path.expanduser('~/.debgpt/config.toml'))
+            os.path.expanduser('~/.debgpt/config.toml'))
         exit(0)
 
     # parse argument order

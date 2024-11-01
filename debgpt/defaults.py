@@ -105,16 +105,12 @@ class Config(object):
         # some arguments will be overrden by environment variables
         if (openai_api_key := os.getenv('OPENAI_API_KEY', None)) is not None:
             if verbose:
-                console.print(
-                    f'Found environment variable OPENAI_API_KEY.'
-                )
+                console.print(f'Found environment variable OPENAI_API_KEY.')
             self.toml['openai_api_key'] = openai_api_key
         if (anthropic_api_key := os.getenv('ANTHROPIC_API_KEY',
                                            None)) is not None:
             if verbose:
-                console.print(
-                    f'Found environment variable ANTHROPIC_API_KEY.'
-                )
+                console.print(f'Found environment variable ANTHROPIC_API_KEY.')
             self.toml['anthropic_api_key'] = anthropic_api_key
         # all the above will be overridden by command line arguments
         pass

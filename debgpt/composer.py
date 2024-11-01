@@ -38,7 +38,6 @@ from urllib.parse import quote
 from . import policy as debgpt_policy
 from .defaults import console
 
-
 __doc__ = '''
 This file is in charge of organizaing (debian specific) functions for loading
 texts from various sources, which are subsequently combined into the first
