@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
+import sys
 import os
 try:
     import tomllib  # requires python >= 3.10
@@ -29,6 +30,15 @@ except:
 import rich
 from rich.console import Console
 
+# before we print anything, even before initializing class instances,
+# we need to detect a special mode that does not allow any printing
+# in stderr
+if 'debgpt' in sys.argv[0] and 'pipe' in sys.argv:
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    # Redirect stderr to /dev/null
+    os.dup2(devnull, 2)
+
+# default console that writes to stderr
 console = Console(stderr=True)
 
 ########################

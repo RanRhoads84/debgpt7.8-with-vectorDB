@@ -558,6 +558,13 @@ Their prices vary. See https://platform.openai.com/docs/models .')
         help='read stdin as the first prompt. Should combine with -Q.')
     ps_stdin.set_defaults(func=lambda ag: composer.stdin())
 
+    # Task: pipe
+    ps_pipe = subps.add_parser(
+        'pipe',
+        help='read stdin, print nothing other than LLM response to stdout. \
+This option will automatically mandate --no-render_markdown, -Q and -H.')
+    ps_pipe.set_defaults(func=lambda ag: composer.stdin())
+
     # Task: genconfig
     ps_genconfig = subps.add_parser('genconfig',
                                     aliases=['genconf', 'config.toml'],
@@ -582,6 +589,13 @@ Their prices vary. See https://platform.openai.com/docs/models .')
         # the editing instruction through --ask|-a. Here we will append
         # some addition prompt to reduce LLM noise.
         ag.ask += ' Just show me the result and do not say anything else. No need to enclose the result using "```".'
+    if ag.subparser_name == 'stdin':
+        ag.quit = True
+    if ag.subparser_name == 'pipe':
+        ag.quit = True
+        ag.hide_first = True
+        ag.render_markdown = False
+        ag.ask += 'Just show the full result and do not say anything else. Do not enclose the result using "```".'
 
     return ag
 
@@ -923,6 +937,9 @@ def main(argv=sys.argv[1:]):
     # in their subparser default function when then finished, such as backend,
     # version, etc. They will exit.
     msg = ag.func(ag)
+    if ag.subparser_name == 'pipe':
+        msg = 'The following content are to be modified:\n```\n' + msg
+        msg += '\n```\n\n'
 
     # gather all specified information in the initial prompt,
     # such as --file, --man, --policy, --ask

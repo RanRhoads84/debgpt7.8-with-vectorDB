@@ -64,9 +64,6 @@ debgpt -Qa 'translate "unix is user-friendly" to chinese'
 
 # start an interactive chat with LLM
 debgpt
-
-# let LLM read long documents and answer question
-debgpt -Hx policy: -a "what is the latest changes in this policy?"
 ```
 
 Tips: The bare minimum "configuration" required to make `debgpt` work is
@@ -126,6 +123,21 @@ debgpt -Qa 'write a hello world in rakudo for me' -o hello.raku
 debgpt -HQ stdin < question.txt | tee result.txt
 ```
 
+The pipe mode is useful when you want to use `debgpt` in a shell script Try the
+follows on the Makefile in debgpt repo. Later we will introduce a in-place
+editing functionality which is more convenient than this one.
+
+```
+cat Makefile | debgpt -a 'delete the deprecated targets' pipe | tee tmp ; mv tmp Makefile; git diff
+```
+
+The pipe mode can be used for editing something in vim in-place.
+
+```
+# In vim debgpt/task.py, use 'V' mode to select the task_backend function, then 
+:'<,'>!debgpt -a 'add type annotations and comments to this function' pipe
+```
+
 After gettting familiarized with the fundamental usage and its CLI behavior,
 we can directly move on to the most important feature of this tool, namely the
 special prompt composer -- `MapReduce`.
@@ -171,7 +183,7 @@ debgpt -Hx 'https://www.debian.org/doc/debian-policy/policy.txt' -A 'what is the
 
 * Load **Debian Policy** (plain text) and ask a question
 ```
-debgpt -Hx policy: -A 'what is the changes of the latest version compared to the previous version?'
+debgpt -Hx policy: -a "what is the latest changes in this policy?"
 debgpt -Hx policy: -A 'what package should enter contrib instead of main or non-free?'
 ```
 
