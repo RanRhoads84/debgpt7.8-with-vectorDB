@@ -27,16 +27,34 @@ from debgpt.policy import DebianDevref
 
 
 @pytest.mark.parametrize('section', ('1', '4.6', '4.9.1'))
-def test_policy(section):
+def test_policy(section: str) -> None:
+    """
+    Test the DebianPolicy class by checking specific sections.
+
+    Args:
+        section (str): The section of the Debian Policy to test.
+    """
     policy = DebianPolicy()
+    # Print the specific section of the policy
     print(policy[section])
+    # Convert the entire policy to a string
     whole = str(policy)
+    # Assert that the entire policy string is longer than 1000 characters
     assert len(whole) > 1000
 
 
 @pytest.mark.parametrize('section', ('2', '2.1', '3.1.1'))
-def test_devref(section):
+def test_devref(section: str) -> None:
+    """
+    Test the DebianDevref class by checking specific sections.
+
+    Args:
+        section (str): The section of the Debian Developer's Reference to test.
+    """
     devref = DebianDevref()
+    # Print the specific section of the developer's reference
     print(devref[section])
+    # Convert the entire developer's reference to a string
     whole = str(devref)
+    # Assert that the entire developer's reference string is longer than 1000 characters
     assert len(whole) > 1000
