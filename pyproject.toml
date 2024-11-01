@@ -23,7 +23,8 @@ dependencies = [
     'tomli',
     'tenacity',
     'pygments',
-    'urwid'
+    'urwid',
+    'lz4'
 ]
 authors = [
   {name = "Mo Zhou", email = "lumin@debian.org"},
