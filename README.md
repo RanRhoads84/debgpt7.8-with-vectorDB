@@ -628,6 +628,9 @@ REFERENCES
 [6] OpenAI: Embedding Models
 : https://platform.openai.com/docs/guides/embeddings
 
+[7] Moonshot - A simple and modular tool to evaluate and red-team any LLM application.
+: https://github.com/aiverify-foundation/moonshot?tab=readme-ov-file
+
 LICENSE and ACKNOWLEDGEMENT
 ===========================
 
