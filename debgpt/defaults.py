@@ -116,6 +116,11 @@ class Config(object):
             if verbose:
                 console.print(f'Found environment variable ANTHROPIC_API_KEY.')
             self.toml['anthropic_api_key'] = anthropic_api_key
+        # create default vector db name
+        self.toml['db'] = os.path.join(home,
+               'VectorDB_{model}_dim{dim}.sqlite'.format(
+                   model=self.toml['embedding_model'],
+                   dim=self.toml['embedding_dim']))
         # all the above will be overridden by command line arguments
         pass
 

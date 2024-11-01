@@ -44,6 +44,7 @@ from pygments.formatters import TerminalFormatter
 from typing import List, Optional
 import warnings
 from .task import task_backend, task_git, task_git_commit, task_replay
+from .task import task_vdb, task_vdb_ls
 from . import defaults
 from . import composer
 from . import frontend
@@ -386,6 +387,32 @@ Their prices vary. See https://platform.openai.com/docs/models .')
         help='the ZMQ backend URL that the frontend will connect to')
     config_template = __add_arg_to_config(config_template, _g, 'zmq_backend')
 
+    # Embedding Models
+    config_template += '''\n
+##############################
+# Embedding Models
+##############################
+\n'''
+    _g = ag.add_argument_group('Embedding Models')
+    _g.add_argument('--embedding_frontend',
+                    type=str,
+                    default=conf['embedding_frontend'],
+                    help='the embedding frontend to use')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'embedding_frontend')
+    _g.add_argument('--embedding_model',
+                    type=str,
+                    default=conf['embedding_model'],
+                    help='the embedding model to use')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'embedding_model')
+
+    _g.add_argument('--embedding_dim',
+                    type=int,
+                    default=conf['embedding_dim'],
+                    help='the embedding dimension')
+    config_template = __add_arg_to_config(config_template, _g, 'embedding_dim')
+
     # Prompt Loaders (numbered list). You can specify them multiple times.
     # for instance, `debgpt -H -f foo.py -f bar.py`.
     config_template += '''\n
@@ -546,6 +573,16 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     ps_git_commit.add_argument('--amend',
                                action='store_true',
                                help='amend the last commit')
+
+    # subcommand: vdb (VectorDB)
+    ps_vdb = subps.add_parser('vdb', help='VectorDB command')
+    ps_vdb.add_argument('--db', type=str, default=conf['db'],
+                        help='path to the VectorDB database')
+    ps_vdb.set_defaults(func=task_vdb)
+    vdb_subps = ps_vdb.add_subparsers(help='vdb subcommands')
+    # subsubcommand: vdb ls
+    ps_vdb_ls = vdb_subps.add_parser('ls', help='list all vectors in the database')
+    ps_vdb_ls.set_defaults(func=task_vdb_ls)
 
     # Task: replay
     ps_replay = subps.add_parser('replay',

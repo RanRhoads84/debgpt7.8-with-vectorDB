@@ -29,6 +29,7 @@ import textwrap
 from . import frontend
 from . import composer
 from . import defaults
+from . import vectordb
 
 console = defaults.console
 
@@ -56,8 +57,19 @@ def task_replay(ag) -> None:
     exit(0)
 
 
+def task_vdb(ag) -> None:
+    console.print("[red]debgpt: vdb: no subcommand specified.[/red]")
+    exit(1)
+
+
+def task_vdb_ls(ag) -> None:
+    vdb = vectordb.VectorDB(ag.db, ag.embedding_dim)
+    vdb.ls()
+    exit(0)
+
+
 def task_git(ag) -> None:
-    console.print("[red]debgpt: git: no subcommand specified. Don[/red]")
+    console.print("[red]debgpt: git: no subcommand specified.[/red]")
     exit(1)
 
 
