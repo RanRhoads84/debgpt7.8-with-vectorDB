@@ -97,12 +97,12 @@ def test_vectordb_get_byid(tmpdir):
     vdb.close()
 
 
-def test_get_all_rows(tmpdir):
+def test_get_all(tmpdir):
     """
     Test retrieving all rows from the VectorDB.
     """
     vdb = _prepare_vdb(tmpdir)
-    allrows = vdb.get_all_rows()
+    allrows = vdb.get_all()
     assert len(allrows) == 11
     # Validate each row
     for row in allrows:
@@ -112,23 +112,6 @@ def test_get_all_rows(tmpdir):
         assert isinstance(row[2], str)
         assert isinstance(row[3], str)
         assert isinstance(row[4], np.ndarray)
-    vdb.close()
-
-
-def test_get_all_vectors(tmpdir):
-    """
-    Test retrieving all vectors from the VectorDB.
-    """
-    vdb = _prepare_vdb(tmpdir)
-    allrows = vdb.get_all_vectors()
-    assert len(allrows) == 11
-    # Validate each vector
-    for row in allrows:
-        assert len(row) == 2
-        assert isinstance(row[0], int)
-        assert isinstance(row[1], np.ndarray)
-        assert row[1].shape == (256, )
-        assert np.isclose(np.linalg.norm(row[1]), 1.0)
     vdb.close()
 
 
@@ -149,11 +132,11 @@ def test_delete_vector(tmpdir):
     Test deleting a vector from the VectorDB.
     """
     vdb = _prepare_vdb(tmpdir)
-    allrows = vdb.get_all_rows()
+    allrows = vdb.get_all()
     assert len(allrows) == 11
     # Delete vector with index 1
     vdb.delete_vector(1)
-    allrows = vdb.get_all_rows()
+    allrows = vdb.get_all()
     assert len(allrows) == 10
     vdb.close()
 

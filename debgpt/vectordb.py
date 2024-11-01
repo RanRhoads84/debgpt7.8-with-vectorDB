@@ -150,7 +150,7 @@ class VectorDB:
         '''
         return self.get_byid(vector_id)
 
-    def get_all_rows(self) -> List[List[Union[int, str, np.ndarray]]]:
+    def get_all(self) -> List[List[Union[int, str, np.ndarray]]]:
         '''
         Retrieve all rows from the vectors table.
 
@@ -161,18 +161,6 @@ class VectorDB:
         results: List[Tuple] = self.cursor.fetchall()
         return [self._decode_row(row) for row in results]
 
-    def get_all_vectors(self) -> List[Tuple[int, np.ndarray]]:
-        '''
-        Retrieve all vectors from the database.
-
-        Returns:
-            List[Tuple[int, np.ndarray]]: A list of tuples containing vector IDs and vectors.
-        '''
-        self.cursor.execute('SELECT id, vector FROM vectors')
-        results: List[Tuple[int, bytes]] = self.cursor.fetchall()
-        return [(idx, np.frombuffer(vector, dtype=self.__dtype))
-                for idx, vector in results]
-
     def as_array(self) -> Tuple[np.ndarray, np.ndarray]:
         '''
         Retrieve all IDs and vectors from the database as numpy arrays.
@@ -180,7 +168,12 @@ class VectorDB:
         Returns:
             Tuple[np.ndarray, np.ndarray]: Arrays of vector IDs and vectors.
         '''
-        idxs, vectors = list(zip(*self.get_all_vectors()))
+        self.cursor.execute('SELECT id, vector FROM vectors')
+        results: List[Tuple[int, bytes]] = self.cursor.fetchall()
+        results = [(idx, np.frombuffer(vector, dtype=self.__dtype))
+                    for idx, vector in results]
+        # repack them into numpy arrays
+        idxs, vectors = list(zip(*results))
         idxs_array: np.ndarray = np.array(idxs)
         matrix: np.ndarray = np.stack(vectors)
         return idxs_array, matrix
@@ -232,7 +225,7 @@ class VectorDB:
         Returns:
             List[List[Union[int, str, np.ndarray]]]: All vectors and their metadata.
         '''
-        vectors: List[List[Union[int, str, np.ndarray]]] = self.get_all_rows()
+        vectors: List[List[Union[int, str, np.ndarray]]] = self.get_all()
         for v in vectors:
             idx, source, text, model, vector = v
             console.log(f'[{idx:4d}]', f'model={repr(model)},',
