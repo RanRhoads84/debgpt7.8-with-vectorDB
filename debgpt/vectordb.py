@@ -121,6 +121,8 @@ class VectorDB:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--db', type=str, default='VectorDB.sqlite',
+                        help='Database file name')
     subparsers = parser.add_subparsers(dest='action')
     parser_demo = subparsers.add_parser('demo')
     parser_create = subparsers.add_parser('create')
@@ -133,7 +135,7 @@ if __name__ == '__main__':
 
     if args.action == 'demo':
         # Example usage, and create a database for debugging purposes
-        db = VectorDB()
+        db = VectorDB(args.db)
 
         # Adding vectors
         for i in range(10):
@@ -163,10 +165,10 @@ if __name__ == '__main__':
         # Closing the database connection
         db.close()
     elif args.action == 'create':
-        db = VectorDB()
+        db = VectorDB(args.db)
         db.close()
     elif args.action == 'ls':
-        db = VectorDB()
+        db = VectorDB(args.db)
         vectors = db.get_all_rows()
         for v in vectors:
             idx, source, text, model, vector = v
@@ -174,7 +176,7 @@ if __name__ == '__main__':
                   f'model={repr(model)},', f'len(vector)={len(vector)}')
         db.close()
     elif args.action == 'show':
-        db = VectorDB()
+        db = VectorDB(args.db)
         vector = db.get_vector(args.id)
         if vector:
             idx, source, text, model, vector = vector
@@ -186,7 +188,7 @@ if __name__ == '__main__':
             print(f'Vector with id={args.id} not found')
         db.close()
     elif args.action == 'rm':
-        db = VectorDB()
+        db = VectorDB(args.db)
         db.delete_vector(args.id)
         db.close()
         console.log(f'Deleted vector with id={args.id}')

@@ -22,12 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 from typing import List, Union
+import argparse
 import rich
 import numpy as np
 import functools as ft
 from rich.console import Console
-
-console = Console(stderr=True)
+from .defaults import console
+from .vectordb import VectorDB
 
 
 def retry_ratelimit(func: callable,
@@ -58,6 +59,12 @@ def retry_ratelimit(func: callable,
 
 class AbstractEmbeddingModel(object):
 
+    # the model name
+    model = 'none'
+
+    # the embedding dimension (after reduction)
+    dim = 0
+
     def __init__(self):
         pass
 
@@ -81,25 +88,73 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
     def __init__(self, args: object = None):
         from openai import OpenAI
         self.client = OpenAI()
-        self.model = "text-embedding-3-small"
+        self.model = args.embedding_model
+        self.dim = args.embedding_dimension
 
     def embed(self, text: str) -> np.ndarray:
         from openai import RateLimitError
         func = retry_ratelimit(self.client.embeddings.create, RateLimitError)
         response = func(input=text, model=self.model)
-        vector = np.array(response.data[0].embedding)
+        vector = np.array(response.data[0].embedding)[:self.dim]
         return vector
 
     def batch_embed(self, texts: List[str]) -> np.ndarray:
         from openai import RateLimitError
         func = retry_ratelimit(self.client.embeddings.create, RateLimitError)
         response = func(input=texts, model=self.model)
-        matrix = np.array([x.embedding for x in response.data])
+        matrix = np.stack([x.embedding for x in response.data])[:, :self.dim]
         return matrix
 
 
+class Retriever(object):
+
+    def __init__(self, args: object):
+        self.model = get_embedding_model(args)
+        self.vdb = VectorDB(args.embedding_database, self.model.dim)
+
+    def retrieve(self, query: str, documents: List[str]) -> List[str]:
+        query_embedding = self.embedding.embed(query)
+        document_embeddings = self.embedding.batch_embed(documents)
+        scores = np.dot(document_embeddings, query_embedding)
+        indices = np.argsort(scores)[::-1]
+        return [documents[i] for i in indices]
+
+    def add(self, source: str, text: str) -> np.ndarray:
+        model_name = self.model.model
+        vector = self.model.embed(text)
+        self.vdb.add_vector(source, text, model_name, vector)
+        return vector
+
+
+def get_embedding_model(args: object) -> AbstractEmbeddingModel:
+    if args.embedding_frontend == 'openai':
+        return OpenAIEmbedding(args)
+    else:
+        raise ValueError('Invalid embedding frontend.')
+
+
+
 if __name__ == '__main__':
-    model = OpenAIEmbedding()
-    text = "Your text string goes here",
-    embedding = model.embed(text)
-    print(f'embedding({len(embedding)}):', embedding)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--embedding-frontend',
+                        '-E',
+                        type=str,
+                        default='openai',
+                        help='Embedding frontend')
+    parser.add_argument('--embedding-model',
+                        type=str,
+                        default="text-embedding-3-small",
+                        help='OpenAI embedding model')
+    parser.add_argument('--embedding-dimension',
+                        type=int,
+                        default=256,
+                        help='Embedding dimension')
+    parser.add_argument('--embedding-database',
+                        type=str,
+                        default='vectors.db',
+                        help='Embedding database')
+    args = parser.parse_args()
+
+    retriever = Retriever(args)
+    vector = retriever.add('void', "Your text string goes here")
+    print(f'embedding:', vector.shape)

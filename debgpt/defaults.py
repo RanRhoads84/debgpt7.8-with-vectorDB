@@ -90,6 +90,10 @@ class Config(object):
             # Prompt Composer Settings
             'mapreduce_chunksize': 65536,
             'mapreduce_parallelism': 8,
+            # Embedding Settings
+            'embedding_frontend': 'openai',
+            'embedding_dim': 256,
+            'embedding_model': 'text-embedding-3-small',
         }
         # the built-in defaults will be overridden by config file
         if not os.path.exists(home):
