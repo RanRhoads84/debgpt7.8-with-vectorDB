@@ -97,6 +97,8 @@ def test_get_all_vectors(tmpdir):
         assert len(row) == 2
         assert isinstance(row[0], int)
         assert isinstance(row[1], np.ndarray)
+        assert row[1].shape == (256,)
+        assert np.isclose(np.linalg.norm(row[1]), 1.0)
     vdb.close()
 
 
