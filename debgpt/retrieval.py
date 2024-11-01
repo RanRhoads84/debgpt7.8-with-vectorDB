@@ -56,7 +56,7 @@ class Retriever(object):
         '''
         model_name = self.model.model
         vector = self.model.embed(text)
-        self.vdb.add_vector(source, text, model_name, vector)
+        self.vdb.add(source, text, model_name, vector)
         return vector
 
     def retrieve_from_db(self, query: str, topk: int = 3) -> List[str]:

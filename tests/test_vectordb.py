@@ -46,9 +46,9 @@ def _prepare_vdb(tmpdir: str, populate: bool = True) -> VectorDB:
     # Adding random vectors
     for i in range(10):
         v = np.random.rand(256)
-        vdb.add_vector(f'vector_{i}', str(v), f'model_name', v)
+        vdb.add(f'vector_{i}', str(v), f'model_name', v)
     # Add a constant vector for retrieval tests
-    vdb.add_vector(f'ones', str(np.ones(256)), f'model_name', np.ones(256))
+    vdb.add(f'ones', str(np.ones(256)), f'model_name', np.ones(256))
     return vdb
 
 
@@ -61,7 +61,7 @@ def test_vectordb_init(tmpdir):
     vdb.close()
 
 
-def test_vectordb_add_vector(tmpdir):
+def test_vectordb_add(tmpdir):
     """
     Test adding vectors to the VectorDB.
     """

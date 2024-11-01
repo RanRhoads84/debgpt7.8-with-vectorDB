@@ -72,7 +72,7 @@ class VectorDB:
         ''')
         self.connection.commit()
 
-    def add_vector(self, source: str, text: str, model: str,
+    def add(self, source: str, text: str, model: str,
                    vector: Union[list, np.ndarray]) -> None:
         '''
         Add a vector to the database. The vector is normalized before storage.
@@ -268,8 +268,8 @@ def main(argv: List[str]) -> None:
         db = VectorDB(args.db)
         for i in range(10):
             v: np.ndarray = np.random.rand(256)
-            db.add_vector(f'vector_{i}', str(v), f'model_name', v)
-        db.add_vector(f'ones', str(np.ones(256)), f'model_name', np.ones(256))
+            db.add(f'vector_{i}', str(v), f'model_name', v)
+        db.add(f'ones', str(np.ones(256)), f'model_name', np.ones(256))
         db.close()
     elif args.action == 'ls':
         db = VectorDB(args.db)
