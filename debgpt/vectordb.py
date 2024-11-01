@@ -178,7 +178,7 @@ class VectorDB:
         matrix: np.ndarray = np.stack(vectors)
         return idxs_array, matrix
 
-    def delete_vector(self, vector_id: int) -> None:
+    def delete_byid(self, vector_id: int) -> None:
         '''
         Delete a vector from the database by its ID.
 
@@ -291,7 +291,7 @@ def main(argv: List[str]) -> None:
         db.close()
     elif args.action == 'rm':
         db = VectorDB(args.db)
-        db.delete_vector(args.id)
+        db.delete_byid(args.id)
         console.log(f'Deleted vector with id={args.id}')
         db.close()
     else:

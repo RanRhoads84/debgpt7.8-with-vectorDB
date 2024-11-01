@@ -127,7 +127,7 @@ def test_as_array(tmpdir):
     vdb.close()
 
 
-def test_delete_vector(tmpdir):
+def test_delete_byid(tmpdir):
     """
     Test deleting a vector from the VectorDB.
     """
@@ -135,7 +135,7 @@ def test_delete_vector(tmpdir):
     allrows = vdb.get_all()
     assert len(allrows) == 11
     # Delete vector with index 1
-    vdb.delete_vector(1)
+    vdb.delete_byid(1)
     allrows = vdb.get_all()
     assert len(allrows) == 10
     vdb.close()
