@@ -67,6 +67,8 @@ class VectorDB:
         assert len( vector ) >= self.dim 
         vector_np = np.array(vector, dtype=self.__dtype)
         vector_np_reduction = vector_np[:self.dim]
+        # normalize the vector
+        vector_np_reduction = vector_np_reduction / np.linalg.norm(vector_np_reduction)
         vector_bytes = vector_np_reduction.tobytes()
         text_compressed = lz4.frame.compress(text.encode())
         self.cursor.execute(
@@ -85,13 +87,13 @@ class VectorDB:
         text_uncompressed = lz4.frame.decompress(text_compressed).decode()
         return [idx, source, text_uncompressed, model, vector_np]
 
-    def get_vector(self, vector_id) -> List[Union[str, np.ndarray]]:
+    def get_vector(self, vector_id: int) -> List[Union[str, np.ndarray]]:
         self.cursor.execute('SELECT * FROM vectors WHERE id = ?',
                             (vector_id, ))
         result = self.cursor.fetchone()
         if result:
             return self._decode_row(result)
-        return None
+        raise ValueError(f'Vector with id={vector_id} not found')
 
     def get_all_rows(self):
         self.cursor.execute('SELECT * FROM vectors')
@@ -104,19 +106,38 @@ class VectorDB:
         return [(idx, np.frombuffer(vector, dtype=self.__dtype)) for idx, vector in results]
 
     def get_all(self) -> List[np.ndarray]:
-        idxs, vectors = list(zip(*self.get_all_vectors))
+        idxs, vectors = list(zip(*self.get_all_vectors()))
         idxs = np.array(idxs)
         matrix = np.stack(vectors)
         return idxs, matrix
 
-    def delete_vector(self, vector_id):
+    def delete_vector(self, vector_id: int):
         self.cursor.execute('DELETE FROM vectors WHERE id = ?', (vector_id, ))
         self.connection.commit()
 
     def close(self):
         self.connection.close()
 
-
+    def retrieve(self, vector: np.ndarray, topk: int = 3):
+        '''
+        Retrieve the nearest vector from the database.
+        '''
+        idxs, matrix = self.get_all()
+        assert matrix.ndim == 2
+        assert vector.ndim == 1
+        vector = vector / np.linalg.norm(vector)
+        cosine = (matrix @ vector.reshape(-1, 1)).flatten()
+        #print('cosine', cosine)
+        argsort = np.argsort(cosine)[::-1][:topk]
+        #print('argsort', argsort)
+        #print('idxs[argsort]', idxs[argsort])
+        #print('cosine[argsort]', cosine[argsort])
+        documents = []
+        for idx, sim in zip(idxs[argsort], cosine[argsort]):
+            _, source, text, _, _ = self.get_vector(int(idx))
+            doc = [sim, source, text]
+            documents.append(doc)
+        return documents
 
 
 if __name__ == '__main__':
@@ -142,13 +163,16 @@ if __name__ == '__main__':
             v = np.random.rand(256)
             db.add_vector(f'vector_{i}', str(v), f'model_name', v)
 
+        # make sure there is at least one vector with cosine=1 for normalized ones(256)
+        db.add_vector(f'ones', str(v), f'model_name', np.ones(256))
+
         # Retrieve a vector
-        vector = db.get_vector(1)
-        print(f'Vector with ID 1: {vector}')
+        vector = db.get_vector(2)
+        print(f'Vector with ID 2: {vector}')
 
         # Retrieve all rows
         vectors = db.get_all_rows()
-        print('All rows:', vectors)
+        print('All rows:', len(vectors))
 
         # Delete a vector
         db.delete_vector(1)
@@ -156,11 +180,19 @@ if __name__ == '__main__':
 
         # Retrieve all rows
         vectors = db.get_all_rows()
-        print('All rows:', vectors)
+        print('All rows:', len(vectors))
 
         # Retrieve all vectors
-        vectors = db.get_all_vectors()
-        print('All vectors:', vectors)
+        all_vectors = db.get_all_vectors()
+        print('All vectors:', len(all_vectors))
+
+        # make a query
+        query_vector = np.ones(256)
+        documents = db.retrieve(query_vector)
+        print('Query result:')
+        for doc in documents:
+            sim, source, text = doc
+            print(f'sim {sim:.3f}', 'len(text)', len(text), 'source', source, )
 
         # Closing the database connection
         db.close()
@@ -172,16 +204,18 @@ if __name__ == '__main__':
         vectors = db.get_all_rows()
         for v in vectors:
             idx, source, text, model, vector = v
-            print(f'[{idx}]', f'source={repr(source)},',
-                  f'model={repr(model)},', f'len(vector)={len(vector)}')
+            print(f'[{idx:4d}]',f'model={repr(model)},', f'len(vector)={len(vector)}',
+                 f'source={repr(source)},')
         db.close()
     elif args.action == 'show':
         db = VectorDB(args.db)
         vector = db.get_vector(args.id)
         if vector:
             idx, source, text, model, vector = vector
-            print(f'[{idx}]', f'source={repr(source)},',
-                  f'model={repr(model)},', f'len(vector)={len(vector)}')
+            print(f'[{idx:4d}]',
+                      f'model={repr(model)},', f'len(vector)={len(vector)}',
+                     f'source={repr(source)},',
+                  )
             print('vector=', vector)
             print('text=', text)
         else:
