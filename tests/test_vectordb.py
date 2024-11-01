@@ -132,12 +132,12 @@ def test_get_all_vectors(tmpdir):
     vdb.close()
 
 
-def test_get_all(tmpdir):
+def test_as_array(tmpdir):
     """
     Test retrieving all indices and vectors from the VectorDB.
     """
     vdb = _prepare_vdb(tmpdir)
-    idx, matrix = vdb.get_all()
+    idx, matrix = vdb.as_array()
     assert len(idx) == 11
     assert isinstance(matrix, np.ndarray)
     assert matrix.shape == (11, 256)

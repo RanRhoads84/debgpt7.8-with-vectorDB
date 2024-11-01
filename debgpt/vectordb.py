@@ -173,9 +173,9 @@ class VectorDB:
         return [(idx, np.frombuffer(vector, dtype=self.__dtype))
                 for idx, vector in results]
 
-    def get_all(self) -> Tuple[np.ndarray, np.ndarray]:
+    def as_array(self) -> Tuple[np.ndarray, np.ndarray]:
         '''
-        Retrieve all vector IDs and vectors from the database.
+        Retrieve all IDs and vectors from the database as numpy arrays.
 
         Returns:
             Tuple[np.ndarray, np.ndarray]: Arrays of vector IDs and vectors.
@@ -212,7 +212,7 @@ class VectorDB:
         Returns:
             List[List[Union[float, str]]]: A list of the nearest vectors and their metadata.
         '''
-        idxs, matrix = self.get_all()
+        idxs, matrix = self.as_array()
         assert matrix.ndim == 2
         assert vector.ndim == 1
         vector = vector / np.linalg.norm(vector)
