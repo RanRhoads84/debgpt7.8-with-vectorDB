@@ -69,15 +69,23 @@ def test_vectordb_add(tmpdir):
     vdb.close()
 
 
-def test_vectordb_get_vector(tmpdir):
+def test_vectordb_get_byid(tmpdir):
     """
     Test retrieving a vector from the VectorDB.
     """
     vdb = _prepare_vdb(tmpdir)
     # Retrieve vector with index 11
-    vec = vdb.get_vector(11)
-    idx, source, text, model, vector = vec
+    row = vdb.get_byid(11)
+    idx, source, text, model, vector = row
     expected_vec = np.ones(256) / np.linalg.norm(np.ones(256))
+    assert idx == 11
+    assert source == 'ones'
+    assert text == str(np.ones(256))
+    assert model == 'model_name'
+    assert np.allclose(vector, expected_vec)
+    # Retrieve vector with index 11 using __index__ method
+    row = vdb[11]
+    idx, source, text, model, vector = row
     assert idx == 11
     assert source == 'ones'
     assert text == str(np.ones(256))
@@ -85,7 +93,7 @@ def test_vectordb_get_vector(tmpdir):
     assert np.allclose(vector, expected_vec)
     # Test retrieving a non-existent vector
     with pytest.raises(ValueError):
-        vdb.get_vector(999)
+        vdb.get_byid(999)
     vdb.close()
 
 

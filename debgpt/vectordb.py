@@ -45,7 +45,9 @@ class VectorDB:
 
     def __init__(self, db_name: str = 'VectorDB.sqlite', dimension: int = 256):
         '''
-        Initialize a VectorDB object.
+        Initialize a VectorDB object. It is suggested to use a file name that
+        contains both the embedding model and the embedding size to avoid
+        errors.
 
         Args:
             db_name (str): The name of the database file. Defaults to 'VectorDB.sqlite'.
@@ -114,9 +116,9 @@ class VectorDB:
         text_uncompressed: str = lz4.frame.decompress(text_compressed).decode()
         return [idx, source, text_uncompressed, model, vector_np]
 
-    def get_vector(self, vector_id: int) -> List[Union[int, str, np.ndarray]]:
+    def get_byid(self, vector_id: int) -> List[Union[int, str, np.ndarray]]:
         '''
-        Retrieve a vector from the database by its ID.
+        Retrieve a row from the database by its ID.
 
         Args:
             vector_id (int): The ID of the vector to retrieve.
@@ -132,6 +134,21 @@ class VectorDB:
         if result:
             return self._decode_row(result)
         raise ValueError(f'Vector with id={vector_id} not found')
+
+    def __getitem__(self, vector_id: int) -> List[Union[int, str, np.ndarray]]:
+        '''
+        Retrieve a row from the database by its ID using the index operator.
+
+        Args:
+            vector_id (int): The ID of the vector to retrieve.
+
+        Returns:
+            List[Union[int, str, np.ndarray]]: The retrieved vector and its metadata.
+
+        Raises:
+            ValueError: If the vector with the specified ID is not found.
+        '''
+        return self.get_byid(vector_id)
 
     def get_all_rows(self) -> List[List[Union[int, str, np.ndarray]]]:
         '''
@@ -203,7 +220,7 @@ class VectorDB:
         argsort: np.ndarray = np.argsort(cosine)[::-1][:topk]
         documents: List[List[Union[float, str]]] = []
         for idx, sim in zip(idxs[argsort], cosine[argsort]):
-            _, source, text, _, _ = self.get_vector(int(idx))
+            _, source, text, _, _ = self.get_byid(int(idx))
             doc: List[Union[float, str]] = [sim, source, text]
             documents.append(doc)
         return documents
@@ -230,7 +247,7 @@ class VectorDB:
         Args:
             idx (int): The index of the vector to show.
         '''
-        vector: List[Union[int, str, np.ndarray]] = self.get_vector(idx)
+        vector: List[Union[int, str, np.ndarray]] = self.get_byid(idx)
         idx, source, text, model, vector = vector
         print(
             f'[{idx:4d}]',
