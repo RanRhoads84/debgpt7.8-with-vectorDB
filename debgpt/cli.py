@@ -113,6 +113,7 @@ def parse_args(argv):
 \n'''
     _g = ag.add_argument_group('Command Line Interface Behavior')
     _g.add_argument('--quit',
+                    '-q',
                     '-Q',
                     action='store_true',
                     help='directly quit after receiving the first response \
