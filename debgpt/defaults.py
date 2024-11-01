@@ -27,8 +27,9 @@ try:
 except:
     import pip._vendor.tomli as tomllib  # for python < 3.10
 import rich
+from rich.console import Console
 
-console = rich.get_console()
+console = Console(stderr=True)
 
 ########################
 # Configuration handling
@@ -83,25 +84,25 @@ class Config(object):
         # the built-in defaults will be overridden by config file
         if not os.path.exists(home):
             if verbose:
-                rich.print(f'Creating directory {home}')
+                console.print(f'Creating directory {home}')
             os.mkdir(home)
         if os.path.exists(config):
             if verbose:
-                rich.print(f'Loading configuration from {config}')
+                console.print(f'Loading configuration from {config}')
             with open(config, 'rb') as f:
                 content = tomllib.load(f)
                 self.toml.update(content)
         # some arguments will be overrden by environment variables
         if (openai_api_key := os.getenv('OPENAI_API_KEY', None)) is not None:
             if verbose:
-                rich.print(
+                console.print(
                     f'Found environment variable OPENAI_API_KEY.'
                 )
             self.toml['openai_api_key'] = openai_api_key
         if (anthropic_api_key := os.getenv('ANTHROPIC_API_KEY',
                                            None)) is not None:
             if verbose:
-                rich.print(
+                console.print(
                     f'Found environment variable ANTHROPIC_API_KEY.'
                 )
             self.toml['anthropic_api_key'] = anthropic_api_key
