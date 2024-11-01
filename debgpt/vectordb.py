@@ -34,11 +34,19 @@ class VectorDB:
     # default data type for vectors
     __dtype = np.float32
 
-    def __init__(self, db_name='VectorDB.sqlite'):
+    def __init__(self,
+                 db_name: str='VectorDB.sqlite',
+                 dimension: int = 256):
+        '''
+        Initialize a VectorDB object.
+        We assume the embedding model supports dimension reduction by
+        truncation.
+        '''
         console.log('Connecting to database:', db_name)
         self.connection = sqlite3.connect(db_name)
         self.cursor = self.connection.cursor()
         self._create_table()
+        self.dim = dimension
 
     def _create_table(self):
         # Create table if it doesn't exist
@@ -56,7 +64,10 @@ class VectorDB:
     def add_vector(self, source: str, text: str, model: str,
                    vector: Union[list, np.ndarray]):
         # Convert vector to bytes for storage
-        vector_bytes = np.array(vector, dtype=self.__dtype).tobytes()
+        assert len( vector ) >= self.dim 
+        vector_np = np.array(vector, dtype=self.__dtype)
+        vector_np_reduction = vector_np[:self.dim]
+        vector_bytes = vector_np_reduction.tobytes()
         text_compressed = lz4.frame.compress(text.encode())
         self.cursor.execute(
             'INSERT INTO vectors (source, text, model, vector) VALUES (?, ?, ?, ?)',
@@ -82,10 +93,21 @@ class VectorDB:
             return self._decode_row(result)
         return None
 
-    def get_all_vectors(self):
+    def get_all_rows(self):
         self.cursor.execute('SELECT * FROM vectors')
         results = self.cursor.fetchall()
         return [self._decode_row(row) for row in results]
+
+    def get_all_vectors(self):
+        self.cursor.execute('SELECT id, vector FROM vectors')
+        results = self.cursor.fetchall()
+        return [(idx, np.frombuffer(vector, dtype=self.__dtype)) for idx, vector in results]
+
+    def get_all(self) -> List[np.ndarray]:
+        idxs, vectors = list(zip(*self.get_all_vectors))
+        idxs = np.array(idxs)
+        matrix = np.stack(vectors)
+        return idxs, matrix
 
     def delete_vector(self, vector_id):
         self.cursor.execute('DELETE FROM vectors WHERE id = ?', (vector_id, ))
@@ -93,6 +115,8 @@ class VectorDB:
 
     def close(self):
         self.connection.close()
+
+
 
 
 if __name__ == '__main__':
@@ -112,23 +136,25 @@ if __name__ == '__main__':
         db = VectorDB()
 
         # Adding vectors
-        v1 = [1.0, 2.0, 3.0]
-        db.add_vector('v1', str(v1), 'embedding model', v1)
-        v2 = [4.0, 5.0, 6.0]
-        db.add_vector('v2', str(v2), 'embedding model', v2)
-        db.add_vector('v3', str(v2), 'embedding model', v2)
+        for i in range(10):
+            v = np.random.rand(256)
+            db.add_vector(f'vector_{i}', str(v), f'model_name', v)
 
         # Retrieve a vector
         vector = db.get_vector(1)
         print(f'Vector with ID 1: {vector}')
 
-        # Retrieve all vectors
-        vectors = db.get_all_vectors()
-        print('All vectors:', vectors)
+        # Retrieve all rows
+        vectors = db.get_all_rows()
+        print('All rows:', vectors)
 
         # Delete a vector
         db.delete_vector(1)
         print('id 1 deleted')
+
+        # Retrieve all rows
+        vectors = db.get_all_rows()
+        print('All rows:', vectors)
 
         # Retrieve all vectors
         vectors = db.get_all_vectors()
@@ -141,7 +167,7 @@ if __name__ == '__main__':
         db.close()
     elif args.action == 'ls':
         db = VectorDB()
-        vectors = db.get_all_vectors()
+        vectors = db.get_all_rows()
         for v in vectors:
             idx, source, text, model, vector = v
             print(f'[{idx}]', f'source={repr(source)},',
