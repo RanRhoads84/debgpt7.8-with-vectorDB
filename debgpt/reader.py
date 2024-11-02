@@ -33,6 +33,7 @@ import glob
 import mimetypes
 import tenacity
 import concurrent.futures
+from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 from urllib.parse import quote
 from . import policy as debgpt_policy
@@ -42,7 +43,7 @@ from .defaults import console
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
             + "AppleWebKit/537.36 (KHTML, like Gecko) " \
-            + "Chrome/91.0.4472.124 Safari/537.36"
+            + "Chrome/91.0.4472.124 Safari/537.36",
     'Accept':
     'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
 }
@@ -179,6 +180,13 @@ def read_url(url: str) -> str:
     Returns:
         str: the content from the URL
     '''
+    # Special case: file://
+    if url.startswith('file://'):
+        # Parse the URL to extract the path
+        parsed_url = urlparse(url)
+        file_path = parsed_url.path
+        # Open and read the file
+        return read_file(file_path)
     # Send request to the URL
     response = requests.get(url, headers=HEADERS)
     if response.status_code != 200:
