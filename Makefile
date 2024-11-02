@@ -21,7 +21,7 @@ yapf:
 	find tests -type f -name '*.py' -exec yapf -i '{}' \;
 
 pytest:
-	PYTHONPATH=. pytest --cov=debgpt --cov-report=html -v
+	PYTHONPATH=. pytest --cov=debgpt --cov-report=html -v -n 8
 
 lint:
 	find . -type f -name '*.py' -exec pyflakes '{}' \;
