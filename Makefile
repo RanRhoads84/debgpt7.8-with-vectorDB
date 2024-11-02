@@ -18,6 +18,7 @@ autopep8:
 
 yapf:
 	find debgpt -type f -name '*.py' -exec yapf -i '{}' \;
+	find tests -type f -name '*.py' -exec yapf -i '{}' \;
 
 pytest:
 	PYTHONPATH=. pytest --cov=debgpt --cov-report=html -v

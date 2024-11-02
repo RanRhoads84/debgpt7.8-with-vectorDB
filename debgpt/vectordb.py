@@ -73,8 +73,8 @@ class VectorDB:
         ''')
         self.connection.commit()
 
-    def add(self, source: str, text: str,
-                   vector: Union[list, np.ndarray]) -> None:
+    def add(self, source: str, text: str, vector: Union[list,
+                                                        np.ndarray]) -> None:
         '''
         Add a vector to the database. The vector is normalized before storage.
 
@@ -86,12 +86,12 @@ class VectorDB:
         assert len(vector) >= self.dim
         vector_np: np.ndarray = np.array(vector, dtype=self.__dtype)
         vector_np_reduction: np.ndarray = vector_np[:self.dim]
-        vector_np_reduction = vector_np_reduction / np.linalg.norm(vector_np_reduction)
+        vector_np_reduction = vector_np_reduction / np.linalg.norm(
+            vector_np_reduction)
         vector_bytes: bytes = vector_np_reduction.tobytes()
         text_compressed: bytes = lz4.frame.compress(text.encode())
         self.cursor.execute(
-            'INSERT INTO vectors (source, text, vector) VALUES (?, ?, ?)',
-            (
+            'INSERT INTO vectors (source, text, vector) VALUES (?, ?, ?)', (
                 source,
                 text_compressed,
                 vector_bytes,
@@ -126,7 +126,8 @@ class VectorDB:
         Raises:
             ValueError: If the vector with the specified ID is not found.
         '''
-        self.cursor.execute('SELECT * FROM vectors WHERE id = ?', (vector_id,))
+        self.cursor.execute('SELECT * FROM vectors WHERE id = ?',
+                            (vector_id, ))
         result: Tuple = self.cursor.fetchone()
         if result:
             return self._decode_row(result)
@@ -168,7 +169,7 @@ class VectorDB:
         self.cursor.execute('SELECT id, vector FROM vectors')
         results: List[Tuple[int, bytes]] = self.cursor.fetchall()
         results = [(idx, np.frombuffer(vector, dtype=self.__dtype))
-                    for idx, vector in results]
+                   for idx, vector in results]
         # repack them into numpy arrays
         idxs, vectors = list(zip(*results))
         idxs_array: np.ndarray = np.array(idxs)
@@ -182,7 +183,7 @@ class VectorDB:
         Args:
             vector_id (int): The ID of the vector to delete.
         '''
-        self.cursor.execute('DELETE FROM vectors WHERE id = ?', (vector_id,))
+        self.cursor.execute('DELETE FROM vectors WHERE id = ?', (vector_id, ))
         self.connection.commit()
 
     def close(self) -> None:
@@ -191,7 +192,9 @@ class VectorDB:
         '''
         self.connection.close()
 
-    def retrieve(self, vector: np.ndarray, topk: int = 3) -> List[List[Union[float, str]]]:
+    def retrieve(self,
+                 vector: np.ndarray,
+                 topk: int = 3) -> List[List[Union[float, str]]]:
         '''
         Retrieve the nearest vectors from the database based on cosine similarity.
 
@@ -225,8 +228,7 @@ class VectorDB:
         vectors: List[List[Union[int, str, np.ndarray]]] = self.get_all()
         for v in vectors:
             idx, source, text, vector = v
-            console.print(f'id[{idx:5d}]',
-                          f'len(vector)={len(vector)},',
+            console.print(f'id[{idx:5d}]', f'len(vector)={len(vector)},',
                           f'len(text)={len(text):5d}',
                           f'source={repr(source)},')
         return vectors

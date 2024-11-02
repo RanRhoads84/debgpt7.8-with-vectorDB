@@ -38,7 +38,10 @@ class Retriever(object):
         self.model = embeddings.get_embedding_model(args)
         self.vdb = vectordb.VectorDB(args.embedding_database, self.model.dim)
 
-    def retrieve(self, query: str, documents: List[str], topk: int = 3) -> List[str]:
+    def retrieve(self,
+                 query: str,
+                 documents: List[str],
+                 topk: int = 3) -> List[str]:
         '''
         This function retrieves the top-k most relevant documents from the
         document list given a query. It does not modify the database, nor

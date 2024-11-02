@@ -41,15 +41,16 @@ def test_devref(section, tmp_path):
     print(composer.devref(section, debgpt_home=tmp_path))
 
 
-@pytest.mark.parametrize('p', ('pytorch',))
+@pytest.mark.parametrize('p', ('pytorch', ))
 def test_buildd(p):
     print(composer.buildd(p))
 
-@pytest.mark.parametrize('url', (
-    'https://lists.debian.org/debian-project/2023/12/msg00029.html',
-    ))
+
+@pytest.mark.parametrize(
+    'url', ('https://lists.debian.org/debian-project/2023/12/msg00029.html', ))
 def test_html(url):
     print(composer.html(url, raw=False))
+
 
 def test_mapreduce_load_file(tmp_path):
     policypath = os.path.join(tmp_path, 'policy.txt')
@@ -61,12 +62,14 @@ def test_mapreduce_load_file(tmp_path):
         print(k, len(encoded))
         print(encoded.decode())
 
+
 def test_mapreduce_load_directory(tmp_path):
     chunks = composer.mapreduce_load_directory('./debian')
     for k, v in chunks.items():
         encoded = '\n'.join(v).encode('utf-8')
         print(k, len(encoded))
         print(encoded.decode())
+
 
 def test_mapreduce_load_any_astext():
     chunks = composer.mapreduce_load_any_astext('./debian')

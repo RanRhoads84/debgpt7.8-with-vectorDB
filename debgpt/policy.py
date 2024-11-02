@@ -43,7 +43,7 @@ class DebianPolicy:
             with open(cache, 'wb') as f:
                 f.write(r.content)
             console.log(f'DebianPolicy> cached {self.NAME} at {cache}')
-        
+
         # Read the cached file into lines.
         with open(cache, 'rt') as f:
             self.lines: list[str] = [x.rstrip() for x in f.readlines()]
@@ -59,11 +59,11 @@ class DebianPolicy:
             2: self.SEP_SUBSECTION,
             3: self.SEP_SUBSUBSECTION
         }[len(index.split('.'))]
-        
+
         ret: list[str] = []
         prev: str = ''
         in_range: bool = False
-        
+
         # Iterate over lines to find the specified section.
         for cursor in self.lines:
             if cursor.startswith(sep) and prev.startswith(f'{index}. '):
@@ -80,7 +80,7 @@ class DebianPolicy:
                 # Within the desired section
                 ret.append(cursor)
             prev = cursor
-        
+
         return '\n'.join(ret)
 
 

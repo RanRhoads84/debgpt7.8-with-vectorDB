@@ -576,12 +576,15 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # subcommand: vdb (VectorDB)
     ps_vdb = subps.add_parser('vdb', help='VectorDB command')
-    ps_vdb.add_argument('--db', type=str, default=conf['db'],
+    ps_vdb.add_argument('--db',
+                        type=str,
+                        default=conf['db'],
                         help='path to the VectorDB database')
     ps_vdb.set_defaults(func=task_vdb)
     vdb_subps = ps_vdb.add_subparsers(help='vdb subcommands')
     # subsubcommand: vdb ls
-    ps_vdb_ls = vdb_subps.add_parser('ls', help='list all vectors in the database')
+    ps_vdb_ls = vdb_subps.add_parser('ls',
+                                     help='list all vectors in the database')
     ps_vdb_ls.set_defaults(func=task_vdb_ls)
 
     # Task: replay
