@@ -25,6 +25,7 @@ from typing import List, Union, Dict, Tuple, Optional
 import re
 import requests
 from bs4 import BeautifulSoup
+import io
 import os
 import subprocess
 import functools as ft
@@ -36,7 +37,7 @@ import tenacity
 import concurrent.futures
 from urllib.parse import urlparse
 from urllib.request import urlopen, Request
-from urllib.parse import quote
+import urllib.parse
 from . import policy as debian_policy
 from .defaults import console
 
@@ -185,8 +186,17 @@ def read_url(url: str) -> str:
         raise ValueError(f'Failed to read {url}')
     # dispatch content type
     if url.endswith('.pdf'):
-        console.log(f'PDF file support not yet implemented: {url}, skipping')
-        return ''
+        try:
+            from pypdf import PdfReader
+        except ImportError:
+            console.log('Please install pypdf using `pip install pypdf`')
+            return ''
+        pdf_bytes = io.BytesIO(response.content)
+        reader = PdfReader(pdf_bytes)
+        text = ''
+        for page in reader.pages:
+            text += page.extract_text()
+        return text
     elif response.headers['Content-Type'].startswith('text/html'):
         soup = BeautifulSoup(response.text, features='html.parser')
         text = soup.get_text().strip()
@@ -205,25 +215,25 @@ def read_url(url: str) -> str:
 
 def read_cmd(cmd: Union[str, List]) -> str:
     if isinstance(cmd, str):
-        cmd = shlex.split(' ')
+        cmd = shlex.split(cmd)
     stdout = subprocess.check_output(cmd).decode()
     lines = [x.rstrip() for x in stdout.split('\n')]
     return '\n'.join(lines)
 
 
-def read_bts(identifier: str) -> str:
+def read_bts(spec: str) -> str:
     '''
     Read the bug report from the Debian BTS
 
     Args:
-        identifier (str): the bug report number, or the package name
+        spec (str): the bug report number, or the package name
     Returns:
         str: the content of the bug report
     '''
-    url = f'https://bugs.debian.org/{identifier}'
+    url = f'https://bugs.debian.org/{spec}'
     r = requests.get(url)
     soup = BeautifulSoup(r.text, features="html.parser")
-    if not identifier.startswith('src:'):
+    if not spec.startswith('src:'):
         # delete useless system messages
         _ = [
             x.clear()
@@ -238,7 +248,7 @@ def read_bts(identifier: str) -> str:
     text = [x.strip() for x in text.split('\n')]
 
     # filter out useless information from the webpage
-    if identifier.startswith('src:'):
+    if spec.startswith('src:'):
         # the lines from 'Options' to the end are useless
         text = text[:text.index('Options')]
     return '\n'.join(text)
@@ -259,18 +269,20 @@ def google_search(query: str) -> List[str]:
         List[str]: the search results, each element is a URL
     '''
     # Format the query for URL
-    query = quote(query)
+    query = urllib.parse.quote_plus(query)
     # Send request to Google
     url = f"https://www.google.com/search?q={query}"
-    result = read_url(url)
+    response = requests.get(url, headers=HEADERS)
+    if response.status_code != 200:
+        raise ValueError(f'Failed to read {url}: HTTP {response.status_code}')
     # Parse the response
-    soup = BeautifulSoup(result, 'html.parser')
+    soup = BeautifulSoup(response.text, 'html.parser')
     # Find search results
     search_results = soup.find_all('div', class_='g')
     results = []
     for result in search_results:
         title = result.find('h3')
-        link = result.find('a')
+        link = result.find('a', href=True)
         if title and link:
             results.append(link.get('href'))
     return results
@@ -282,11 +294,11 @@ def read_archwiki(spec: str) -> str:
     https://wiki.archlinux.org/title/Archiving_and_compression
 
     Args:
-        spec (str): the identifier of the ArchWiki page, e.g., Archiving_and_compression
+        spec (str): the spec of the ArchWiki page, e.g., Archiving_and_compression
     Returns:
         str: the content of the ArchWiki page
     '''
-    url = f'https://wiki.archlinux.org/title/{identifier}'
+    url = f'https://wiki.archlinux.org/title/{spec}'
     r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text, features='html.parser')
     text = soup.get_text().split('\n')
@@ -295,7 +307,7 @@ def read_archwiki(spec: str) -> str:
 
 
 def read_buildd(spec: str,):
-    url = f'https://buildd.debian.org/status/package.php?p={p}'
+    url = f'https://buildd.debian.org/status/package.php?p={spec}'
     r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text, features='html.parser')
     text = soup.get_text().split('\n')
@@ -325,7 +337,7 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable,
         The template should contain one placeholder for the spec.
         '''
         def _wrapper(content: str) -> str:
-            lines = [tempalte.format(spec)]
+            lines = [template.format(spec)]
             lines.extend(['```'] + content.split('\n') + ['```', ''])
             return '\n'.join(lines)
         return _wrapper
@@ -335,8 +347,8 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable,
         The template should contain three placeholders for the spec, start, and stop.
         '''
         def _wrapper(content: str, start: int, stop: int) -> str:
-            lines = [tempalte.format(spec, start, stop)]
-            lines.extend(['```'] + content.split('\n')[start:stop] + ['```', ''])
+            lines = [template.format(spec, start, stop)]
+            lines.extend(['```'] + content.split('\n') + ['```', ''])
             return '\n'.join(lines)
         return _wrapper
 
@@ -358,7 +370,6 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable,
     elif any(spec.startswith(x) for x in ('file://', 'http://', 'https://')):
         parsed_spec = spec
         content = read_url(spec)
-        results.append((parsed_spec, content))
         wrapfun = create_wrapper('Here is the contents of URL {}:', spec)
         wrapfun_chunk = create_chunk_wrapper('Here is the contents of URL {} (lines {}-{}):', spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
@@ -399,7 +410,8 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable,
             content = str(content)
             wrapfun = create_wrapper('Here is the Debian Developer Reference document {}:', parsed_spec)
             wrapfun_chunk = create_chunk_wrapper('Here is the Debian Developer Reference document {} (lines {}-{}):', parsed_spec)
-        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+        source = f'Debian Developer Reference document [{parsed_spec}]'
+        results.append((source, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('man:'):
         parsed_spec = spec[4:]
         content = read_cmd(f'man {parsed_spec}')
@@ -418,7 +430,8 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable,
             content = str(content)
             wrapfun = create_wrapper('Here is the Debian Policy document {}:', parsed_spec)
             wrapfun_chunk = create_chunk_wrapper('Here is the Debian Policy document {} (lines {}-{}):', parsed_spec)
-        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+        source = f'Debian Policy section [{parsed_spec}]'
+        results.append((source, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('tldr:'):
         parsed_spec = spec[5:]
         content = read_cmd(f'tldr {parsed_spec}')
@@ -427,11 +440,11 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable,
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     # special cases: stdin
     elif spec in ('stdin', '-'):
-        parsed_spec = spec
+        parsed_spec = 'stdin'
         content = read_stdin()
         wrapfun = create_wrapper('Carefully read the following contents {}:', parsed_spec)
         wrapfun_chunk = create_chunk_wrapper('Carefully read the following contents {} (lines {}-{}):', parsed_spec)
-        results.append((parsed_spec, content, wrapfun, wrapfun-chunk))
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     else:
         raise FileNotFoundError(f'File or resource {repr(spec)} not recognized')
     return results

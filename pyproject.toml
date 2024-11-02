@@ -55,6 +55,7 @@ test = [
     "pytest>=7.0",
     "pytest-cov",
     "pytest-xdist",
+    "pytest-timeout",
 ]
 dev = [
     "debgpt[test]",
