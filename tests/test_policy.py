@@ -27,22 +27,33 @@ from debgpt.policy import DebianPolicy
 from debgpt.policy import DebianDevref
 
 
-@pytest.mark.parametrize('section', ('1', '4.6', '4.9.1'))
-def test_policy(tmpdir: str, section: str) -> None:
+def test_policy(tmpdir: str) -> None:
     """
     Test the DebianPolicy class by checking specific sections.
 
     Args:
         tmpdir (str): The temporary directory to use for testing.
-        section (str): The section of the Debian Policy to test.
     """
     policy = DebianPolicy(os.path.join(tmpdir, 'policy.txt'))
-    # Print the specific section of the policy
-    print(policy[section])
+    # specific section of the policy, indexed by section number (as string)
+    for section in ('1', '4.6', '4.9.1'):
+        text = policy[section]
     # Convert the entire policy to a string
     whole = str(policy)
-    # Assert that the entire policy string is longer than 1000 characters
     assert len(whole) > 1000
+
+    # test __iter__ and __next__
+    for i, section in enumerate(policy):
+        assert isinstance(section, str)
+        assert len(section) > 0
+
+    # test __len__
+    assert len(policy) > 0
+
+    # test __getitem__ with int
+    for i in range(len(policy)):
+        text = policy[i]
+        assert len(text) > 0
 
 
 @pytest.mark.parametrize('section', ('2', '2.1', '3.1.1'))

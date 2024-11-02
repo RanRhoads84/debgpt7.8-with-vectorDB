@@ -93,7 +93,7 @@ class DebianPolicy:
         # if the index is an integer, map it to the real section number
         if isinstance(index, int):
             section = self.indexes[index]
-            return self.__getitem__(index)
+            return self.__getitem__(section)
         # Retrieve a specific section, subsection, or subsubsection based on the index.
         sep: str = {
             1: self.SEP_SECTION,
@@ -134,15 +134,17 @@ class DebianDevref(DebianPolicy):
         super().__init__(cache)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     import numpy as np
     # Test the DebianPolicy class.
     p = DebianPolicy()
-    print(len(p))
+    print('Policy total length', len(str(p).encode()), 'bytes')
     for (sec, text) in zip(p.indexes, p):
         print('section', sec, 'length', len(text.encode()), 'bytes')
 
 
     # Test the DebianDevref class.
     d = DebianDevref()
-    print(len(d['1.1']))
+    print('Devref total length', len(str(d).encode()), 'bytes')
+    for (sec, text) in zip(d.indexes, d):
+        print('section', sec, 'length', len(text.encode()), 'bytes')
