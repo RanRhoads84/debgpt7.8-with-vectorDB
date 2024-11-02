@@ -358,7 +358,9 @@ using the `--frontend|-F` argument.", "Press Esc to abort.").run()
         embedding_frontends, "An embedding model turns text into vector embeddings, \
 unlocking use cases like search. Choose a frontend that will compute the \
 embedding vectors.\n\n\
-The embedding frontend can be different from the frontend.",
+The embedding frontend can be different from the frontend.\n\n\
+If you are not going to use the embedding-realted feature, such as vectordb,\
+retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'.",
         "Press Esc to abort.").run()
     if not embedding_frontend:
         print('Aborted.')
