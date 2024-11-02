@@ -30,13 +30,14 @@ import subprocess
 import functools as ft
 import sys
 import glob
+import shlex
 import mimetypes
 import tenacity
 import concurrent.futures
 from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 from urllib.parse import quote
-from . import policy as debgpt_policy
+from . import policy as debian_policy
 from .defaults import console
 
 
@@ -213,7 +214,7 @@ def read_url(url: str) -> str:
 
 def read_cmd(cmd: Union[str, List]) -> str:
     if isinstance(cmd, str):
-        cmd = cmd.split(' ')
+        cmd = shlex.split(' ')
     stdout = subprocess.check_output(cmd).decode()
     lines = [x.rstrip() for x in stdout.split('\n')]
     return '\n'.join(lines)
@@ -284,9 +285,35 @@ def google_search(query: str) -> List[str]:
     return results
 
 
+def read_archwiki(spec: str) -> str:
+    '''
+    Archwiki. e.g.,
+    https://wiki.archlinux.org/title/Archiving_and_compression
+
+    Args:
+        spec (str): the identifier of the ArchWiki page, e.g., Archiving_and_compression
+    Returns:
+        str: the content of the ArchWiki page
+    '''
+    url = f'https://wiki.archlinux.org/title/{identifier}'
+    r = requests.get(url, headers=HEADERS)
+    soup = BeautifulSoup(r.text, features='html.parser')
+    text = soup.get_text().split('\n')
+    return '\n'.join([x.rstrip() for x in text])
 
 
-def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable]]:
+
+def read_buildd(spec: str,):
+    url = f'https://buildd.debian.org/status/package.php?p={p}'
+    r = requests.get(url, headers=HEADERS)
+    soup = BeautifulSoup(r.text, features='html.parser')
+    text = soup.get_text().split('\n')
+    return '\n'.join([x.rstrip() for x in text])
+
+
+
+
+def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable, callable]]:
     '''
     Unified reader for reading text contents from various sources
     specified by the user. We will detect the type of the resource specified,
@@ -296,204 +323,138 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable]
         spec: the path or URL to the file
         debgpt_home: the home directory of debgpt
     Returns:
-        a list of tuples, each tuple contains the parsed spec and the content
+        a list of tuples, each tuple contains the parsed spec and the content,
+        and two wrapper functions to wrap the content with. The first wrapper
+        wraps unchunked content, and the second wrapper wraps chunked content.
     '''
     # helper functions
     def create_wrapper(template: str, spec: str) -> callable:
+        '''
+        create a wrapper function to wrap the content with a template.
+        The template should contain one placeholder for the spec.
+        '''
         def _wrapper(content: str) -> str:
             lines = [tempalte.format(spec)]
             lines.extend(['```'] + content.split('\n') + ['```', ''])
             return '\n'.join(lines)
         return _wrapper
+    def create_chunk_wrapper(template: str, spec: str) -> callable:
+        '''
+        create a wrapper function to wrap the content with a template.
+        The template should contain three placeholders for the spec, start, and stop.
+        '''
+        def _wrapper(content: str, start: int, stop: int) -> str:
+            lines = [tempalte.format(spec, start, stop)]
+            lines.extend(['```'] + content.split('\n')[start:stop] + ['```', ''])
+            return '\n'.join(lines)
+        return _wrapper
 
     results: List[Tuple[str, str]] = []
-    # standard cases
+    # standard cases: file, directory, URL
     if os.path.exists(spec) and os.path.isfile(spec):
         parsed_spec = spec
         content = read_file(spec)
         wrapfun = create_wrapper('Here is the contents of file {}:', spec)
-        results.append((parsed_spec, content, wrapfun))
+        wrapfun_chunk = create_chunk_wrapper('Here is the contents of file {} (lines {}-{}):', spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif os.path.exists(spec) and os.path.isdir(spec):
         wrapfun = create_wrapper('Here is the contents of file {}:', spec)
+        wrapfun_chunk = create_chunk_wrapper('Here is the contents of file {} (lines {}-{}):', spec)
         parsed_spec = spec
         contents = read_directory(spec)
-        contents = [(x, y, wrapfun) for x, y in contents]
+        contents = [(x, y, wrapfun, wrapfun_chunk) for x, y in contents]
         results.extend(contents)
     elif any(spec.startswith(x) for x in ('file://', 'http://', 'https://')):
         parsed_spec = spec
         content = read_url(spec)
         results.append((parsed_spec, content))
         wrapfun = create_wrapper('Here is the contents of URL {}:', spec)
-        results.append((parsed_spec, content, wrapfun))
-    # special cases
+        wrapfun_chunk = create_chunk_wrapper('Here is the contents of URL {} (lines {}-{}):', spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+    # special cases: alphabetical order
+    elif spec.startswith('archwiki:'):
+        parsed_spec = spec[9:]
+        content = read_archwiki(parsed_spec)
+        wrapfun = create_wrapper('Here is the Arch Wiki about {}:', parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper('Here is the Arch Wiki about {} (lines {}-{}):', parsed_spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('bts:'):
         parsed_spec = spec[4:]
         content = read_bts(parsed_spec)
-        results.append((parsed_spec, content))
+        wrapfun = create_wrapper('Here is the Debian Bug Tracking System page of {}:', parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper('Here is the Debian BTS status of {} (lines {}-{}):', parsed_spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+    elif spec.startswith('buildd:'):
+        parsed_spec = spec[7:]
+        content = read_buildd(parsed_spec)
+        wrapfun = create_wrapper('Here is the buildd status of package {}:', parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper('Here is the buildd status of package {} (lines {}-{}):', parsed_spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('cmd:'):
         parsed_spec = spec[4:]
         content = read_cmd(parsed_spec)
-        results.append((parsed_spec, content))
+        wrapfun = create_wrapper('Here is the output of command {}:', parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper('Here is the output of command {} (lines {}-{}):', parsed_spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+    elif spec.startswith('devref:'):
+        # e.g., devref:1 loads section 1, devref: loads the whole devref
+        parsed_spec = spec[7:]
+        content = debian_policy.DebianDevref(os.path.join(debgpt_home, 'devref.txt'))
+        if parsed_spec:
+            content = content[parsed_spec]
+            wrapfun = create_wrapper('Here is the Debian Developer Reference document, section {}:', parsed_spec)
+            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Developer Reference document, section {} (lines {}-{}):', parsed_spec)
+        else:
+            content = str(content)
+            wrapfun = create_wrapper('Here is the Debian Developer Reference document {}:', parsed_spec)
+            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Developer Reference document {} (lines {}-{}):', parsed_spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+    elif spec.startswith('man:'):
+        parsed_spec = spec[4:]
+        content = read_cmd(f'man {parsed_spec}')
+        wrapfun = create_wrapper('Here is the manual page of {}:', parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper('Here is the manual page of {} (lines {}-{}):', parsed_spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+    elif spec.startswith('policy:'):
+        # e.g., policy:1 loads section 1, policy: loads the whole policy
+        parsed_spec = spec[7:]
+        content = debian_policy.DebianPolicy(os.path.join(debgpt_home, 'policy.txt'))
+        if parsed_spec:
+            content = content[parsed_spec]
+            wrapfun = create_wrapper('Here is the Debian Policy document, section {}:', parsed_spec)
+            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Policy document, section {} (lines {}-{}):', parsed_spec)
+        else:
+            content = str(content)
+            wrapfun = create_wrapper('Here is the Debian Policy document {}:', parsed_spec)
+            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Policy document {} (lines {}-{}):', parsed_spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+    elif spec.startswith('tldr:'):
+        parsed_spec = spec[5:]
+        content = read_cmd(f'tldr {parsed_spec}')
+        wrapfun = create_wrapper('Here is the tldr of {}:', parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper('Here is the tldr of {} (lines {}-{}):', parsed_spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+    # special cases: stdin
     elif spec in ('stdin', '-'):
         parsed_spec = spec
         content = read_stdin()
-        results.append((parsed_spec, content))
+        wrapfun = create_wrapper('Carefully read the following contents {}:', parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper('Carefully read the following contents {} (lines {}-{}):', parsed_spec)
+        results.append((parsed_spec, content, wrapfun, wrapfun-chunk))
     else:
         raise FileNotFoundError(f'File or resource {repr(spec)} not recognized')
     return results
 
 
-
-
-
-
-
-
-
-
-
-
-
-def archw(identifier: str) -> str:
+def read_and_wrap(spec: str, *, debgpt_home: str = '.') -> str:
     '''
-    Archwiki. e.g.,
-    https://wiki.archlinux.org/title/Archiving_and_compression
+    Read contents from the specified resource and wrap the content to make it
+    suitable for prompting LLM.
     '''
-    url = f'https://wiki.archlinux.org/title/{identifier}'
-    r = requests.get(url)
-    soup = BeautifulSoup(r.text, features='html.parser')
-    text = soup.get_text().split('\n')
-    lines = [f'Here is the Arch Wiki about {identifier}:']
-    lines.extend(['```', *text, '```', ''])
-    return '\n'.join(lines)
+    results = read(spec, debgpt_home=debgpt_home)
+    raise NotImplementedError('Not yet implemented')
 
 
-def html(url: str, *, raw: bool = False):
-    '''
-    Load a website in plain/raw text format
-    '''
-    text = _load_html_raw(url) if raw else _load_html(url)
-    lines = [f'Here is the contents of {url}:']
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
-
-
-def buildd(p: str, *, suite: str = 'sid', raw: bool = False):
-    url = f'https://buildd.debian.org/status/package.php?p={p}&suite={suite}'
-    text = _load_html_raw(url) if raw else _load_html(url)
-    lines = [f'The following is the build status of package {p}:']
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
-
-
-def bts(identifier: str, *, raw: bool = False):
-    text = _load_bts(identifier)
-    lines = ["The following is a webpage from Debian's bug tracking system:"]
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
-
-
-def policy(section: str, *, debgpt_home: str):
-    '''
-    the policy cache in plain text format will be stored in debgpt_home
-    '''
-    doc = debgpt_policy.DebianPolicy(os.path.join(debgpt_home, 'policy.txt'))
-    text = doc[section].split('\n')
-    lines = [f'''The following is the section {section} of Debian Policy:''']
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
-
-
-def devref(section: str, *, debgpt_home: str):
-    '''
-    similar to policy, the devref cache will be stored in debgpt_home
-    '''
-    doc = debgpt_policy.DebianDevref(os.path.join(debgpt_home, 'devref.txt'))
-    text = doc[section].split('\n')
-    lines = [
-        f'''The following is the section {section} of Debian Developer's Reference:'''
-    ]
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
-
-
-def man(name: str):
-    text = _load_cmdline(f'man {name}')
-    lines = [f'''The following is the manual page of {name}:''']
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
-
-
-def tldr(name: str):
-    text = _load_cmdline(f'tldr {name}')
-    lines = [f'''The following is the tldr of the program {name}:''']
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
-
-
-def command_line(cmd: str):
-    text = _load_cmdline(cmd)
-    lines = [f'''The following is the output of command line `{cmd}`:''']
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
-
-
-def stdin():
-    text = _load_stdin()
-    return '\n'.join(text)
-
-
-def file(path: str):
-    if ':' in path:
-        # it is a special syntax to specify line range e.g. setup.py:1-10
-        path, lrange = path.split(':')
-        text = _load_file(path)
-        start, end = re.match(r'^(\d*)-(\d*)', lrange).groups()
-        start = int(start) if start else None
-        end = int(end) if end else None
-        text = text[start:end]
-    else:
-        text = _load_file(path)
-    lines = [f'''The following is a file named {path}:''']
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
-
-
-def pynew(version_section: str):
-    '''
-    What's New websites of cpython
-    https://docs.python.org/3/whatsnew/3.12.html#summary-release-highlights
-
-    version: e.g. 3.12
-    section: e.g. summary
-    '''
-    # parse inputs
-    if ':' in version_section:
-        # normally return the specified section
-        version, section = version_section.split(':')
-    else:
-        # print all available sections and exit()
-        version, section = version_section, None
-    # retrieve webpage
-    url = f'https://docs.python.org/3/whatsnew/{version}.html'
-    doc = requests.get(url).text
-    soup = BeautifulSoup(doc, features='html.parser')
-    sections = [x.attrs['id'] for x in soup.find_all('section')]
-    # extract information from webpage
-    if section is None or not section:
-        # if not specified section: print available ones and exit()
-        console.print("Available Sections in Python What's New:", sections)
-        sys.exit(0)
-    else:
-        # if specified section: find that section
-        part = soup.find_all('section', attrs={'id': section})[0]
-        text = part.get_text().strip()
-    # enclose in markdown block
-    lines = [
-        f'''The following is the {section} section of Python {version}'s What's New document:'''
-    ]
-    lines.extend(['```', text, '```', ''])
-    return '\n'.join(lines)
 
 
 ##########################################
