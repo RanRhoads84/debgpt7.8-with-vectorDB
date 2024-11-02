@@ -24,6 +24,7 @@ SOFTWARE.
 from types import SimpleNamespace
 import sys
 import os
+import numpy as np
 import pytest
 from debgpt import defaults
 from debgpt import embeddings
@@ -41,6 +42,7 @@ def test_random_embedding_embed(conf):
     # test __call__
     emb = model('hello world')
     assert emb.ndim == 1
+    assert np.isclose(np.linalg.norm(emb), 1.0)
 
 
 def test_random_embedding_batch_embed(conf):
@@ -50,6 +52,7 @@ def test_random_embedding_batch_embed(conf):
     # test __call__
     emb = model(['hello world', 'goodbye world'])
     assert emb.ndim == 2
+    assert np.isclose(np.linalg.norm(emb, axis=1), 1.0).all()
 
 
 def test_openai_embedding_embed(conf):
@@ -69,6 +72,7 @@ def test_openai_embedding_embed(conf):
     # test __call__
     emb = model('hello world')
     assert emb.ndim == 1
+    assert np.isclose(np.linalg.norm(emb), 1.0)
 
 
 def test_openai_embedding_batch_embed(conf):
@@ -88,6 +92,7 @@ def test_openai_embedding_batch_embed(conf):
     # test __call__
     emb = model(['hello world', 'goodbye world'])
     assert emb.ndim == 2
+    assert np.isclose(np.linalg.norm(emb, axis=1), 1.0).all()
 
 
 def test_gemini_embedding_embed(conf):
@@ -96,6 +101,7 @@ def test_gemini_embedding_embed(conf):
     model = embeddings.GeminiEmbedding(conf)
     vector = model.embed('hello world')
     assert vector.ndim == 1
+    assert np.isclose(np.linalg.norm(vector), 1.0)
 
 
 def test_gemini_embedding_batch_embed(conf):
@@ -104,6 +110,7 @@ def test_gemini_embedding_batch_embed(conf):
     model = embeddings.GeminiEmbedding(conf)
     matrix = model.batch_embed(['hello world', 'goodbye world'])
     assert matrix.ndim == 2
+    assert np.isclose(np.linalg.norm(matrix, axis=1), 1.0).all()
 
 
 

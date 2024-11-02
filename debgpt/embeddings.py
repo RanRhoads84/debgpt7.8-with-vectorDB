@@ -99,7 +99,7 @@ class AbstractEmbeddingModel(object):
             texts (List[str]): List of texts to embed.
 
         Returns:
-            np.ndarray: A matrix of embedding vectors.
+            np.ndarray: A matrix of embedding vectors (normalized).
         '''
         raise NotImplementedError('This is an abstract method.')
 
@@ -111,7 +111,7 @@ class AbstractEmbeddingModel(object):
             text (Union[str, List[str]]): Text or list of texts to embed.
 
         Returns:
-            np.ndarray: The embedding vector or matrix.
+            np.ndarray: The embedding vector or matrix (normalized).
         '''
         if isinstance(text, str):
             return self.embed(text)
@@ -141,6 +141,7 @@ class RandomEmbedding(AbstractEmbeddingModel):
             np.ndarray: The embedding vector.
         '''
         vector = np.random.randn(self.dim)
+        vector = vector / np.linalg.norm(vector)
         return vector
 
     def batch_embed(self, texts: List[str]) -> np.ndarray:
@@ -154,6 +155,7 @@ class RandomEmbedding(AbstractEmbeddingModel):
             np.ndarray: A matrix of embedding vectors.
         '''
         matrix = np.random.randn(len(texts), self.dim)
+        matrix = matrix / np.linalg.norm(matrix, axis=1)[:, np.newaxis]
         return matrix
 
 
@@ -183,6 +185,7 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
         func = retry_ratelimit(self.client.embeddings.create, RateLimitError)
         response = func(input=text, model=self.model, dimensions=self.dim)
         vector = np.array(response.data[0].embedding)
+        vector = vector / np.linalg.norm(vector)
         return vector
 
     def batch_embed(self, texts: List[str]) -> np.ndarray:
@@ -199,6 +202,7 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
         func = retry_ratelimit(self.client.embeddings.create, RateLimitError)
         response = func(input=texts, model=self.model)
         matrix = np.stack([x.embedding for x in response.data])[:, :self.dim]
+        matrix = matrix / np.linalg.norm(matrix, axis=1)[:, np.newaxis]
         return matrix
 
 
@@ -236,6 +240,7 @@ class GeminiEmbedding(AbstractEmbeddingModel):
         response = func(model=self.model, content=text,
                         output_dimensionality=self.dim)
         vector = np.array(response['embedding'])
+        vector = vector / np.linalg.norm(vector)
         return vector
 
     def batch_embed(self, texts: List[str]) -> np.ndarray:
@@ -253,6 +258,7 @@ class GeminiEmbedding(AbstractEmbeddingModel):
         response = func(model=self.model, content=texts,
                         output_dimensionality=self.dim)
         matrix = np.stack(response['embedding'])[:, :self.dim]
+        matrix = matrix / np.linalg.norm(matrix, axis=1)[:, np.newaxis]
         return matrix
 
 
@@ -268,8 +274,10 @@ def get_embedding_model(args: object) -> AbstractEmbeddingModel:
     '''
     if args.embedding_frontend == 'openai':
         return OpenAIEmbedding(args)
-    if args.embedding_frontend == 'gemini':
+    elif args.embedding_frontend == 'gemini':
         return GeminiEmbedding(args)
+    elif args.embedding_frontend == 'random':
+        return RandomEmbedding(args)
     else:
         raise ValueError('Invalid embedding frontend.')
 
