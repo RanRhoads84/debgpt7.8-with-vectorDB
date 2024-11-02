@@ -30,8 +30,8 @@ import numpy as np
 import functools as ft
 from rich.console import Console
 from . import defaults
+
 console = defaults.console
-conf = defaults.Config()
 
 
 def retry_ratelimit(func: callable,
@@ -117,8 +117,8 @@ def get_embedding_model(args: object) -> AbstractEmbeddingModel:
         raise ValueError('Invalid embedding frontend.')
 
 
-
 def main(argv: List[str]) -> None:
+    conf = defaults.Config()
     parser = argparse.ArgumentParser()
     parser.add_argument('--embedding-frontend',
                         '-E',
@@ -162,14 +162,6 @@ def main(argv: List[str]) -> None:
     print(f'vector[:10]:', vector[:10])
     print(f'vector[-10:]:', vector[-10:])
 
-    matrix = model.batch_embed([args.text] * 3)
-    print(f'matrix.shape:', matrix.shape)
-    print(f'matrix.min:', matrix.min())
-    print(f'matrix.max:', matrix.max())
-    print(f'matrix.mean:', matrix.mean())
-    print(f'matrix.std:', matrix.std())
-    print(f'matrix[:, :10]:', matrix[:, :10])
-    print(f'matrix[:, -10:]:', matrix[:, -10:])
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main(sys.argv[1:])
