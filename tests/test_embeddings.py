@@ -72,5 +72,28 @@ def test_openai_embedding_batch_embed(conf):
     assert emb.ndim == 2
 
 
+def test_gemini_embedding_embed(conf):
+    if conf.gemini_api_key == 'your-google-gemini-api-key':
+        pytest.skip('Gemini API key is not provided')
+    orig_model = conf.embedding_model
+    conf.embedding_model = 'models/text-embedding-004'
+    model = embeddings.GeminiEmbedding(conf)
+    vector = model.embed('hello world')
+    assert vector.ndim == 1
+    conf.embedding_model = orig_model
+
+
+def test_gemini_embedding_batch_embed(conf):
+    if conf.gemini_api_key == 'your-google-gemini-api-key':
+        pytest.skip('Gemini API key is not provided')
+    orig_model = conf.embedding_model
+    conf.embedding_model = 'models/text-embedding-004'
+    model = embeddings.GeminiEmbedding(conf)
+    matrix = model.batch_embed(['hello world', 'goodbye world'])
+    assert matrix.ndim == 2
+    conf.embedding_model = orig_model
+
+
+
 def test_embedding_main():
     embeddings.main(['hello world'])

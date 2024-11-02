@@ -166,6 +166,60 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
         return matrix
 
 
+class GeminiEmbedding(AbstractEmbeddingModel):
+    '''
+    Gemini embedding model implementation.
+
+    Example model: "models/text-embedding-004"
+    This model has a maximum dimension of 768.
+    Example dimension: 256
+
+    Reference:
+    https://github.com/google-gemini/cookbook/blob/main/quickstarts/Embeddings.ipynb
+    '''
+
+    def __init__(self, args: object = None) -> None:
+        import google.generativeai as genai
+        genai.configure(api_key=args.gemini_api_key)
+        self.client = genai
+        self.model = args.embedding_model
+        self.dim = args.embedding_dim
+
+    def embed(self, text: str) -> np.ndarray:
+        '''
+        Embed a single text string using Gemini.
+
+        Args:
+            text (str): The text to embed.
+
+        Returns:
+            np.ndarray: The embedding vector.
+        '''
+        from google.api_core.exceptions import ResourceExhausted
+        func = retry_ratelimit(self.client.embed_content, ResourceExhausted)
+        response = func(model=self.model, content=text,
+                        output_dimensionality=self.dim)
+        vector = np.array(response['embedding'])
+        return vector
+
+    def batch_embed(self, texts: List[str]) -> np.ndarray:
+        '''
+        Embed a batch of text strings using Gemini.
+
+        Args:
+            texts (List[str]): List of texts to embed.
+
+        Returns:
+            np.ndarray: A matrix of embedding vectors.
+        '''
+        from google.api_core.exceptions import ResourceExhausted
+        func = retry_ratelimit(self.client.embed_content, ResourceExhausted)
+        response = func(model=self.model, content=texts,
+                        output_dimensionality=self.dim)
+        matrix = np.stack(response['embedding'])[:, :self.dim]
+        return matrix
+
+
 def get_embedding_model(args: object) -> AbstractEmbeddingModel:
     '''
     Get the embedding model based on the provided arguments.
@@ -178,6 +232,8 @@ def get_embedding_model(args: object) -> AbstractEmbeddingModel:
     '''
     if args.embedding_frontend == 'openai':
         return OpenAIEmbedding(args)
+    if args.embedding_frontend == 'gemini':
+        return GeminiEmbedding(args)
     else:
         raise ValueError('Invalid embedding frontend.')
 
