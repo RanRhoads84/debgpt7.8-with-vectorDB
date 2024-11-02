@@ -65,9 +65,13 @@ class Config(object):
             # LLM Inference Parameters
             'temperature': 0.5,
             'top_p': 1.0,
+            # Embedding Settings
+            'embedding_frontend': 'openai',
+            'embedding_dim': 256,
             # OpenAI Frontend Specific
             'openai_base_url': 'https://api.openai.com/v1',
             'openai_model': 'gpt-4o',
+            'openai_embedding_model': 'text-embedding-3-small',
             'openai_api_key': 'your-openai-api-key',
             # Anthropic Frontend Specific
             'anthropic_base_url': 'https://api.anthropic.com',
@@ -76,6 +80,7 @@ class Config(object):
             # Gemini Frontend Specific
             'gemini_api_key': 'your-google-gemini-api-key',
             'gemini_model': 'gemini-1.5-flash',
+            'gemini_embedding_model': 'models/text-embedding-004',
             # Llamafile Frontend Specific
             'llamafile_base_url': 'http://localhost:8080/v1',
             # Ollama Frontend Specific
@@ -90,10 +95,6 @@ class Config(object):
             # Prompt Composer Settings
             'mapreduce_chunksize': 65536,
             'mapreduce_parallelism': 8,
-            # Embedding Settings
-            'embedding_frontend': 'openai',
-            'embedding_dim': 256,
-            'embedding_model': 'text-embedding-3-small',
         }
         # the built-in defaults will be overridden by config file
         if not os.path.exists(home):
@@ -121,9 +122,10 @@ class Config(object):
                 console.print(f'Found environment variable GOOGLE_API_KEY.')
             self.toml['gemini_api_key'] = gemini_api_key
         # create default vector db name
+        emb_model = self.toml[f'{self.embedding_frontend}_embedding_model']
         self.toml['db'] = os.path.join(
             home, 'VectorDB_{model}_dim{dim}.sqlite'.format(
-                model=self.toml['embedding_model'],
+                model=emb_model,
                 dim=self.toml['embedding_dim']))
         # all the above will be overridden by command line arguments
         pass

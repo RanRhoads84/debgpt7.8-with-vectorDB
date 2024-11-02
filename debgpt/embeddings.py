@@ -130,7 +130,7 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
         from openai import OpenAI
         self.client = OpenAI(api_key=args.openai_api_key,
                              base_url=args.openai_base_url)
-        self.model = args.embedding_model
+        self.model = args.openai_embedding_model
         self.dim = args.embedding_dim
 
     def embed(self, text: str) -> np.ndarray:
@@ -182,7 +182,7 @@ class GeminiEmbedding(AbstractEmbeddingModel):
         import google.generativeai as genai
         genai.configure(api_key=args.gemini_api_key)
         self.client = genai
-        self.model = args.embedding_model
+        self.model = args.gemini_embedding_model
         self.dim = args.embedding_dim
 
     def embed(self, text: str) -> np.ndarray:
@@ -247,31 +247,6 @@ def main(argv: List[str]) -> None:
     '''
     conf = defaults.Config()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--embedding-frontend',
-                        '-E',
-                        type=str,
-                        default='openai',
-                        help='Embedding frontend')
-    parser.add_argument('--embedding-model',
-                        type=str,
-                        default="text-embedding-3-small",
-                        help='OpenAI embedding model')
-    parser.add_argument('--embedding-dim',
-                        type=int,
-                        default=256,
-                        help='Embedding dimension')
-    parser.add_argument('--embedding-database',
-                        type=str,
-                        default='vectors.db',
-                        help='Embedding database')
-    parser.add_argument('--openai-api-key',
-                        type=str,
-                        default=conf['openai_api_key'],
-                        help='OpenAI API key')
-    parser.add_argument('--openai-base-url',
-                        type=str,
-                        default='https://api.openai.com/v1',
-                        help='OpenAI base URL')
     parser.add_argument('text',
                         type=str,
                         nargs='?',
@@ -279,7 +254,7 @@ def main(argv: List[str]) -> None:
                         help='Text to embed')
     args = parser.parse_args(argv)
 
-    model = get_embedding_model(args)
+    model = get_embedding_model(conf)
     vector = model.embed(args.text)
     print(f'vector.shape:', vector.shape)
     print(f'vector.min:', vector.min())

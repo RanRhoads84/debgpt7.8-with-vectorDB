@@ -265,6 +265,13 @@ gpt-3.5-turbo-16k (16k context), gpt-4, gpt-4-32k (32k context). \
 Their prices vary. See https://platform.openai.com/docs/models .')
     config_template = __add_arg_to_config(config_template, _g, 'openai_model')
 
+    _g.add_argument('--openai_embedding_model',
+                    type=str,
+                    default=conf['openai_embedding_model'],
+                    help='the openai embedding model to use')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'openai_embedding_model')
+
     # Specific to Anthropic Frontend
     config_template += '''\n
 ##################################
@@ -313,6 +320,13 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     default=conf['gemini_model'],
                     help='the gemini model, e.g., gemini-1.5-flash')
     config_template = __add_arg_to_config(config_template, _g, 'gemini_model')
+
+    _g.add_argument('--gemini_embedding_model',
+                    type=str,
+                    default=conf['gemini_embedding_model'],
+                    help='the gemini embedding model to use')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'gemini_embedding_model')
 
     # Specific to Llamafile Frontend
     config_template += '''\n
@@ -400,13 +414,6 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     help='the embedding frontend to use')
     config_template = __add_arg_to_config(config_template, _g,
                                           'embedding_frontend')
-    _g.add_argument('--embedding_model',
-                    type=str,
-                    default=conf['embedding_model'],
-                    help='the embedding model to use')
-    config_template = __add_arg_to_config(config_template, _g,
-                                          'embedding_model')
-
     _g.add_argument('--embedding_dim',
                     type=int,
                     default=conf['embedding_dim'],
