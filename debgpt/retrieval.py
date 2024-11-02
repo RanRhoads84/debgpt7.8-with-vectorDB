@@ -74,6 +74,13 @@ class VectorRetriever(object):
         This function retrieves the top-k most relevant documents from the
         document list given a query. It does not modify the database, nor
         query the database. It computes the embeddings on-the-fly.
+
+        Args:
+            query: the query string.
+            documents: a list of document strings.
+            topk: the number of documents to retrieve.
+        Returns:
+            a list of top-k most relevant documents.
         '''
         query_embedding = self.embedding.embed(query)
         document_embeddings = self.embedding.batch_embed(documents)
@@ -84,6 +91,12 @@ class VectorRetriever(object):
     def add(self, source: str, text: str) -> np.ndarray:
         '''
         This function computes and adds a new vector to the database.
+
+        Args:
+            source: the source of the text.
+            text: the text to be added.
+        Returns:
+            the computed vector.
         '''
         vector = self.model.embed(text)
         self.vdb.add(source, text, vector)
@@ -93,6 +106,12 @@ class VectorRetriever(object):
         '''
         This function retrieves the top-k most relevant documents from the
         database given a query.
+
+        Args:
+            query: the query string.
+            topk: the number of documents to retrieve.
+        Returns:
+            a list of top-k most relevant documents.
         '''
         query_embedding = self.model.embed(query)
         scores, documents = self.vdb.retrieve(query_embedding, topk)
