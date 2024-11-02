@@ -12,7 +12,7 @@ DebGPT - General Purpose Terminal LLM Tool with Some Debian-Specific Design
 SYNOPSIS
 ========
 
-`debgpt [CLI-options] [frontend-options] [composers] [subcommands [subcommand-args]]`
+`debgpt [CLI-options] [frontend-options] [readers] [subcommands [subcommand-args]]`
 
 DESCRIPTION
 ===========
@@ -146,14 +146,14 @@ The pipe mode can be used for editing something in vim in-place.
 
 After gettting familiarized with the fundamental usage and its CLI behavior,
 we can directly move on to the most important feature of this tool, namely the
-special prompt composer -- `MapReduce`.
+special prompt reader -- `MapReduce`.
 
 
-#### Special Retrieval Prompt Composer for Document Library
+#### Special Retrieval Prompt reader for Document Library
 
 > This is WIP. Leveraging the embeddings to retrieve.  Basically RAG.
 
-#### 2. Special MapReduce Prompt Composer for Any Length Context
+#### 2. Special MapReduce Prompt reader for Any Length Context
 
 > This `MapReduce` is a key feature of DebGPT.
 
@@ -232,19 +232,19 @@ result, this functionality can be very quota-consuming if you are going to deal
 with long texts. Please keep an eye on your bill when you try this on a paied
 API service.
 
-#### 3. Standard Prompt Composers for Texts that Fit in Context Window
+#### 3. Standard Prompt readers for Texts that Fit in Context Window
 
-Prompt Composer is a function that reads the plain text contents from the
+Prompt reader is a function that reads the plain text contents from the
 specified resource, and wrap them as a part of a prompt for the LLM. In the
-previous section we have seens the special prompt composer `MapReduce`, which
-works differently from the standard prompt composers that will be introduced
-here. Note, the query composers (including special one) can be arbitrarily
+previous section we have seens the special prompt reader `MapReduce`, which
+works differently from the standard prompt readers that will be introduced
+here. Note, the query readers (including special one) can be arbitrarily
 combined together or specified multiple times through command line arguments.
 
 
 **[-f|--file]**
 
-The first to introduce is the very general `--file|-f` query composer,
+The first to introduce is the very general `--file|-f` query reader,
 which loads a text file from the specified path.
 
 ```
@@ -264,12 +264,12 @@ debgpt -Hf pyproject.toml:-10  -A 'explain it'  # select the [0,10) lines
 debgpt -Hf pyproject.toml:3-   -A 'explain it'  # select the [3,end) lines
 ```
 
-The rest prompt composers are ordered alphabetically.
+The rest prompt readers are ordered alphabetically.
 
 
 **[--inplace|-i]**
 
-We have a kind of special composer `--inplace|-i` (read-write) that reads
+We have a kind of special reader `--inplace|-i` (read-write) that reads
 the contents of a file like `--file|-f` (read-only), but it will also write
 the LLM response (I assume it is the file editing result) back to the file.
 It will also print the diff of the changes to the screen.
@@ -382,7 +382,7 @@ debgpt -H --devref 5.5 -A :summary
 ```
 
 
-**Arbitrary Combination of Prompt Composers**
+**Arbitrary Combination of Prompt readers**
 
 We can add code file and Debian Policy simultaneously. 
 In the following example, we put the `debian/control` file from the
@@ -426,8 +426,8 @@ references on this topic:
 
 #### 6. Frequently Seen Issues
 
-* Context overlength: If the result from query composers is too long, you
-  can switch to the `--mapreduce|-x` special composer, or switch to a model
+* Context overlength: If the result from query readers is too long, you
+  can switch to the `--mapreduce|-x` special reader, or switch to a model
   or backend or service provider that supports longer context.
 
 

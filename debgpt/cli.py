@@ -46,7 +46,7 @@ import warnings
 from .task import task_backend, task_git, task_git_commit, task_replay
 from .task import task_vdb, task_vdb_ls
 from . import defaults
-from . import composer
+from . import reader
 from . import frontend
 from . import configurator
 
@@ -424,11 +424,11 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     # for instance, `debgpt -H -f foo.py -f bar.py`.
     config_template += '''\n
 ##############################
-# Prompt Composer
+# Prompt reader
 ##############################
 \n'''
     # -- 1. Debian BTS
-    _g = ag.add_argument_group('Prompt Composer')
+    _g = ag.add_argument_group('Prompt reader')
     _g.add_argument(
         '--bts',
         type=str,
@@ -607,14 +607,14 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     ps_stdin = subps.add_parser(
         'stdin',
         help='read stdin as the first prompt. Should combine with -Q.')
-    ps_stdin.set_defaults(func=lambda ag: composer.stdin())
+    ps_stdin.set_defaults(func=lambda ag: reader.stdin())
 
     # Task: pipe
     ps_pipe = subps.add_parser(
         'pipe',
         help='read stdin, print nothing other than LLM response to stdout. \
 This option will automatically mandate --no-render_markdown, -Q and -H.')
-    ps_pipe.set_defaults(func=lambda ag: composer.stdin())
+    ps_pipe.set_defaults(func=lambda ag: reader.stdin())
 
     # Task: genconfig
     ps_genconfig = subps.add_parser('genconfig',
@@ -710,7 +710,7 @@ def mapreduce_super_long_context(ag) -> str:
     else:
         user_question = 'summarize the above contents.'
 
-    chunks = composer.mapreduce_load_any_astext(ag.mapreduce,
+    chunks = reader.mapreduce_load_any_astext(ag.mapreduce,
                                                 ag.mapreduce_chunksize,
                                                 user_question=user_question,
                                                 args=ag)
@@ -739,17 +739,17 @@ def mapreduce_super_long_context(ag) -> str:
 
     # skip mapreduce if there is only one chunk
     if len(chunks) == 1:
-        filepath = composer.mapreduce_parse_path(ag.mapreduce,
+        filepath = reader.mapreduce_parse_path(ag.mapreduce,
                                                  debgpt_home=ag.debgpt_home)
         if any(
                 filepath.startswith(x)
                 for x in ('file://', 'http://', 'https://')):
-            return composer.url(filepath)
+            return reader.url(filepath)
         else:
             if filepath.endswith('.pdf'):
-                return composer.pdf(filepath)
+                return reader.pdf(filepath)
             else:
-                return composer.file(filepath)
+                return reader.file(filepath)
 
     def _process_chunk(chunk: str, question: str) -> str:
         '''
@@ -854,31 +854,31 @@ def gather_information_ordered(msg: Optional[str], ag,
         msg = '' if msg is None else msg
         return msg + '\n' + info
 
-    # following the argument order, dispatch to composer.* functions with
+    # following the argument order, dispatch to reader.* functions with
     # different function signatures
     for key in ag_order:
         if key in ('file', 'tldr', 'man', 'buildd', 'pynew', 'archw', 'pdf'):
             spec = getattr(ag, key).pop(0)
-            func = getattr(composer, key)
+            func = getattr(reader, key)
             msg = _append_info(msg, func(spec))
         elif key == 'cmd':
             cmd_line = ag.cmd.pop(0)
-            msg = _append_info(msg, composer.command_line(cmd_line))
+            msg = _append_info(msg, reader.command_line(cmd_line))
         elif key == 'bts':
             bts_id = ag.bts.pop(0)
-            msg = _append_info(msg, composer.bts(bts_id, raw=ag.bts_raw))
+            msg = _append_info(msg, reader.bts(bts_id, raw=ag.bts_raw))
         elif key == 'html':
             url = ag.html.pop(0)
-            msg = _append_info(msg, composer.html(url, raw=False))
+            msg = _append_info(msg, reader.html(url, raw=False))
         elif key in ('policy', 'devref'):
             spec = getattr(ag, key).pop(0)
-            func = getattr(composer, key)
+            func = getattr(reader, key)
             msg = _append_info(msg, func(spec, debgpt_home=ag.debgpt_home))
         elif key == 'inplace':
             # This is a special case. It reads the file as does by
             # `--file` (read-only), but `--inplace` (read-write) will write
             # the result back to the file. This serves code editing purpose.
-            msg = _append_info(msg, composer.file(ag.inplace))
+            msg = _append_info(msg, reader.file(ag.inplace))
         elif key == 'mapreduce':
             # but we only do once for mapreduce
             if __has_done_mapreduce:

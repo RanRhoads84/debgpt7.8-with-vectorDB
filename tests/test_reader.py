@@ -22,41 +22,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 import pytest
-from debgpt import composer
+from debgpt import reader
 import os
 
 
 @pytest.mark.parametrize('idx', ('src:pytorch', '1056388'))
 def test_debian_bts(idx: str):
-    print(composer.bts(idx))
+    print(reader.bts(idx))
 
 
 @pytest.mark.parametrize('section', ('1', '4.6', '4.6.1'))
 def test_policy(section, tmp_path):
-    print(composer.policy(section, debgpt_home=tmp_path))
+    print(reader.policy(section, debgpt_home=tmp_path))
 
 
 @pytest.mark.parametrize('section', ('5.5', '1'))
 def test_devref(section, tmp_path):
-    print(composer.devref(section, debgpt_home=tmp_path))
+    print(reader.devref(section, debgpt_home=tmp_path))
 
 
 @pytest.mark.parametrize('p', ('pytorch', ))
 def test_buildd(p):
-    print(composer.buildd(p))
+    print(reader.buildd(p))
 
 
 @pytest.mark.parametrize(
     'url', ('https://lists.debian.org/debian-project/2023/12/msg00029.html', ))
 def test_html(url):
-    print(composer.html(url, raw=False))
+    print(reader.html(url, raw=False))
 
 
 def test_mapreduce_load_file(tmp_path):
     policypath = os.path.join(tmp_path, 'policy.txt')
     # just download the policy text file
-    composer.policy('1', debgpt_home=tmp_path)
-    chunks = composer.mapreduce_load_file(policypath)
+    reader.policy('1', debgpt_home=tmp_path)
+    chunks = reader.mapreduce_load_file(policypath)
     for k, v in chunks.items():
         encoded = '\n'.join(v).encode('utf-8')
         print(k, len(encoded))
@@ -64,7 +64,7 @@ def test_mapreduce_load_file(tmp_path):
 
 
 def test_mapreduce_load_directory(tmp_path):
-    chunks = composer.mapreduce_load_directory('./debian')
+    chunks = reader.mapreduce_load_directory('./debian')
     for k, v in chunks.items():
         encoded = '\n'.join(v).encode('utf-8')
         print(k, len(encoded))
@@ -72,6 +72,6 @@ def test_mapreduce_load_directory(tmp_path):
 
 
 def test_mapreduce_load_any_astext():
-    chunks = composer.mapreduce_load_any_astext('./debian')
+    chunks = reader.mapreduce_load_any_astext('./debian')
     for v in chunks:
         print(v)

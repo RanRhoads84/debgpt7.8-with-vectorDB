@@ -27,7 +27,7 @@ from rich.panel import Panel
 import tempfile
 import textwrap
 from . import frontend
-from . import composer
+from . import reader
 from . import defaults
 from . import vectordb
 
@@ -48,7 +48,7 @@ def task_backend(ag) -> None:
 def task_replay(ag) -> None:
     from . import replay
     if ag.json_file_path is None:
-        json_path = composer._latest_glob(
+        json_path = reader._latest_glob(
             os.path.join(ag.debgpt_home, '*.json'))
         console.log('found the latest json:', json_path)
     else:
@@ -77,12 +77,12 @@ def task_git_commit(ag) -> None:
     f = ag.frontend_instance
     msg = "Previous commit titles:\n"
     msg += "```"
-    msg += composer.command_line('git log --pretty=format:%s --max-count=10')
+    msg += reader.command_line('git log --pretty=format:%s --max-count=10')
     msg += "```"
     msg += "\n"
     msg += "Change diff:\n"
     msg += "```\n"
-    msg += composer.command_line('git diff --staged')
+    msg += reader.command_line('git diff --staged')
     msg += "```\n"
     msg += "\n"
     msg += 'Write a good git commit message subject line for the change diff shown above, using the project style visible in previous commits titles above.'
