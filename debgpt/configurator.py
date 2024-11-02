@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Dict
 import urwid
 import os
 import rich
@@ -134,103 +134,139 @@ class SingleEdit(object):
 _TITLE = 'DebGPT Configurator'
 
 
-def _request_frontend_specific_config(frontend: str) -> dict:
+def _request_frontend_specific_config(frontend: str,
+                                      current_config: Dict = dict(),
+                                      is_embedding: bool = False) -> dict:
     '''
     ask the user to provide the frontend-specific configuration
     '''
     conf = dict()
 
-    if frontend == 'openai':
+    # openai part
+    if frontend == 'openai' and 'openai_base_url' not in current_config:
         value = SingleEdit(
             _TITLE, "Enter the OpenAI base url:", default['openai_base_url'],
             "Keep the default as is, if you do not intend to use this API on a different compatible service.",
             "Press Esc to abort.").run()
         conf['openai_base_url'] = value
+    if frontend == 'openai' and 'openai_api_key' not in current_config:
         value = SingleEdit(
             _TITLE, "Enter the OpenAI API key:", default['openai_api_key'],
             "Typically your key can be found here: https://platform.openai.com/settings/organization/api-keys",
             "Press Esc to abort.").run()
         conf['openai_api_key'] = value
+    if frontend == 'openai' and not is_embedding and 'openai_model' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the OpenAI API model name:",
             default['openai_model'],
             'If not sure, just keep the default. Available options: https://platform.openai.com/docs/models',
             'Press Esc to abort.').run()
         conf['openai_model'] = value
-    elif frontend == 'anthropic':
+    if frontend == 'openai' and is_embedding and 'openai_embedding_model' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the OpenAI API embedding model name:",
+            default['openai_embedding_model'],
+            'If not sure, just keep the default.',
+            'Press Esc to abort.').run()
+        conf['openai_embedding_model'] = value
+    
+    # anthropic part
+    if frontend == 'anthropic' and 'anthropic_api_key' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Anthropic API key:",
             default['anthropic_api_key'],
             "Typicall your key can be found here: https://console.anthropic.com/settings/keys",
             "Press Esc to abort.").run()
         conf['anthropic_api_key'] = value
+    if frontend == 'anthropic' and 'anthropic_model' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Anthropic model name:",
             default['anthropic_model'],
             "If not sure, just keep the default. Available options: https://docs.anthropic.com/en/docs/about-claude/models",
             "Press Esc to abort.").run()
         conf['anthropic_model'] = value
-    elif frontend == 'gemini':
+
+    # gemini part
+    if frontend == 'gemini' and 'gemini_api_key' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Google Gemini API key:",
             default['gemini_api_key'],
             "Typically found here: https://aistudio.google.com/app/apikey",
             "Press Esc to abort.").run()
         conf['gemini_api_key'] = value
+    if frontend == 'gemini' and not is_embedding and 'gemini_model' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Google model name:",
             default['gemini_model'],
             "If not sure, just keep the default. Available options: https://ai.google.dev/gemini-api/docs/models/gemini",
             "Press Esc to abort.").run()
         conf['gemini_model'] = value
-    elif frontend == 'ollama':
+    if frontend == 'gemini' and is_embedding and 'gemini_embedding_model' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the Google embedding model name:",
+            default['gemini_embedding_model'],
+            "If not sure, just keep the default.",
+            "Press Esc to abort.").run()
+        conf['gemini_embedding_model'] = value
+
+    # ollama part
+    if frontend == 'ollama' and 'ollama_base_url' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Ollama service url:",
             default['ollama_base_url'],
             "Reference: https://github.com/ollama/ollama/blob/main/README.md",
             "Press Esc to abort.").run()
         conf['ollama_base_url'] = value
+    if frontend == 'ollama' and 'ollama_model' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Ollama model name:",
             default['ollama_model'],
             "Reference: https://github.com/ollama/ollama/blob/main/README.md",
             "Press Esc to abort.").run()
         conf['ollama_model'] = value
-    elif frontend == 'llamafile':
+
+    # llamafile part
+    if frontend == 'llamafile' and 'llamafile_base_url' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the LlamaFile service url:",
             default['llamafile_base_url'],
             "Reference: https://github.com/Mozilla-Ocho/llamafile",
             "Press Esc to abort.").run()
         conf['llamafile_base_url'] = value
-    elif frontend == 'vllm':
+
+    # vllm part
+    if frontend == 'vllm' and 'vllm_base_url' not in current_config:
         value = SingleEdit("DebGPT Configurator",
                            "Enter the vLLM service url:",
                            default['vllm_base_url'],
                            "Reference: https://docs.vllm.ai/en/stable/",
                            "Press Esc to abort.").run()
         conf['vllm_base_url'] = value
+    if frontend == 'vllm' and 'vllm_api_key' not in current_config:
         value = SingleEdit("DebGPT Configurator", "Enter the vLLM API key:",
                            default['vllm_api_key'],
                            "Reference: https://docs.vllm.ai/en/stable/",
                            "Press Esc to abort.").run()
         conf['vllm_api_key'] = value
+    if frontend == 'vllm' and 'vllm_model' not in current_config:
         value = SingleEdit("DebGPT Configurator", "Enter the vLLM model name:",
                            default['vllm_model'],
                            "Reference: https://docs.vllm.ai/en/stable/",
                            "Press Esc to abort.").run()
         conf['vllm_model'] = value
-    elif frontend == 'zmq':
+
+    # zmq part
+    if frontend == 'zmq' and 'zmq_backend' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the DebGPT ZMQ Backend URL:",
             default['zmq_backend'],
             "The service endpoint where you launched debgpt backend.",
             "Press Esc to abort.").run()
         conf['zmq_backend'] = value
-    elif frontend == 'dryrun':
+
+    # dryrun part
+    if frontend == 'dryrun':
         pass
-    else:
-        raise NotImplementedError(f"frontend {frontend} is not supported yet.")
 
     return conf
 
@@ -310,6 +346,29 @@ using the `--frontend|-F` argument.", "Press Esc to abort.").run()
     # step 2: ask for the frontend-specific configuration
     extra = _request_frontend_specific_config(frontend)
     conf.update(extra)
+
+    # step 3: ask for the embedding frontend
+    embedding_frontends = [
+        'OpenAI    | commercial,  OpenAI-API',
+        'Gemini    | commercial,  Google-API',
+        'Random    | debug,       DebGPT built-in',
+    ]
+    embedding_frontend = SingleChoice(
+        "DebGPT Configurator", "Select an embedding frontend that DebGPT will use:",
+        embedding_frontends, "An embedding model turns text into vector embeddings, \
+unlocking use cases like search. Choose a frontend that will compute the \
+embedding vectors.\n\n\
+The embedding frontend can be different from the frontend.",
+        "Press Esc to abort.").run()
+    if not embedding_frontend:
+        print('Aborted.')
+        exit(1)
+    embedding_frontend = embedding_frontend.split(' ')[0].lower()
+    conf['embedding_frontend'] = embedding_frontend
+
+    # step 4: ask for the embedding frontend-specific configuration
+    newconf = _request_frontend_specific_config(frontend, conf, is_embedding=True)
+    conf.update(newconf)
 
     # step 3: ask for the common CLI behavior configuration
     extra = _request_common_cli_behavior_config()
