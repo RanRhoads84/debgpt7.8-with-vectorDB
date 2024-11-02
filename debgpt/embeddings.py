@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-from typing import List, Union
+from typing import List, Union, Callable, Any
 import sys
 import os
 import argparse
@@ -34,18 +34,23 @@ from . import defaults
 console = defaults.console
 
 
-def retry_ratelimit(func: callable,
-                    exception: Exception,
-                    retry_interval: int = 15):
+def retry_ratelimit(func: Callable, exception: Exception, retry_interval: int = 15) -> Callable:
     '''
-    a decorator to retry the function call when exception occurs.
+    A decorator to retry the function call when exception occurs.
 
     OpenAI API doc provides some other methods to retry:
     https://platform.openai.com/docs/guides/rate-limits/error-mitigation
-    '''
 
+    Args:
+        func (Callable): The function to be retried.
+        exception (Exception): The exception to catch and retry upon.
+        retry_interval (int): The interval in seconds to wait before retrying.
+
+    Returns:
+        Callable: A wrapped function with retry logic.
+    '''
     @ft.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         while True:
             try:
                 result = func(*args, **kwargs)
@@ -54,30 +59,60 @@ def retry_ratelimit(func: callable,
                 console.log(
                     f'Rate limit reached. Will retry after {retry_interval} seconds.'
                 )
-                time.sleep(15)
+                time.sleep(retry_interval)
         return result
 
     return wrapper
 
 
 class AbstractEmbeddingModel(object):
+    '''
+    Abstract class for embedding models.
+    '''
 
     # the model name
-    model = 'none'
+    model: str = 'none'
 
     # the embedding dimension (after reduction)
-    dim = 0
+    dim: int = 0
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def embed(self, text: str) -> np.ndarray:
+        '''
+        Embed a single text string.
+
+        Args:
+            text (str): The text to embed.
+
+        Returns:
+            np.ndarray: The embedding vector.
+        '''
         raise NotImplementedError('This is an abstract method.')
 
     def batch_embed(self, texts: List[str]) -> np.ndarray:
+        '''
+        Embed a batch of text strings.
+
+        Args:
+            texts (List[str]): List of texts to embed.
+
+        Returns:
+            np.ndarray: A matrix of embedding vectors.
+        '''
         raise NotImplementedError('This is an abstract method.')
 
     def __call__(self, text: Union[str, List[str]]) -> np.ndarray:
+        '''
+        Call method to embed text or batch of texts.
+
+        Args:
+            text (Union[str, List[str]]): Text or list of texts to embed.
+
+        Returns:
+            np.ndarray: The embedding vector or matrix.
+        '''
         if isinstance(text, str):
             return self.embed(text)
         elif isinstance(text, list):
@@ -87,8 +122,11 @@ class AbstractEmbeddingModel(object):
 
 
 class OpenAIEmbedding(AbstractEmbeddingModel):
+    '''
+    OpenAI embedding model implementation.
+    '''
 
-    def __init__(self, args: object = None):
+    def __init__(self, args: object = None) -> None:
         from openai import OpenAI
         self.client = OpenAI(api_key=args.openai_api_key,
                              base_url=args.openai_base_url)
@@ -96,6 +134,15 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
         self.dim = args.embedding_dim
 
     def embed(self, text: str) -> np.ndarray:
+        '''
+        Embed a single text string using OpenAI.
+
+        Args:
+            text (str): The text to embed.
+
+        Returns:
+            np.ndarray: The embedding vector.
+        '''
         from openai import RateLimitError
         func = retry_ratelimit(self.client.embeddings.create, RateLimitError)
         response = func(input=text, model=self.model, dimensions=self.dim)
@@ -103,6 +150,15 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
         return vector
 
     def batch_embed(self, texts: List[str]) -> np.ndarray:
+        '''
+        Embed a batch of text strings using OpenAI.
+
+        Args:
+            texts (List[str]): List of texts to embed.
+
+        Returns:
+            np.ndarray: A matrix of embedding vectors.
+        '''
         from openai import RateLimitError
         func = retry_ratelimit(self.client.embeddings.create, RateLimitError)
         response = func(input=texts, model=self.model)
@@ -111,6 +167,15 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
 
 
 def get_embedding_model(args: object) -> AbstractEmbeddingModel:
+    '''
+    Get the embedding model based on the provided arguments.
+
+    Args:
+        args (object): The arguments containing model configuration.
+
+    Returns:
+        AbstractEmbeddingModel: The instantiated embedding model.
+    '''
     if args.embedding_frontend == 'openai':
         return OpenAIEmbedding(args)
     else:
@@ -118,6 +183,12 @@ def get_embedding_model(args: object) -> AbstractEmbeddingModel:
 
 
 def main(argv: List[str]) -> None:
+    '''
+    Main function to parse arguments and perform embedding.
+
+    Args:
+        argv (List[str]): Command-line arguments.
+    '''
     conf = defaults.Config()
     parser = argparse.ArgumentParser()
     parser.add_argument('--embedding-frontend',
