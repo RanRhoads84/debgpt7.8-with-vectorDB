@@ -121,6 +121,42 @@ class AbstractEmbeddingModel(object):
             raise ValueError('Invalid input type.')
 
 
+class RandomEmbedding(AbstractEmbeddingModel):
+    '''
+    Random embedding model for testing purposes.
+    '''
+
+    def __init__(self, args: object = None) -> None:
+        self.model = 'random'
+        self.dim = args.embedding_dim
+
+    def embed(self, text: str) -> np.ndarray:
+        '''
+        Embed a single text string using random vectors.
+
+        Args:
+            text (str): The text to embed.
+
+        Returns:
+            np.ndarray: The embedding vector.
+        '''
+        vector = np.random.randn(self.dim)
+        return vector
+
+    def batch_embed(self, texts: List[str]) -> np.ndarray:
+        '''
+        Embed a batch of text strings using random vectors.
+
+        Args:
+            texts (List[str]): List of texts to embed.
+
+        Returns:
+            np.ndarray: A matrix of embedding vectors.
+        '''
+        matrix = np.random.randn(len(texts), self.dim)
+        return matrix
+
+
 class OpenAIEmbedding(AbstractEmbeddingModel):
     '''
     OpenAI embedding model implementation.

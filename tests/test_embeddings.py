@@ -34,6 +34,24 @@ def conf() -> object:
     return defaults.Config()
 
 
+def test_random_embedding_embed(conf):
+    model = embeddings.RandomEmbedding(conf)
+    vector = model.embed('hello world')
+    assert vector.ndim == 1
+    # test __call__
+    emb = model('hello world')
+    assert emb.ndim == 1
+
+
+def test_random_embedding_batch_embed(conf):
+    model = embeddings.RandomEmbedding(conf)
+    matrix = model.batch_embed(['hello world', 'goodbye world'])
+    assert matrix.ndim == 2
+    # test __call__
+    emb = model(['hello world', 'goodbye world'])
+    assert emb.ndim == 2
+
+
 def test_openai_embedding_embed(conf):
     if conf.openai_api_key == 'your-openai-api-key':
         pytest.skip('OpenAI API key is not provided')
