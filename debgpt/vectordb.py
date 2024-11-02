@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
+import textwrap
 import sys
 from typing import Union, List, Tuple
 import sqlite3
@@ -230,7 +231,9 @@ class VectorDB:
             idx, source, text, vector = v
             console.print(f'id[{idx:5d}]', f'len(vector)={len(vector)},',
                           f'len(text)={len(text):5d}',
-                          f'source={repr(source)},')
+                          f'source={repr(source)},',
+                          f'text={textwrap.shorten(text, 16)}',
+                          )
         return vectors
 
     def show(self, idx: int) -> None:
@@ -246,6 +249,7 @@ class VectorDB:
             f'[{idx:4d}]',
             f'len(vector)={len(vector)}',
             f'source={repr(source)},',
+            f'text={repr(text)}',
         )
         print('vector=', vector)
         print('text=', text)

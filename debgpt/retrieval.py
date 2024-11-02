@@ -27,39 +27,66 @@ import rich
 import numpy as np
 import functools as ft
 from rich.console import Console
-from .defaults import console
+from . import defaults
 from . import vectordb
-from . import embedddings
+from . import embeddings
+console = defaults.console
 
 
-class Retriever(object):
+class AbstrastRetriever(object):
+    '''
+    Abstract class for retrievers.
+    '''
+    def __init__(self, args: object):
+        pass
+
+    def retrieve_onfly(self, query: str, documents: List[str], topk: int = 3) -> List[str]:
+        pass
+
+    def add(self, source: str, text: str) -> np.ndarray:
+        pass
+
+    def retrieve_from_db(self, query: str, topk: int = 3) -> List[str]:
+        pass
+
+
+class LanguageRetriever(AbstrastRetriever):
+    '''
+    Language-based retriever.
+    '''
+    pass
+
+
+class VectorRetriever(object):
+    '''
+    Vector-based retriever.
+    '''
 
     def __init__(self, args: object):
+        self.vdb = vectordb.VectorDB(args.db, args.embedding_dim)
         self.model = embeddings.get_embedding_model(args)
-        self.vdb = vectordb.VectorDB(args.embedding_database, self.model.dim)
 
-    def retrieve(self,
+    def retrieve_onfly(self,
                  query: str,
                  documents: List[str],
                  topk: int = 3) -> List[str]:
         '''
         This function retrieves the top-k most relevant documents from the
         document list given a query. It does not modify the database, nor
-        query the database.
+        query the database. It computes the embeddings on-the-fly.
         '''
         query_embedding = self.embedding.embed(query)
         document_embeddings = self.embedding.batch_embed(documents)
         scores = np.dot(document_embeddings, query_embedding)
-        indices = np.argsort(scores)[::-1]
-        return [documents[i] for i in indices][:topk]
+        indices = np.argsort(scores)[::-1][:topk]
+        return [documents[i] for i in indices]
 
     def add(self, source: str, text: str) -> np.ndarray:
         '''
         This function computes and adds a new vector to the database.
         '''
-        model_name = self.model.model
         vector = self.model.embed(text)
-        self.vdb.add(source, text, model_name, vector)
+        self.vdb.add(source, text, vector)
         return vector
 
     def retrieve_from_db(self, query: str, topk: int = 3) -> List[str]:
@@ -73,26 +100,8 @@ class Retriever(object):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--embedding-frontend',
-                        '-E',
-                        type=str,
-                        default='openai',
-                        help='Embedding frontend')
-    parser.add_argument('--embedding-model',
-                        type=str,
-                        default="text-embedding-3-small",
-                        help='OpenAI embedding model')
-    parser.add_argument('--embedding-dimension',
-                        type=int,
-                        default=256,
-                        help='Embedding dimension')
-    parser.add_argument('--embedding-database',
-                        type=str,
-                        default='vectors.db',
-                        help='Embedding database')
-    args = parser.parse_args()
-
-    retriever = Retriever(args)
-    vector = retriever.add('void', "Your text string goes here")
-    print(f'embedding:', vector.shape)
+    conf = defaults.Config()
+    retriever = VectorRetriever(conf)
+    for content in ('apple', 'banana', 'orange'):
+        vector = retriever.add('fruit', content)
+        print(f'embedding of [{content}]:', vector.shape)
