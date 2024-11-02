@@ -26,7 +26,7 @@ import argparse
 import rich
 import numpy as np
 import functools as ft
-from rich.console import Console
+from rich.status import Status
 from . import defaults
 from . import vectordb
 from . import embeddings
@@ -82,8 +82,8 @@ class VectorRetriever(object):
         Returns:
             a list of top-k most relevant documents.
         '''
-        query_embedding = self.embedding.embed(query)
-        document_embeddings = self.embedding.batch_embed(documents)
+        query_embedding = self.model.embed(query)
+        document_embeddings = self.model.batch_embed(documents)
         scores = np.dot(document_embeddings, query_embedding)
         indices = np.argsort(scores)[::-1][:topk]
         return [documents[i] for i in indices]
@@ -98,9 +98,26 @@ class VectorRetriever(object):
         Returns:
             the computed vector.
         '''
-        vector = self.model.embed(text)
+        with Status(f'computing embedding ...', console=console) as status:
+            vector = self.model.embed(text)
         self.vdb.add(source, text, vector)
         return vector
+
+    def batch_add(self, sources: List[str], texts: List[str]) -> List[np.ndarray]:
+        '''
+        This function computes and adds a batch of new vectors to the database.
+
+        Args:
+            sources: a list of sources of the texts.
+            texts: a list of texts to be added.
+        Returns:
+            a list of computed vectors.
+        '''
+        with Status(f'computing embedding ...', console=console) as status:
+            vectors = self.model.batch_embed(texts)
+        for source, text, vector in zip(sources, texts, vectors):
+            self.vdb.add(source, text, vector)
+        return vectors
 
     def retrieve_from_db(self, query: str, topk: int = 3) -> List[str]:
         '''
@@ -114,13 +131,29 @@ class VectorRetriever(object):
             a list of top-k most relevant documents.
         '''
         query_embedding = self.model.embed(query)
-        scores, documents = self.vdb.retrieve(query_embedding, topk)
+        documents = self.vdb.retrieve(query_embedding, topk)
         return documents
 
 
 if __name__ == '__main__':
     conf = defaults.Config()
     retriever = VectorRetriever(conf)
-    for content in ('apple', 'banana', 'orange'):
-        vector = retriever.add('fruit', content)
-        print(f'embedding of [{content}]:', vector.shape)
+
+    # on the fly retrieval
+    query = 'person'
+    console.print(f'query: {query}')
+    documents = ['a person is walking', 'a cat is sleeping', 'a dog is barking',
+                 'a horse is running', 'a king is ruling', 'the sky is blue']
+    console.print(f'documents: {documents}')
+    results = retriever.retrieve_onfly(query, documents)
+    console.print(f'retrieved: {results}')
+
+    # vectordb retrieval
+    for content in ('sky', 'cat', 'dog', 'horse', 'king'):
+        vector = retriever.add('my-mind', content)
+        console.print(f'embedding of [{content}]:', vector.shape)
+    vectors = retriever.batch_add(['my-mind'] * 3,
+                                  ['apple', 'banana', 'orange'])
+    console.print(f'batch embedding:', len(vectors))
+    results = retriever.retrieve_from_db('person')
+    console.print('retrieved:', results)
