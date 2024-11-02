@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 from typing import List, Union
+import sys
 import argparse
 import rich
 import numpy as np
@@ -33,7 +34,7 @@ from . import embeddings
 console = defaults.console
 
 
-class AbstrastRetriever(object):
+class AbstrastRetriever(object):  # pragma: no cover
     '''
     Abstract class for retrievers.
     '''
@@ -84,9 +85,13 @@ class VectorRetriever(object):
         '''
         query_embedding = self.model.embed(query)
         document_embeddings = self.model.batch_embed(documents)
-        scores = np.dot(document_embeddings, query_embedding)
-        indices = np.argsort(scores)[::-1][:topk]
-        return [documents[i] for i in indices]
+        cosine = np.dot(document_embeddings, query_embedding)
+        indices = np.argsort(cosine)[::-1][:topk]
+        results = []
+        for sim, doc in zip(cosine[indices], [documents[i] for i in indices]):
+            doc = [float(sim), '<temporary>', doc]
+            results.append(doc)
+        return results
 
     def add(self, source: str, text: str) -> np.ndarray:
         '''
@@ -135,25 +140,36 @@ class VectorRetriever(object):
         return documents
 
 
-if __name__ == '__main__':
+def main(argv):
+    # configuration
     conf = defaults.Config()
     retriever = VectorRetriever(conf)
+    # argument parser
+    parser = argparse.ArgumentParser(description='retrieval')
+    subparsers = parser.add_subparsers(dest='subcommand')
+    # subcommand: add
+    parser_add = subparsers.add_parser('add')
+    parser_add.add_argument('-s', type=str, default='',
+                            help='source of this text')
+    parser_add.add_argument('text', type=str,
+                            help='text to be added')
+    # subcommand: retrieve
+    parser_retrieve = subparsers.add_parser('retrieve', aliases=['ret'])
+    parser_retrieve.add_argument('query', type=str,
+                            help='query string')
+    parser_retrieve.add_argument('-k', type=int, default=3,
+                            help='number of documents to retrieve')
+    # parse arguments
+    args = parser.parse_args(argv)
 
-    # on the fly retrieval
-    query = 'person'
-    console.print(f'query: {query}')
-    documents = ['a person is walking', 'a cat is sleeping', 'a dog is barking',
-                 'a horse is running', 'a king is ruling', 'the sky is blue']
-    console.print(f'documents: {documents}')
-    results = retriever.retrieve_onfly(query, documents)
-    console.print(f'retrieved: {results}')
+    if args.subcommand == 'add':
+        vector = retriever.add(args.s, args.text)
+        print('vector added:', vector.shape)
+    elif args.subcommand in ('retrieve', 'ret'):
+        documents = retriever.retrieve_from_db(args.query, args.k)
+        for doc in documents:
+            print(doc)
 
-    # vectordb retrieval
-    for content in ('sky', 'cat', 'dog', 'horse', 'king'):
-        vector = retriever.add('my-mind', content)
-        console.print(f'embedding of [{content}]:', vector.shape)
-    vectors = retriever.batch_add(['my-mind'] * 3,
-                                  ['apple', 'banana', 'orange'])
-    console.print(f'batch embedding:', len(vectors))
-    results = retriever.retrieve_from_db('person')
-    console.print('retrieved:', results)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
