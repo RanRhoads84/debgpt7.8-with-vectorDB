@@ -116,6 +116,10 @@ class Config(object):
             if verbose:
                 console.print(f'Found environment variable ANTHROPIC_API_KEY.')
             self.toml['anthropic_api_key'] = anthropic_api_key
+        if (gemini_api_key := os.getenv('GOOGLE_API_KEY', None)) is not None:
+            if verbose:
+                console.print(f'Found environment variable GOOGLE_API_KEY.')
+            self.toml['gemini_api_key'] = gemini_api_key
         # create default vector db name
         self.toml['db'] = os.path.join(
             home, 'VectorDB_{model}_dim{dim}.sqlite'.format(
