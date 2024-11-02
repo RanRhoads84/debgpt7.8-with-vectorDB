@@ -65,6 +65,9 @@ backend = [
     'pytorch',
     'transformers',
 ]
+features = [
+    "pypdf",
+]
 all = [
     "debgpt[gemini]",
     "debgpt[anthropic]",

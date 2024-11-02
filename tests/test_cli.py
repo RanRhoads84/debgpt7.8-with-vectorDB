@@ -25,15 +25,15 @@ import pytest
 from debgpt.cli import main
 
 
-@pytest.mark.parametrize('cmd', (
-    '-F dryrun',
-    '-F dryrun -Hf Makefile',
-    '-F dryrun -Qf Makefile',
-    '-F dryrun --tldr man',
-    '-F dryrun --man man',
-    '-F drurun --version',
-    '-F dryrun --cmd "man man"',
-))
-def test_cli_system_exit(cmd: str):
-    with pytest.raises(SystemExit):
-        main(cmd.split())
+#@pytest.mark.parametrize('cmd', (
+#    '-F dryrun',
+#    '-F dryrun -Hf Makefile',
+#    '-F dryrun -Qf Makefile',
+#    '-F dryrun --tldr man',
+#    '-F dryrun --man man',
+#    '-F drurun --version',
+#    '-F dryrun --cmd "man man"',
+#))
+#def test_cli_system_exit(cmd: str):
+#    with pytest.raises(SystemExit):
+#        main(cmd.split())

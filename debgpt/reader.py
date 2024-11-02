@@ -109,28 +109,19 @@ def read_file_pdf(path: str) -> str:
         str: the content of the PDF file
     '''
     try:
-        import PyPDF2
+        from pypdf import PdfReader
     except ImportError:
-        print("Please install PyPDF2 using 'pip install PyPDF2'")
+        print("Please install pypdf using 'pip install pypdf'")
         exit(1)
-    # Open the PDF file
-    with open(path, 'rb') as file:
-        # Create a PDF reader object
-        pdf_reader = PyPDF2.PdfReader(file)
-
-        # Get the number of pages
-        num_pages = len(pdf_reader.pages)
-
-        # Initialize a string to store the text
-        text = ""
-
-        # Extract text from each page
-        for page_num in range(num_pages):
-            # Get the page object
-            page = pdf_reader.pages[page_num]
-            # Extract text from the page
-            text += page.extract_text()
-
+    # Load the PDF file
+    reader = PdfReader(path)
+    # Get the number of pages
+    num_pages = len(reader.pages)
+    # Extract text from each page
+    text = ""
+    for page_number in range(num_pages):
+        page = reader.pages[page_number]
+        text += page.extract_text()
     return text
 
 

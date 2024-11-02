@@ -24,6 +24,45 @@ SOFTWARE.
 import pytest
 from debgpt import reader
 import os
+import time
+import numpy as np
+
+
+def test_latest_file(tmpdir):
+    for i in range(3):
+        with open(tmpdir.join(f'test{i}.txt'), 'wt') as f:
+            f.write(f'test{i}\n')
+        time.sleep(1)
+    files = [tmpdir.join(f'test{i}.txt') for i in range(3)]
+    assert reader.latest_file(files) == tmpdir.join('test2.txt')
+    assert reader.latest_glob(os.path.join(tmpdir, 'test*.txt')) == tmpdir.join('test2.txt')
+
+
+def test_is_text_file(tmpdir):
+    block = np.random.randn(100).tobytes()
+    with open(tmpdir.join('test.bin'), 'wb') as f:
+        f.write(block)
+    assert not reader.is_text_file(tmpdir.join('test.bin'))
+    with open(tmpdir.join('test.txt'), 'wt') as f:
+        f.write('test test test\n')
+    assert reader.is_text_file(tmpdir.join('test.txt'))
+
+
+def test_read_pdf(tmpdir):
+    try:
+        from fpdf import FPDF
+    except ImportError:
+        pytest.skip('fpdf not installed')
+
+    def _create_pdf(file_path):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt="Hello World!", ln=True, align='C')
+        pdf.output(file_path)
+
+    _create_pdf(tmpdir.join("test.pdf"))
+    assert reader.read_file_pdf(os.path.join(tmpdir, "test.pdf")) == 'Hello World!'
 
 
 def test_read_file(tmpdir):
