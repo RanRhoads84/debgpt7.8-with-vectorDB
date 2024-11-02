@@ -38,14 +38,43 @@ from urllib.parse import quote
 from . import policy as debgpt_policy
 from .defaults import console
 
-__doc__ = '''
-This file is in charge of organizaing (debian specific) functions for loading
-texts from various sources, which are subsequently combined into the first
-prompt, and sent through frontend to the backend for LLM to process.
-'''
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
+            + "AppleWebKit/537.36 (KHTML, like Gecko) " \
+            + "Chrome/91.0.4472.124 Safari/537.36"
+    'Accept':
+    'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+}
+
+
+def latest_file(files: List[str]) -> str:
+    '''
+    return the latest file among the list of files
+    '''
+    latest = max(files, key=os.path.getmtime)
+    return latest
+
+
+def latest_glob(pattern: str) -> str:
+    '''
+    return the latest file that matches the glob pattern
+    '''
+    return latest_file(glob.glob(pattern))
+
+
+
 
 
 def is_text_file(filepath: str) -> bool:
+    '''
+    check if the file is a text file
+
+    Args:
+        filepath (str): the path to the file
+    Returns:
+        bool: True if the file is a text file, False otherwise
+    '''
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             f.read()
@@ -54,135 +83,36 @@ def is_text_file(filepath: str) -> bool:
         return False
 
 
-########################
-# Utility I/O functions
-########################
-
-
-def _load_html(url: str) -> List[str]:
+def read_file_plaintext(path: str) -> str:
     '''
-    read HTML from url, convert it into plain text, then list of lines
+    read the file and return the content as a string
+
+    Args:
+        path (str): the path to the file
+    Returns:
+        str: the content of the file
     '''
-    r = requests.get(url)
-    soup = BeautifulSoup(r.text, features="html.parser")
-    text = soup.get_text().strip()
-    text = re.sub('\n\n+\n', '\n\n', text)
-    text = [x.rstrip() for x in text.split('\n')]
-    return text
+    with open(path, 'rt', encoding='utf-8') as f:
+        content = f.read()
+    return content
 
 
-def _load_bts(identifier: str) -> List[str]:
-    url = f'https://bugs.debian.org/{identifier}'
-    r = requests.get(url)
-    soup = BeautifulSoup(r.text, features="html.parser")
-
-    if not identifier.startswith('src:'):
-        # delete useless system messages
-        _ = [
-            x.clear()
-            for x in soup.find_all('p', attrs={'class': 'msgreceived'})
-        ]
-        _ = [
-            x.clear()
-            for x in soup.find_all('div', attrs={'class': 'infmessage'})
-        ]
-
-    text = soup.get_text().strip()
-    text = re.sub('\n\n+\n', '\n\n', text)
-    text = [x.strip() for x in text.split('\n')]
-
-    # filter out useless information from the webpage
-    if identifier.startswith('src:'):
-        # the lines from 'Options' to the end are useless
-        text = text[:text.index('Options')]
-
-    return text
-
-
-def _load_html_raw(url: str) -> List[str]:
+def read_file_pdf(path: str) -> str:
     '''
-    read the raw HTML.
-    XXX: if we do not preprocess the raw HTML, the input sequence to LLM
-    will be very long. It may trigger CUDA out-of-memory in the backend
-    when the length exceeds a certain value, depending on the CUDA memory
-    available in the backend machine.
+    read the PDF file and return the content as a string
+
+    Args:
+        path (str): the path to the PDF file
+    Returns:
+        str: the content of the PDF file
     '''
-    r = requests.get(url)
-    text = r.text.strip()
-    text = re.sub('\n\n+\n', '\n\n', text)
-    text = [x.strip() for x in text.split('\n')]
-    return text
-
-
-def _load_file(path: str) -> List[str]:
-    with open(path, 'rt') as f:
-        lines = [x.rstrip() for x in f.readlines()]
-    return lines
-
-
-def _load_cmdline(cmd: Union[str, List]) -> List[str]:
-    if isinstance(cmd, str):
-        cmd = cmd.split(' ')
-    stdout = subprocess.check_output(cmd).decode()
-    lines = [x.rstrip() for x in stdout.split('\n')]
-    return lines
-
-
-def _load_stdin() -> List[str]:
-    lines = [x.rstrip() for x in sys.stdin.readlines()]
-    return lines
-
-
-def _latest_file(files: List[str]) -> str:
-    '''
-    return the latest file among the list of files
-    '''
-    latest = max(files, key=os.path.getmtime)
-    return latest
-
-
-def _latest_glob(pattern: str) -> str:
-    '''
-    return the latest file that matches the glob pattern
-    '''
-    return _latest_file(glob.glob(pattern))
-
-
-@tenacity.retry(stop=tenacity.stop_after_attempt(3),
-                wait=tenacity.wait_fixed(5))
-def _load_url(url: str) -> List[str]:
-    headers = {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept':
-        'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-    }
-    req = Request(url, headers=headers)
-    with urlopen(req) as response:
-        try:
-            content = response.read().decode('utf-8')
-        except UnicodeDecodeError:
-            console.log(f'Failed to read {repr(url)} as utf-8. Giving up.')
-            return ['']
-        lines = content.splitlines()
-    lines = [x.rstrip() for x in lines]
-    return lines
-
-
-def _load_url_parsed(url: str) -> str:
-    content = '\n'.join(_load_url(url))
-    soup = BeautifulSoup(content, features="html.parser")
-    text = soup.get_text().strip()
-    return text.split('\n')
-
-
-def _load_pdf(file_path: str) -> list[str]:
     try:
         import PyPDF2
     except ImportError:
         print("Please install PyPDF2 using 'pip install PyPDF2'")
         exit(1)
     # Open the PDF file
-    with open(file_path, 'rb') as file:
+    with open(path, 'rb') as file:
         # Create a PDF reader object
         pdf_reader = PyPDF2.PdfReader(file)
 
@@ -199,60 +129,221 @@ def _load_pdf(file_path: str) -> list[str]:
             # Extract text from the page
             text += page.extract_text()
 
-    return text.split('\n')
+    return text
+
+
+def read_file(path: str) -> str:
+    '''
+    read the specified file and return the content as a string
+
+    Args:
+        path (str): the path to the file
+    Returns:
+        str: the content of the file
+    '''
+    if is_text_file(path):
+        return read_file_plaintext(path)
+    elif path.lower().endswith('.pdf'):
+        return read_file_pdf(path)
+    else:
+        raise TypeError(f'Unsupported file type: {path}')
+
+
+def read_directory(path: str) -> List[Tuple[str, str]]:
+    '''
+    read a whole directory
+
+    Args:
+        path (str): the path to the directory
+    Returns:
+        List[Tuple[str, str]]: a list of tuples, each tuple contains the path
+        and the content
+    '''
+    contents: List[Tuple[str, str]] = []
+    for root, _, files in os.walk(path):
+        for file in files:
+            path = os.path.join(root, file)
+            content = read_file(path)
+            contents.append((path, content))
+    return contents
 
 
 @tenacity.retry(stop=tenacity.stop_after_attempt(3),
                 wait=tenacity.wait_fixed(5))
+def read_url(url: str) -> str:
+    '''
+    read the content from the URL. We will detect the content type.
+
+    Args:
+        url (str): the URL to read
+    Returns:
+        str: the content from the URL
+    '''
+    # Send request to the URL
+    response = requests.get(url, headers=HEADERS)
+    if response.status_code != 200:
+        raise ValueError(f'Failed to read {url}')
+    # dispatch content type
+    if url.endswith('.pdf'):
+        console.log(f'PDF file support not yet implemented: {url}, skipping')
+        return ''
+    elif response.headers['Content-Type'].startswith('text/html'):
+        soup = BeautifulSoup(response.text, features='html.parser')
+        text = soup.get_text().strip()
+        text = re.sub('\n\n+\n', '\n\n', text)
+        text = [x.rstrip() for x in text.split('\n')]
+        content = '\n'.join(text)
+    else:
+        # assume plain text, but it may not be utf-8
+        try:
+            content = response.text
+        except UnicodeDecodeError:
+            console.log(f'Failed to read {repr(url)} as utf-8. Giving up.')
+            return ['']
+    return content
+
+
+def read_cmd(cmd: Union[str, List]) -> str:
+    if isinstance(cmd, str):
+        cmd = cmd.split(' ')
+    stdout = subprocess.check_output(cmd).decode()
+    lines = [x.rstrip() for x in stdout.split('\n')]
+    return '\n'.join(lines)
+
+
+def read_bts(identifier: str) -> str:
+    '''
+    Read the bug report from the Debian BTS
+
+    Args:
+        identifier (str): the bug report number, or the package name
+    Returns:
+        str: the content of the bug report
+    '''
+    url = f'https://bugs.debian.org/{identifier}'
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, features="html.parser")
+    if not identifier.startswith('src:'):
+        # delete useless system messages
+        _ = [
+            x.clear()
+            for x in soup.find_all('p', attrs={'class': 'msgreceived'})
+        ]
+        _ = [
+            x.clear()
+            for x in soup.find_all('div', attrs={'class': 'infmessage'})
+        ]
+    text = soup.get_text().strip()
+    text = re.sub('\n\n+\n', '\n\n', text)
+    text = [x.strip() for x in text.split('\n')]
+
+    # filter out useless information from the webpage
+    if identifier.startswith('src:'):
+        # the lines from 'Options' to the end are useless
+        text = text[:text.index('Options')]
+    return '\n'.join(text)
+
+
+def read_stdin() -> str:
+    lines = [x.rstrip() for x in sys.stdin.readlines()]
+    return '\n'.join(lines)
+
+
 def google_search(query: str) -> List[str]:
+    '''
+    read the search results from Google
+
+    Args:
+        query (str): the search query
+    Returns:
+        List[str]: the search results, each element is a URL
+    '''
     # Format the query for URL
     query = quote(query)
-
     # Send request to Google
     url = f"https://www.google.com/search?q={query}"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
-                + "AppleWebKit/537.36 (KHTML, like Gecko) " \
-                + "Chrome/91.0.4472.124 Safari/537.36"
-    }
-    response = requests.get(url, headers=headers)
-
+    result = read_url(url)
     # Parse the response
-    soup = BeautifulSoup(response.text, 'html.parser')
-
+    soup = BeautifulSoup(result, 'html.parser')
     # Find search results
     search_results = soup.find_all('div', class_='g')
-
     results = []
     for result in search_results:
         title = result.find('h3')
         link = result.find('a')
         if title and link:
             results.append(link.get('href'))
-
     return results
 
 
-#####################################
-# Text Loaders from Various Sources
-#####################################
 
 
-def url(url: str):
+def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable]]:
     '''
-    directly load text contents from URL without any processing
+    Unified reader for reading text contents from various sources
+    specified by the user. We will detect the type of the resource specified,
+    and dispatch to the corresponding reader.
+
+    Args:
+        spec: the path or URL to the file
+        debgpt_home: the home directory of debgpt
+    Returns:
+        a list of tuples, each tuple contains the parsed spec and the content
     '''
-    text = _load_url(url)
-    lines = [f'Here is the contents of {url}:']
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
+    # helper functions
+    def create_wrapper(template: str, spec: str) -> callable:
+        def _wrapper(content: str) -> str:
+            lines = [tempalte.format(spec)]
+            lines.extend(['```'] + content.split('\n') + ['```', ''])
+            return '\n'.join(lines)
+        return _wrapper
+
+    results: List[Tuple[str, str]] = []
+    # standard cases
+    if os.path.exists(spec) and os.path.isfile(spec):
+        parsed_spec = spec
+        content = read_file(spec)
+        wrapfun = create_wrapper('Here is the contents of file {}:', spec)
+        results.append((parsed_spec, content, wrapfun))
+    elif os.path.exists(spec) and os.path.isdir(spec):
+        wrapfun = create_wrapper('Here is the contents of file {}:', spec)
+        parsed_spec = spec
+        contents = read_directory(spec)
+        contents = [(x, y, wrapfun) for x, y in contents]
+        results.extend(contents)
+    elif any(spec.startswith(x) for x in ('file://', 'http://', 'https://')):
+        parsed_spec = spec
+        content = read_url(spec)
+        results.append((parsed_spec, content))
+        wrapfun = create_wrapper('Here is the contents of URL {}:', spec)
+        results.append((parsed_spec, content, wrapfun))
+    # special cases
+    elif spec.startswith('bts:'):
+        parsed_spec = spec[4:]
+        content = read_bts(parsed_spec)
+        results.append((parsed_spec, content))
+    elif spec.startswith('cmd:'):
+        parsed_spec = spec[4:]
+        content = read_cmd(parsed_spec)
+        results.append((parsed_spec, content))
+    elif spec in ('stdin', '-'):
+        parsed_spec = spec
+        content = read_stdin()
+        results.append((parsed_spec, content))
+    else:
+        raise FileNotFoundError(f'File or resource {repr(spec)} not recognized')
+    return results
 
 
-def pdf(path: str) -> str:
-    text = _load_pdf(path)
-    lines = [f'Here is the contents of PDF file {path}:']
-    lines.extend(['```'] + text + ['```', ''])
-    return '\n'.join(lines)
+
+
+
+
+
+
+
+
+
 
 
 def archw(identifier: str) -> str:
