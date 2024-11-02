@@ -22,13 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 from typing import List, Union
+import sys
+import os
 import argparse
 import rich
 import numpy as np
 import functools as ft
 from rich.console import Console
-from .defaults import console
-from .vectordb import VectorDB
+from . import defaults
+console = defaults.console
+conf = defaults.Config()
 
 
 def retry_ratelimit(func: callable,
@@ -87,14 +90,15 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
 
     def __init__(self, args: object = None):
         from openai import OpenAI
-        self.client = OpenAI()
+        self.client = OpenAI(api_key=args.openai_api_key,
+                             base_url=args.openai_base_url)
         self.model = args.embedding_model
-        self.dim = args.embedding_dimension
+        self.dim = args.embedding_dim
 
     def embed(self, text: str) -> np.ndarray:
         from openai import RateLimitError
         func = retry_ratelimit(self.client.embeddings.create, RateLimitError)
-        response = func(input=text, model=self.model, dimension=self.dim)
+        response = func(input=text, model=self.model, dimensions=self.dim)
         vector = np.array(response.data[0].embedding)
         return vector
 
@@ -114,7 +118,7 @@ def get_embedding_model(args: object) -> AbstractEmbeddingModel:
 
 
 
-if __name__ == '__main__':
+def main(argv: List[str]) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--embedding-frontend',
                         '-E',
@@ -125,7 +129,7 @@ if __name__ == '__main__':
                         type=str,
                         default="text-embedding-3-small",
                         help='OpenAI embedding model')
-    parser.add_argument('--embedding-dimension',
+    parser.add_argument('--embedding-dim',
                         type=int,
                         default=256,
                         help='Embedding dimension')
@@ -133,8 +137,39 @@ if __name__ == '__main__':
                         type=str,
                         default='vectors.db',
                         help='Embedding database')
-    args = parser.parse_args()
+    parser.add_argument('--openai-api-key',
+                        type=str,
+                        default=conf['openai_api_key'],
+                        help='OpenAI API key')
+    parser.add_argument('--openai-base-url',
+                        type=str,
+                        default='https://api.openai.com/v1',
+                        help='OpenAI base URL')
+    parser.add_argument('text',
+                        type=str,
+                        nargs='?',
+                        default='Your text string goes here',
+                        help='Text to embed')
+    args = parser.parse_args(argv)
 
     model = get_embedding_model(args)
-    vector = model.embed("Your text string goes here")
-    print(f'embedding:', vector.shape)
+    vector = model.embed(args.text)
+    print(f'vector.shape:', vector.shape)
+    print(f'vector.min:', vector.min())
+    print(f'vector.max:', vector.max())
+    print(f'vector.mean:', vector.mean())
+    print(f'vector.std:', vector.std())
+    print(f'vector[:10]:', vector[:10])
+    print(f'vector[-10:]:', vector[-10:])
+
+    matrix = model.batch_embed([args.text] * 3)
+    print(f'matrix.shape:', matrix.shape)
+    print(f'matrix.min:', matrix.min())
+    print(f'matrix.max:', matrix.max())
+    print(f'matrix.mean:', matrix.mean())
+    print(f'matrix.std:', matrix.std())
+    print(f'matrix[:, :10]:', matrix[:, :10])
+    print(f'matrix[:, -10:]:', matrix[:, -10:])
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
