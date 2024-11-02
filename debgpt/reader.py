@@ -25,6 +25,7 @@ from typing import List, Union, Dict, Tuple, Optional
 import re
 import requests
 from bs4 import BeautifulSoup
+import argparse
 import io
 import os
 import subprocess
@@ -409,15 +410,18 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
         parsed_spec = spec[7:]
         content = debian_policy.DebianDevref(os.path.join(debgpt_home, 'devref.txt'))
         if parsed_spec:
+            source = f'Debian Developer Reference document [{parsed_spec}]'
             content = content[parsed_spec]
             wrapfun = create_wrapper('Here is the Debian Developer Reference document, section {}:', parsed_spec)
             wrapfun_chunk = create_chunk_wrapper('Here is the Debian Developer Reference document, section {} (lines {}-{}):', parsed_spec)
+            results.append((source, content, wrapfun, wrapfun_chunk))
         else:
-            content = str(content)
             wrapfun = create_wrapper('Here is the Debian Developer Reference document {}:', parsed_spec)
             wrapfun_chunk = create_chunk_wrapper('Here is the Debian Developer Reference document {} (lines {}-{}):', parsed_spec)
-        source = f'Debian Developer Reference document [{parsed_spec}]'
-        results.append((source, content, wrapfun, wrapfun_chunk))
+            for sectionidx in content.indexes:
+                source = f'Debian Developer Reference document [{sectionidx}]'
+                section = content[sectionidx]
+                results.append((source, section, wrapfun, wrapfun_chunk))
     elif spec.startswith('man:'):
         parsed_spec = spec[4:]
         content = read_cmd(f'man {parsed_spec}')
@@ -429,15 +433,18 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
         parsed_spec = spec[7:]
         content = debian_policy.DebianPolicy(os.path.join(debgpt_home, 'policy.txt'))
         if parsed_spec:
-            content = content[parsed_spec]
+            source = f'Debian Policy section [{parsed_spec}]'
+            section = content[parsed_spec]
             wrapfun = create_wrapper('Here is the Debian Policy document, section {}:', parsed_spec)
             wrapfun_chunk = create_chunk_wrapper('Here is the Debian Policy document, section {} (lines {}-{}):', parsed_spec)
+            results.append((source, section, wrapfun, wrapfun_chunk))
         else:
-            content = str(content)
             wrapfun = create_wrapper('Here is the Debian Policy document {}:', parsed_spec)
             wrapfun_chunk = create_chunk_wrapper('Here is the Debian Policy document {} (lines {}-{}):', parsed_spec)
-        source = f'Debian Policy section [{parsed_spec}]'
-        results.append((source, content, wrapfun, wrapfun_chunk))
+            for sectionidx in content.indexes:
+                source = f'Debian Policy section [{sectionidx}]'
+                section = content[sectionidx]
+                results.append((source, section, wrapfun, wrapfun_chunk))
     elif spec.startswith('tldr:'):
         parsed_spec = spec[5:]
         content = read_cmd(f'tldr {parsed_spec}')
@@ -458,14 +465,31 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
     return results
 
 
-def read_and_wrap(spec: str, *, debgpt_home: str = '.') -> str:
+def read_and_wrap(spec: str,
+                  *,
+                  max_chunk_size: int = -1,
+                  debgpt_home: str = '.') -> str:
     '''
     Read contents from the specified resource and wrap the content to make it
     suitable for prompting LLM.
-    '''
-    results = read(spec, debgpt_home=debgpt_home)
-    raise NotImplementedError('Not yet implemented')
 
+    Args:
+        spec (str): the path or URL to the file
+        max_chunk_size (int): the maximum chunk size of the content. If the
+            number is less than 0, we shall not chunk the contents.
+        debgpt_home (str): the home directory of debgpt
+    Returns:
+        str: the wrapped content
+    '''
+    entries = read(spec, debgpt_home=debgpt_home)
+    wrapped: str = ''
+    for entry in entries:
+        if max_chunk_size > 0:
+            raise NotImplementedError('Chunking is not implemented yet.')
+            #wrapped += entry.wrapfun_chunk(entry.content, 0, max_chunk_size)
+        else:
+            wrapped += entry.wrapfun(entry.content)
+    return wrapped
 
 
 
@@ -731,3 +755,36 @@ def mapreduce_load_any_astext(
         txt += '\n```\n'
         texts.append(txt)
     return texts
+
+
+def main(argv: List[str] = sys.argv[1:]):
+    '''
+    read something and print to screen
+    '''
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--file', '-f', type=str, default=[], action='extend',
+                        required=True,
+                        nargs='+', help='file,path,spec,etc to read')
+    parser.add_argument('--wrap', '-w', action='store_true', 
+                        help='wrap the content with a template')
+    parser.add_argument('--chunk', '-c', type=int, default=-1,
+                        help='chunk the content into pieces')
+    parser.add_argument('--debgpt_home', type=str, default='.',
+                        help='the home directory of debgpt')
+    args = parser.parse_args(argv)
+
+    if args.wrap:
+        for file in args.file:
+            string = read_and_wrap(file, max_chunk_size=args.chunk,
+                                   debgpt_home=args.debgpt_home)
+            console.log('Specifier:', file)
+            console.print(string)
+    else:
+        for file in args.file:
+            entries = read(file, debgpt_home=args.debgpt_home)
+            console.log('Specifier:', file)
+            console.print(entries)
+
+
+if __name__ == '__main__':  # pragma: no cover
+    main()

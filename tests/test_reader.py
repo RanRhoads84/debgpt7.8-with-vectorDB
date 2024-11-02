@@ -84,6 +84,11 @@ def test_read_pdf(tmpdir):
         assert isinstance(wrapped, str)
         assert content[1] in wrapped
 
+    # read and wrap it
+    context = reader.read_and_wrap(str(tmpdir.join('test.pdf')))
+    assert isinstance(context, str)
+    assert len(context) > 0
+
 
 def test_read_file(tmpdir):
     content = 'test test test\n'
@@ -114,6 +119,12 @@ def test_read_file(tmpdir):
     with pytest.raises(FileNotFoundError):
         reader.read('non-existing-file')
 
+    # read and wrap a file
+    context = reader.read_and_wrap(str(tmpdir.join('test.txt')))
+    assert isinstance(context, str)
+    assert len(context) > 0
+
+
 def test_read_directory(tmpdir):
     content = 'test test test\n'
     with open(tmpdir.join('test.txt'), 'wt') as f:
@@ -135,6 +146,11 @@ def test_read_directory(tmpdir):
         wrapped = content[3](content[1], 1, -1)
         assert isinstance(wrapped, str)
         assert content[1] in wrapped
+
+    # read and wrap it
+    context = reader.read_and_wrap(str(tmpdir))
+    assert isinstance(context, str)
+    assert len(context) > 0
 
 
 def test_read_url_file(tmpdir):
@@ -160,6 +176,11 @@ def test_read_url_file(tmpdir):
         assert isinstance(wrapped, str)
         assert content[1] in wrapped
 
+    # read and wrap it
+    context = reader.read_and_wrap(url)
+    assert isinstance(context, str)
+    assert len(context) > 0
+
 
 @pytest.mark.parametrize('url', (
     'http://google.com',
@@ -171,11 +192,29 @@ def test_read_url_file(tmpdir):
 def test_read_url_http(url):
     assert len(reader.read_url(url)) > 0
 
+    # read as entries
+    contents = reader.read(url)
+    assert len(contents) > 0
+    for content in contents:
+        assert isinstance(content[0], str)
+        assert isinstance(content[1], str)
+        assert callable(content[2])
+        assert callable(content[3])
+        assert content[0] == url
+        assert content[1] in content[2](content[1])
+        assert content[1] in content[3](content[1], 1, -1)
 
-@pytest.mark.timeout(5)
+    # read and wrap it
+    context = reader.read_and_wrap(url)
+    assert isinstance(context, str)
+    assert len(context) > 0
+
+@pytest.mark.timeout(10)
 @pytest.mark.parametrize('spec', ('src:pytorch', '1056388'))
 def test_read_bts(spec: str):
+    # read directly
     assert reader.read_bts(spec)
+    # read as entries
     contents = reader.read(f'bts:{spec}')
     assert len(contents) > 0
     for content in contents:
@@ -186,6 +225,10 @@ def test_read_bts(spec: str):
         assert content[0] == spec
         assert content[1] in content[2](content[1])
         assert content[1] in content[3](content[1], 1, -1)
+    # read and wrap
+    context = reader.read_and_wrap(f'bts:{spec}')
+    assert isinstance(context, str)
+    assert len(context) > 0
 
 @pytest.mark.parametrize('spec', ('man creat', ['man', 'creat']))
 def test_read_cmd(spec: Union[str, List[str]]):
@@ -202,6 +245,10 @@ def test_read_cmd(spec: Union[str, List[str]]):
         assert content[0] == spec
         assert content[1] in content[2](content[1])
         assert content[1] in content[3](content[1], 1, -1)
+    # read and wrap
+    context = reader.read_and_wrap(f'cmd:{spec}')
+    assert isinstance(context, str)
+    assert len(context) > 0
 
 def test_read_man():
     contents = reader.read('man:creat')
@@ -214,6 +261,10 @@ def test_read_man():
         assert content[0] == 'creat'
         assert content[1] in content[2](content[1])
         assert content[1] in content[3](content[1], 1, -1)
+    # read and wrap
+    context = reader.read_and_wrap('man:creat')
+    assert isinstance(context, str)
+    assert len(context) > 0
 
 
 def test_read_tldr():
@@ -227,12 +278,17 @@ def test_read_tldr():
         assert content[0] == 'tar'
         assert content[1] in content[2](content[1])
         assert content[1] in content[3](content[1], 1, -1)
+    # read and wrap
+    context = reader.read_and_wrap('tldr:tar')
+    assert isinstance(context, str)
+    assert len(context) > 0
 
 
 def test_read_stdin(monkeypatch):
     test_input = 'test test test\ntest test test'
     monkeypatch.setattr(sys, 'stdin', io.StringIO(test_input))
     assert reader.read_stdin() == test_input
+    # read as entries
     monkeypatch.setattr(sys, 'stdin', io.StringIO(test_input))
     contents = reader.read('stdin')
     assert len(contents) == 1
@@ -244,8 +300,13 @@ def test_read_stdin(monkeypatch):
         assert content[0] == 'stdin'
         assert content[1] in content[2](content[1])
         assert content[1] in content[3](content[1], 1, -1)
+    # read and wrap
+    monkeypatch.setattr(sys, 'stdin', io.StringIO(test_input))
+    context = reader.read_and_wrap('stdin')
+    assert isinstance(context, str)
+    assert len(context) > 0
 
-def test_google_search(keyword='debian'):
+def test_google_search(keyword='python programming'):
     results = reader.google_search(keyword)
     print('google search results:', results)
     assert len(results) > 0
@@ -283,7 +344,7 @@ def test_read_buildd(package):
 @pytest.mark.parametrize('section', ('', '1', '4.6', '4.6.1'))
 def test_policy(section, tmpdir):
     contents = reader.read(f'policy:{section}', debgpt_home=str(tmpdir))
-    assert len(contents) == 1
+    assert len(contents) >= 1
     for content in contents:
         assert isinstance(content[0], str)
         assert isinstance(content[1], str)
@@ -300,7 +361,7 @@ def test_policy(section, tmpdir):
 @pytest.mark.parametrize('section', ('', '5.5', '1'))
 def test_devref(section, tmpdir):
     contents = reader.read(f'devref:{section}', debgpt_home=str(tmpdir))
-    assert len(contents) == 1
+    assert len(contents) >= 1
     for content in contents:
         assert isinstance(content[0], str)
         assert isinstance(content[1], str)
@@ -314,6 +375,31 @@ def test_devref(section, tmpdir):
         assert content[1] in wrapped
 
 
+@pytest.mark.parametrize('spec', (
+    'test.txt',
+    'policy:',
+    'policy:1',
+    'devref:',
+    'devref:1',
+    'bts:src:pytorch',
+    'bts:1056388',
+    'archwiki:Archiving_and_compression',
+    'tldr:tar',
+    'man:creat',
+    'cmd:man creat',
+    ))
+def test_read_main(spec: str, tmpdir: object):
+    args = ['--debgpt_home', str(tmpdir)]
+    if spec == 'test.txt':
+        with open(tmpdir.join('test.txt'), 'wt') as f:
+            f.write('test test test\n')
+        reader.main([*args, '-f', 'file://'+str(tmpdir.join('test.txt'))])
+        reader.main([*args, '-f', str(tmpdir)])
+        reader.main([*args, '-f', str(tmpdir.join('test.txt'))])
+        reader.main([*args, '-w', '-f', str(tmpdir.join('test.txt'))])
+    else:
+        reader.main([*args, '-f', spec])
+        reader.main([*args, '-w', '-f', spec])
 
 
 #def test_mapreduce_load_file(tmp_path):
