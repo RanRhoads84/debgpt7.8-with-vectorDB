@@ -40,6 +40,11 @@ from urllib.request import urlopen, Request
 import urllib.parse
 from . import policy as debian_policy
 from .defaults import console
+from collections import namedtuple
+
+
+# The Entry namedtuple, core data structure for reader outputs
+Entry = namedtuple('Entry', ['path', 'content', 'wrapfun', 'wrapfun_chunk'])
 
 
 HEADERS = {
@@ -316,7 +321,7 @@ def read_buildd(spec: str,):
 
 
 
-def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable, callable]]:
+def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
     '''
     Unified reader for reading text contents from various sources
     specified by the user. We will detect the type of the resource specified,
@@ -326,9 +331,10 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable,
         spec: the path or URL to the file
         debgpt_home: the home directory of debgpt
     Returns:
-        a list of tuples, each tuple contains the parsed spec and the content,
-        and two wrapper functions to wrap the content with. The first wrapper
-        wraps unchunked content, and the second wrapper wraps chunked content.
+        List[Entry]: a list of tuples, each tuple contains the parsed spec and
+        the content, and two wrapper functions to wrap the content with.
+        The first wrapper wraps unchunked content, and the second wrapper
+        wraps chunked content.
     '''
     # helper functions
     def create_wrapper(template: str, spec: str) -> callable:
@@ -447,6 +453,8 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Tuple[str, str, callable,
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     else:
         raise FileNotFoundError(f'File or resource {repr(spec)} not recognized')
+    # convert the results to Entry (named tuple)
+    results = [Entry(*x) for x in results]
     return results
 
 
