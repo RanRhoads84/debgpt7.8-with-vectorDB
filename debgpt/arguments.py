@@ -15,40 +15,18 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
 # suppress all warnings.
+from typing import List, Tuple
 import textwrap
-import rich
-import shlex
 import sys
-import os
 import re
-import difflib
 import argparse
-import concurrent.futures
-from prompt_toolkit.completion import Completer, Completion
-from prompt_toolkit import PromptSession
-from rich.panel import Panel
-from rich.rule import Rule
-from rich.markup import escape
-from rich.progress import track
-from prompt_toolkit.styles import Style
-from pygments import highlight
-from pygments.lexers import DiffLexer
-from pygments.formatters import TerminalFormatter
-from typing import List, Optional
-import warnings
-from .task import task_backend, task_git, task_git_commit, task_replay
-from .task import task_vdb, task_vdb_ls
 from . import defaults
-from . import reader
-from . import frontend
-from . import configurator
 
-warnings.filterwarnings("ignore")
 console = defaults.console
 
 
 
-def parse_args(argv):
+def parse_args(argv: List[str]) -> argparse.Namespace:
     '''
     argparse with subparsers. Generate a config.toml template as byproduct.
     '''
@@ -513,8 +491,7 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # Task Specific Subparsers
     subps = ag.add_subparsers(dest='subparser_name',
-                              help='specific task handling')
-    ag.set_defaults(func=lambda ag: None)  # if no subparser is specified
+                              help='debgpt subcommands')
 
     # Specific to ZMQ Backend (self-hosted LLM Inference)
     ps_backend = subps.add_parser(
@@ -533,18 +510,15 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     ps_backend.add_argument('--llm', type=str, default='Mistral7B')
     ps_backend.add_argument('--device', type=str, default='cuda')
     ps_backend.add_argument('--precision', type=str, default='fp16')
-    ps_backend.set_defaults(func=task_backend)
 
     # Task: git
     ps_git = subps.add_parser('git', help='git command wrapper')
-    ps_git.set_defaults(func=task_git)
     git_subps = ps_git.add_subparsers(help='git commands')
     # Task: git commit
     ps_git_commit = git_subps.add_parser(
         'commit',
         aliases=['co'],
         help='directly commit staged changes with auto-generated message')
-    ps_git_commit.set_defaults(func=task_git_commit)
     ps_git_commit.add_argument('--amend',
                                action='store_true',
                                help='amend the last commit')
@@ -555,12 +529,10 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                         type=str,
                         default=conf['db'],
                         help='path to the VectorDB database')
-    ps_vdb.set_defaults(func=task_vdb)
     vdb_subps = ps_vdb.add_subparsers(help='vdb subcommands')
     # subsubcommand: vdb ls
     ps_vdb_ls = vdb_subps.add_parser('ls',
                                      help='list all vectors in the database')
-    ps_vdb_ls.set_defaults(func=task_vdb_ls)
 
     # Task: replay
     ps_replay = subps.add_parser('replay',
@@ -569,31 +541,26 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                            type=str,
                            nargs='?',
                            help='path to the JSON file')
-    ps_replay.set_defaults(func=task_replay)
 
     # Task: stdin
     ps_stdin = subps.add_parser(
         'stdin',
         help='read stdin as the first prompt. Should combine with -Q.')
-    ps_stdin.set_defaults(func=lambda ag: reader.stdin())
 
     # Task: pipe
     ps_pipe = subps.add_parser(
         'pipe',
         help='read stdin, print nothing other than LLM response to stdout. \
 This option will automatically mandate --no-render_markdown, -Q and -H.')
-    ps_pipe.set_defaults(func=lambda ag: reader.stdin())
 
     # Task: genconfig
     ps_genconfig = subps.add_parser('genconfig',
                                     aliases=['genconf', 'config.toml'],
                                     help='generate config.toml file template')
-    ps_genconfig.set_defaults(func=generate_config_file)
 
     # Task: config or reconfigure
     ps_config = subps.add_parser('config',
                                  help='reconfigure debgpt with a wizard')
-    ps_config.set_defaults(func=reconfigure)
 
     # -- parse and sanitize
     ag = ag.parse_args(argv)
@@ -619,7 +586,7 @@ This option will automatically mandate --no-render_markdown, -Q and -H.')
     return ag
 
 
-def parse_args_order(argv) -> List[str]:
+def parse_args_order(argv: List[str]) -> List[str]:
     '''
     parse the order of selected arguments
 
@@ -658,3 +625,27 @@ def parse_args_order(argv) -> List[str]:
         _match_l(item, '--pdf', order)
         _match_ls(item, '--mapreduce', '-x', order)
     return order
+
+
+def parse(argv: List[str]) -> Tuple[argparse.Namespace, List[str]]:
+    '''
+    Parse the command line arguments and return the parsed arguments,
+    as well as the argument order.
+    '''
+    args = parse_args(argv)
+    order = parse_args_order(argv)
+    return args, order
+
+
+def main(argv: List[str] = sys.argv[1:]):
+    '''
+    The main entry point of the program.
+    '''
+    args, order = parse(argv)
+    console.print('args:', args)
+    console.print('order:', order)
+
+
+
+if __name__ == '__main__':  # pragma: no cover
+    main()

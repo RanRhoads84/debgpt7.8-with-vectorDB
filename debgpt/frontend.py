@@ -14,13 +14,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-from typing import List, Dict, Union
-from rich.status import Status
-from rich.panel import Panel
-from rich.markup import escape
-from rich.markdown import Markdown
-from rich.live import Live
-from rich.console import Console
+from typing import List, Dict, Union, Optional
 import argparse
 import os
 import json
@@ -29,6 +23,22 @@ import uuid
 import sys
 import time
 import functools as ft
+
+from prompt_toolkit import PromptSession
+from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.styles import Style
+from pygments import highlight
+from pygments.formatters import TerminalFormatter
+from pygments.lexers import DiffLexer
+from rich.console import Console
+from rich.live import Live
+from rich.markdown import Markdown
+from rich.markup import escape
+from rich.panel import Panel
+from rich.progress import track
+from rich.rule import Rule
+from rich.status import Status
+
 from . import defaults
 
 console = defaults.console
@@ -539,7 +549,7 @@ def interact_once(f: AbstractFrontend, text: str) -> None:
             _ = f(text)
 
 
-def interact_with(f: frontend.AbstractFrontend) -> None:
+def interact_with(f: AbstractFrontend) -> None:
     # create prompt_toolkit style
     if f.monochrome:
         prompt_style = Style([('prompt', 'bold')])

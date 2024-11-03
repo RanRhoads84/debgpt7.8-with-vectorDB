@@ -20,7 +20,6 @@ try:
     import tomllib  # requires python >= 3.10
 except:
     import pip._vendor.tomli as tomllib  # for python < 3.10
-import rich
 from rich.console import Console
 
 # before we print anything, even before initializing class instances,
@@ -103,16 +102,16 @@ class Config(object):
         # some arguments will be overrden by environment variables
         if (openai_api_key := os.getenv('OPENAI_API_KEY', None)) is not None:
             if verbose:
-                console.log(f'Found environment variable OPENAI_API_KEY.')
+                console.log('Found environment variable OPENAI_API_KEY.')
             self.toml['openai_api_key'] = openai_api_key
         if (anthropic_api_key := os.getenv('ANTHROPIC_API_KEY',
                                            None)) is not None:
             if verbose:
-                console.log(f'Found environment variable ANTHROPIC_API_KEY.')
+                console.log('Found environment variable ANTHROPIC_API_KEY.')
             self.toml['anthropic_api_key'] = anthropic_api_key
         if (gemini_api_key := os.getenv('GOOGLE_API_KEY', None)) is not None:
             if verbose:
-                console.log(f'Found environment variable GOOGLE_API_KEY.')
+                console.log('Found environment variable GOOGLE_API_KEY.')
             self.toml['gemini_api_key'] = gemini_api_key
         # create default vector db name
         emb_model = self.toml[f'{self.embedding_frontend}_embedding_model']
