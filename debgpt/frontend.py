@@ -593,6 +593,19 @@ def interact_with(f: frontend.AbstractFrontend) -> None:
                         fp.write(f.session[-1]['content'])
                     console.log(f'The last LLM response is saved at {path}')
                 elif cmd[0] == '/reset':
+                    if len(cmd) != 1:
+                        console.print('syntax error: /reset')
+                        continue
+                    f.reset()
+                else:
+                    console.print(f'unknown command: {cmd[0]}')
+            else:
+                frontend.query_once(f, text)
+    except EOFError:
+        pass
+    except KeyboardInterrupt:
+        pass
+
 
 if __name__ == '__main__':
     ag = argparse.ArgumentParser()
