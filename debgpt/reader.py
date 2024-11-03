@@ -152,11 +152,18 @@ def read_directory(path: str) -> List[Tuple[str, str]]:
         List[Tuple[str, str]]: a list of tuples, each tuple contains the path
         and the content
     '''
+    SKIPLIST = ('.git', '__pycache__')
     contents: List[Tuple[str, str]] = []
     for root, _, files in os.walk(path):
+        if any(x in root.split('/') for x in SKIPLIST):
+            continue
         for file in files:
             path = os.path.join(root, file)
-            content = read_file(path)
+            try:
+                content = read_file(path)
+            except TypeError as e:
+                console.log(f'Skipping unsupported file `{path}`.')
+                content = ''
             contents.append((path, content))
     return contents
 
@@ -873,6 +880,7 @@ def main(argv: List[str] = sys.argv[1:]):
                         help='the home directory of debgpt')
     args = parser.parse_args(argv)
 
+    tally = 0
     if args.wrap:
         for file in args.file:
             string = read_and_wrap(file,
@@ -880,6 +888,8 @@ def main(argv: List[str] = sys.argv[1:]):
                                    debgpt_home=args.debgpt_home)
             console.log('Specifier:', file)
             console.print(string)
+            tally += 1
+        console.print('Total number of texts:', tally)
     else:
         for file in args.file:
             entries = read(file, debgpt_home=args.debgpt_home)
@@ -889,6 +899,8 @@ def main(argv: List[str] = sys.argv[1:]):
                     [chunk_entry(x, args.chunk) for x in entries])
             console.log('Specifier:', file)
             console.print(entries)
+            tally += len(entries)
+        console.print('Total number of entries:', tally)
 
 
 if __name__ == '__main__':  # pragma: no cover
