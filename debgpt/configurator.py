@@ -23,6 +23,8 @@ from . import defaults
 default = defaults.Config(verbose=True)
 console = defaults.console
 
+#FIXME: keep other configs existing in the original toml unchanged.
+# i.e., do not delete api keys for other frontends when we switch to a new one.
 
 class SingleChoice(object):
 

@@ -369,113 +369,34 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     # Prompt Loaders (numbered list). You can specify them multiple times.
     # for instance, `debgpt -H -f foo.py -f bar.py`.
     config_template += '''\n
-##############################
-# Prompt reader
-##############################
+##################
+# Context Reader #
+##################
 \n'''
     # -- 1. Debian BTS
     _g = ag.add_argument_group('Prompt reader')
-    _g.add_argument(
-        '--bts',
-        type=str,
-        default=[],
-        action='append',
-        help='Retrieve BTS webpage to prompt. example: "src:pytorch", "1056388"'
-    )
-    _g.add_argument('--bts_raw',
-                    action='store_true',
-                    help='load raw HTML instead of plain text.')
-    # -- 2. Custom Command Line(s)
-    _g.add_argument('--cmd',
-                    type=str,
-                    default=[],
-                    action='append',
-                    help='add the command line output to the prompt')
-    # -- 3. Debian Buildd
-    _g.add_argument('--buildd',
-                    type=str,
-                    default=[],
-                    action='append',
-                    help='Retrieve buildd page for package to prompt.')
     # -- 4. Arbitrary Plain Text File(s)
     _g.add_argument('--file',
                     '-f',
                     type=str,
                     default=[],
                     action='append',
-                    help='load specified file(s) in prompt. A special syntax \
-                    is supported: "--file filename:start_line:end_line"')
-    # -- 5. Debian Policy
-    _g.add_argument(
-        '--policy',
-        type=str,
-        default=[],
-        action='append',
-        help='load specified policy section(s). (e.g., "1", "4.6")')
-    # -- 6. Debian Developers References
-    _g.add_argument('--devref',
-                    type=str,
-                    default=[],
-                    action='append',
-                    help='load specified devref section(s).')
-    # -- 7. TLDR Manual Page
-    _g.add_argument('--tldr',
-                    type=str,
-                    default=[],
-                    action='append',
-                    help='add tldr page to the prompt.')
-    # -- 8. Man Page
-    _g.add_argument(
-        '--man',
-        type=str,
-        default=[],
-        action='append',
-        help='add man page to the prompt. Note the context length!')
-    # -- 9. Arbitrary HTML document
-    _g.add_argument('--html',
-                    type=str,
-                    default=[],
-                    action='append',
-                    help='load HTML document from given URL(s)')
-    # -- 10. CPython What's New
-    _g.add_argument(
-        '--pynew',
-        type=str,
-        default=[],
-        action='append',
-        help=
-        "load CPython What's New website, e.g. '3.12:summary-release-highlights'"
-    )
-    # -- 11. Arch Wiki
-    _g.add_argument('--archw',
-                    type=str,
-                    default=[],
-                    action='append',
-                    help='load Arch Wiki. e.g., "Archiving_and_compression"')
-    # -- 12. PDF File
-    _g.add_argument('--pdf',
-                    type=str,
-                    default=[],
-                    action='append',
-                    help='load texts from PDF file(s)')
+                    help='load specified files (plain text and pdfs), directories, \
+or URLs in prompt. Many special specifiers are supported, \
+including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cmd>, tldr:<tldr>')
     # -- 998. The special query buider for mapreduce chunks
     _g.add_argument('--mapreduce',
-                    '--map',
                     '-x',
                     action='append',
                     type=str,
                     help='load any file or directory for an answer')
     _g.add_argument('--mapreduce_chunksize',
-                    '--map_chunksize',
                     type=int,
                     default=conf['mapreduce_chunksize'],
                     help='context chunk size for mapreduce')
     config_template = __add_arg_to_config(config_template, _g,
                                           'mapreduce_chunksize')
     _g.add_argument('--mapreduce_parallelism',
-                    '--mapreduce_jobs',
-                    '--map_parallelism',
-                    '--map_jobs',
                     type=int,
                     default=conf['mapreduce_parallelism'],
                     help='number of parallel processes in mapreduce')
@@ -610,20 +531,11 @@ def parse_args_order(argv: List[str]) -> List[str]:
             dest.append(long.lstrip('--'))
 
     for item in argv:
-        _match_l(item, '--bts', order)
-        _match_l(item, '--cmd', order)
-        _match_l(item, '--buildd', order)
+        _match_ls(item, '--mapreduce', '-x', order)
+        _match_ls(item, '--retrieve', '-r', order)
+        _match_ls(item, '--embed', '-e', order)
         _match_ls(item, '--file', '-f', order)
         _match_ls(item, '--inplace', '-i', order)
-        _match_l(item, '--policy', order)
-        _match_l(item, '--devref', order)
-        _match_l(item, '--tldr', order)
-        _match_l(item, '--man', order)
-        _match_l(item, '--html', order)
-        _match_l(item, '--pynew', order)
-        _match_l(item, '--archw', order)
-        _match_l(item, '--pdf', order)
-        _match_ls(item, '--mapreduce', '-x', order)
     return order
 
 
@@ -632,7 +544,7 @@ def parse(argv: List[str]) -> Tuple[argparse.Namespace, List[str]]:
     Parse the command line arguments and return the parsed arguments,
     as well as the argument order.
     '''
-    args = parse_args(argv)
+    args = vars(parse_args(argv))
     order = parse_args_order(argv)
     return args, order
 
