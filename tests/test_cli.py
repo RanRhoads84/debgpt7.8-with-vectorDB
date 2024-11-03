@@ -24,7 +24,6 @@ SOFTWARE.
 import pytest
 from debgpt.cli import main
 
-
 #@pytest.mark.parametrize('cmd', (
 #    '-F dryrun',
 #    '-F dryrun -Hf Makefile',

@@ -38,7 +38,8 @@ def test_latest_file(tmpdir):
         time.sleep(1)
     files = [tmpdir.join(f'test{i}.txt') for i in range(3)]
     assert reader.latest_file(files) == tmpdir.join('test2.txt')
-    assert reader.latest_glob(os.path.join(tmpdir, 'test*.txt')) == tmpdir.join('test2.txt')
+    assert reader.latest_glob(os.path.join(
+        tmpdir, 'test*.txt')) == tmpdir.join('test2.txt')
 
 
 def test_is_text_file(tmpdir):
@@ -65,7 +66,8 @@ def test_read_pdf(tmpdir):
         pdf.output(file_path)
 
     _create_pdf(tmpdir.join("test.pdf"))
-    assert reader.read_file_pdf(os.path.join(tmpdir, "test.pdf")) == 'Hello World!'
+    assert reader.read_file_pdf(os.path.join(tmpdir,
+                                             "test.pdf")) == 'Hello World!'
     assert reader.read_file(os.path.join(tmpdir, "test.pdf")) == 'Hello World!'
 
     contents = reader.read(os.path.join(tmpdir, "test.pdf"))
@@ -129,7 +131,8 @@ def test_read_directory(tmpdir):
     content = 'test test test\n'
     with open(tmpdir.join('test.txt'), 'wt') as f:
         f.write(content)
-    assert reader.read_directory(tmpdir) == [(tmpdir.join('test.txt'), content)]
+    assert reader.read_directory(tmpdir) == [(tmpdir.join('test.txt'), content)
+                                             ]
 
     contents = reader.read(str(tmpdir))
     assert len(contents) == 1
@@ -188,7 +191,7 @@ def test_read_url_file(tmpdir):
     'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     'https://httpbin.org/robots.txt',
     'https://lists.debian.org/debian-project/2023/12/msg00029.html',
-    ))
+))
 def test_read_url_http(url):
     assert len(reader.read_url(url)) > 0
 
@@ -208,6 +211,7 @@ def test_read_url_http(url):
     context = reader.read_and_wrap(url)
     assert isinstance(context, str)
     assert len(context) > 0
+
 
 @pytest.mark.timeout(10)
 @pytest.mark.parametrize('spec', ('src:pytorch', '1056388'))
@@ -230,6 +234,7 @@ def test_read_bts(spec: str):
     assert isinstance(context, str)
     assert len(context) > 0
 
+
 @pytest.mark.parametrize('spec', ('man creat', ['man', 'creat']))
 def test_read_cmd(spec: Union[str, List[str]]):
     assert reader.read_cmd(spec)
@@ -249,6 +254,7 @@ def test_read_cmd(spec: Union[str, List[str]]):
     context = reader.read_and_wrap(f'cmd:{spec}')
     assert isinstance(context, str)
     assert len(context) > 0
+
 
 def test_read_man():
     contents = reader.read('man:creat')
@@ -306,6 +312,7 @@ def test_read_stdin(monkeypatch):
     assert isinstance(context, str)
     assert len(context) > 0
 
+
 def test_google_search(keyword='python programming'):
     results = reader.google_search(keyword)
     print('google search results:', results)
@@ -313,7 +320,8 @@ def test_google_search(keyword='python programming'):
     for r in results:
         assert r.startswith('http')
 
-@pytest.mark.parametrize('keyword', ('Archiving_and_compression',))
+
+@pytest.mark.parametrize('keyword', ('Archiving_and_compression', ))
 def test_read_archwiki(keyword):
     assert reader.read_archwiki(keyword)
     contents = reader.read(f'archwiki:{keyword}')
@@ -326,6 +334,7 @@ def test_read_archwiki(keyword):
         assert content[0] == keyword
         assert content[1] in content[2](content[1])
         assert content[1] in content[3](content[1], 1, -1)
+
 
 @pytest.mark.parametrize('package', ('debgpt', 'pytorch'))
 def test_read_buildd(package):
@@ -340,6 +349,7 @@ def test_read_buildd(package):
         assert content[0] == package
         assert content[1] in content[2](content[1])
         assert content[1] in content[3](content[1], 1, -1)
+
 
 @pytest.mark.parametrize('section', ('', '1', '4.6', '4.6.1'))
 def test_policy(section, tmpdir):
@@ -387,13 +397,13 @@ def test_devref(section, tmpdir):
     'tldr:tar',
     'man:creat',
     'cmd:man creat',
-    ))
+))
 def test_read_main(spec: str, tmpdir: object):
     args = ['--debgpt_home', str(tmpdir)]
     if spec == 'test.txt':
         with open(tmpdir.join('test.txt'), 'wt') as f:
             f.write('test test test\n')
-        reader.main([*args, '-f', 'file://'+str(tmpdir.join('test.txt'))])
+        reader.main([*args, '-f', 'file://' + str(tmpdir.join('test.txt'))])
         reader.main([*args, '-f', str(tmpdir)])
         reader.main([*args, '-f', str(tmpdir.join('test.txt'))])
         reader.main([*args, '-w', '-f', str(tmpdir.join('test.txt'))])
@@ -402,6 +412,7 @@ def test_read_main(spec: str, tmpdir: object):
         reader.main([*args, '-w', '-f', spec])
         reader.main([*args, '-c', '1024', '-f', spec])
         reader.main([*args, '-w', '-c', '1024', '-f', spec])
+
 
 def test_chunk_lines():
     lines = 'test test test test test test'.split()

@@ -27,6 +27,7 @@ __license__ = 'MIT'
 # do not load all components.
 # some components like llm, and backend, requires much more dependencies
 
+
 def version() -> None:
     console.print(f'DebGPT {__version__}')
     console.print(f'Copyright {__copyright__}')

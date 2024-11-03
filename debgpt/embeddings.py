@@ -34,7 +34,9 @@ from . import defaults
 console = defaults.console
 
 
-def retry_ratelimit(func: Callable, exception: Exception, retry_interval: int = 15) -> Callable:
+def retry_ratelimit(func: Callable,
+                    exception: Exception,
+                    retry_interval: int = 15) -> Callable:
     '''
     A decorator to retry the function call when exception occurs.
 
@@ -49,6 +51,7 @@ def retry_ratelimit(func: Callable, exception: Exception, retry_interval: int = 
     Returns:
         Callable: A wrapped function with retry logic.
     '''
+
     @ft.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         while True:
@@ -237,7 +240,8 @@ class GeminiEmbedding(AbstractEmbeddingModel):
         '''
         from google.api_core.exceptions import ResourceExhausted
         func = retry_ratelimit(self.client.embed_content, ResourceExhausted)
-        response = func(model=self.model, content=text,
+        response = func(model=self.model,
+                        content=text,
                         output_dimensionality=self.dim)
         vector = np.array(response['embedding'])
         vector = vector / np.linalg.norm(vector)
@@ -255,7 +259,8 @@ class GeminiEmbedding(AbstractEmbeddingModel):
         '''
         from google.api_core.exceptions import ResourceExhausted
         func = retry_ratelimit(self.client.embed_content, ResourceExhausted)
-        response = func(model=self.model, content=texts,
+        response = func(model=self.model,
+                        content=texts,
                         output_dimensionality=self.dim)
         matrix = np.stack(response['embedding'])[:, :self.dim]
         matrix = matrix / np.linalg.norm(matrix, axis=1)[:, np.newaxis]

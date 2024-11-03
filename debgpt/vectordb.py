@@ -229,11 +229,13 @@ class VectorDB:
         vectors: List[List[Union[int, str, np.ndarray]]] = self.get_all()
         for v in vectors:
             idx, source, text, vector = v
-            console.print(f'id[{idx:5d}]', f'len(vector)={len(vector)},',
-                          f'len(text)={len(text):5d}',
-                          f'source={repr(source)},',
-                          f'text={textwrap.shorten(text, 16)}',
-                          )
+            console.print(
+                f'id[{idx:5d}]',
+                f'len(vector)={len(vector)},',
+                f'len(text)={len(text):5d}',
+                f'source={repr(source)},',
+                f'text={textwrap.shorten(text, 16)}',
+            )
         return vectors
 
     def show(self, idx: int) -> None:

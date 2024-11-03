@@ -31,6 +31,7 @@ from rich.status import Status
 from . import defaults
 from . import vectordb
 from . import embeddings
+
 console = defaults.console
 
 
@@ -38,10 +39,14 @@ class AbstrastRetriever(object):  # pragma: no cover
     '''
     Abstract class for retrievers.
     '''
+
     def __init__(self, args: object):
         pass
 
-    def retrieve_onfly(self, query: str, documents: List[str], topk: int = 3) -> List[str]:
+    def retrieve_onfly(self,
+                       query: str,
+                       documents: List[str],
+                       topk: int = 3) -> List[str]:
         pass
 
     def add(self, source: str, text: str) -> np.ndarray:
@@ -68,9 +73,9 @@ class VectorRetriever(object):
         self.model = embeddings.get_embedding_model(args)
 
     def retrieve_onfly(self,
-                 query: str,
-                 documents: List[str],
-                 topk: int = 3) -> List[str]:
+                       query: str,
+                       documents: List[str],
+                       topk: int = 3) -> List[str]:
         '''
         This function retrieves the top-k most relevant documents from the
         document list given a query. It does not modify the database, nor
@@ -108,7 +113,8 @@ class VectorRetriever(object):
         self.vdb.add(source, text, vector)
         return vector
 
-    def batch_add(self, sources: List[str], texts: List[str]) -> List[np.ndarray]:
+    def batch_add(self, sources: List[str],
+                  texts: List[str]) -> List[np.ndarray]:
         '''
         This function computes and adds a batch of new vectors to the database.
 
@@ -149,16 +155,18 @@ def main(argv):
     subparsers = parser.add_subparsers(dest='subcommand')
     # subcommand: add
     parser_add = subparsers.add_parser('add')
-    parser_add.add_argument('-s', type=str, default='',
+    parser_add.add_argument('-s',
+                            type=str,
+                            default='',
                             help='source of this text')
-    parser_add.add_argument('text', type=str,
-                            help='text to be added')
+    parser_add.add_argument('text', type=str, help='text to be added')
     # subcommand: retrieve
     parser_retrieve = subparsers.add_parser('retrieve', aliases=['ret'])
-    parser_retrieve.add_argument('query', type=str,
-                            help='query string')
-    parser_retrieve.add_argument('-k', type=int, default=3,
-                            help='number of documents to retrieve')
+    parser_retrieve.add_argument('query', type=str, help='query string')
+    parser_retrieve.add_argument('-k',
+                                 type=int,
+                                 default=3,
+                                 help='number of documents to retrieve')
     # parse arguments
     args = parser.parse_args(argv)
 

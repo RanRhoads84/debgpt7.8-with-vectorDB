@@ -54,7 +54,7 @@ class DebianPolicy:
 
     def __iter__(self):
         # Return an iterator over the section indexes.
-        self.__cursor :int = 0
+        self.__cursor: int = 0
         return self
 
     def __next__(self) -> str:
@@ -75,11 +75,12 @@ class DebianPolicy:
         ret: list[str] = []
         for i in range(1, len(self.lines)):
             cursur = self.lines[i]
-            previous = self.lines[i-1]
-            if any(cursur.startswith(x)
-                   for x in [self.SEP_SECTION,
-                             self.SEP_SUBSECTION, 
-                             self.SEP_SUBSUBSECTION]):
+            previous = self.lines[i - 1]
+            if any(
+                    cursur.startswith(x) for x in [
+                        self.SEP_SECTION, self.SEP_SUBSECTION,
+                        self.SEP_SUBSUBSECTION
+                    ]):
                 index = previous.split(' ')[0]
                 if index.endswith('.'):
                     ret.append(index.rstrip('.'))
@@ -141,7 +142,6 @@ if __name__ == '__main__':  # pragma: no cover
     print('Policy total length', len(str(p).encode()), 'bytes')
     for (sec, text) in zip(p.indexes, p):
         print('section', sec, 'length', len(text.encode()), 'bytes')
-
 
     # Test the DebianDevref class.
     d = DebianDevref()

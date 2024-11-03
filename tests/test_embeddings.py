@@ -113,6 +113,5 @@ def test_gemini_embedding_batch_embed(conf):
     assert np.isclose(np.linalg.norm(matrix, axis=1), 1.0).all()
 
 
-
 def test_embedding_main():
     embeddings.main(['hello world'])

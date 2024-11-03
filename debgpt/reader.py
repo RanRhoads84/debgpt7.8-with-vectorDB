@@ -43,7 +43,6 @@ from . import policy as debian_policy
 from .defaults import console
 from collections import namedtuple
 
-
 # The Entry namedtuple, core data structure for reader outputs
 # path: str
 # content: str
@@ -74,9 +73,6 @@ def latest_glob(pattern: str) -> str:
     return the latest file that matches the glob pattern
     '''
     return latest_file(glob.glob(pattern))
-
-
-
 
 
 def is_text_file(filepath: str) -> bool:
@@ -315,15 +311,12 @@ def read_archwiki(spec: str) -> str:
     return '\n'.join([x.rstrip() for x in text])
 
 
-
-def read_buildd(spec: str,):
+def read_buildd(spec: str, ):
     url = f'https://buildd.debian.org/status/package.php?p={spec}'
     r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text, features='html.parser')
     text = soup.get_text().split('\n')
     return '\n'.join([x.rstrip() for x in text])
-
-
 
 
 def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
@@ -341,26 +334,32 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
         The first wrapper wraps unchunked content, and the second wrapper
         wraps chunked content.
     '''
+
     # helper functions
     def create_wrapper(template: str, spec: str) -> callable:
         '''
         create a wrapper function to wrap the content with a template.
         The template should contain one placeholder for the spec.
         '''
+
         def _wrapper(content: str) -> str:
             lines = [template.format(spec)]
             lines.extend(['```'] + content.split('\n') + ['```', ''])
             return '\n'.join(lines)
+
         return _wrapper
+
     def create_chunk_wrapper(template: str, spec: str) -> callable:
         '''
         create a wrapper function to wrap the content with a template.
         The template should contain three placeholders for the spec, start, and end.
         '''
+
         def _wrapper(content: str, start: int, end: int) -> str:
             lines = [template.format(spec, start, end)]
             lines.extend(['```'] + content.split('\n') + ['```', ''])
             return '\n'.join(lines)
+
         return _wrapper
 
     results: List[Tuple[str, str]] = []
@@ -369,11 +368,13 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
         parsed_spec = spec
         content = read_file(spec)
         wrapfun = create_wrapper('Here is the contents of file `{}`:', spec)
-        wrapfun_chunk = create_chunk_wrapper('Here is the contents of file {} (lines {}-{}):', spec)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Here is the contents of file {} (lines {}-{}):', spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif os.path.exists(spec) and os.path.isdir(spec):
         wrapfun = create_wrapper('Here is the contents of file `{}`:', spec)
-        wrapfun_chunk = create_chunk_wrapper('Here is the contents of file {} (lines {}-{}):', spec)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Here is the contents of file {} (lines {}-{}):', spec)
         parsed_spec = spec
         contents = read_directory(spec)
         contents = [(x, y, wrapfun, wrapfun_chunk) for x, y in contents]
@@ -382,46 +383,65 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
         parsed_spec = spec
         content = read_url(spec)
         wrapfun = create_wrapper('Here is the contents of URL {}:', spec)
-        wrapfun_chunk = create_chunk_wrapper('Here is the contents of URL {} (lines {}-{}):', spec)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Here is the contents of URL {} (lines {}-{}):', spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     # special cases: alphabetical order
     elif spec.startswith('archwiki:'):
         parsed_spec = spec[9:]
         content = read_archwiki(parsed_spec)
-        wrapfun = create_wrapper('Here is the Arch Wiki about `{}`:', parsed_spec)
-        wrapfun_chunk = create_chunk_wrapper('Here is the Arch Wiki about {} (lines {}-{}):', parsed_spec)
+        wrapfun = create_wrapper('Here is the Arch Wiki about `{}`:',
+                                 parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Here is the Arch Wiki about {} (lines {}-{}):', parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('bts:'):
         parsed_spec = spec[4:]
         content = read_bts(parsed_spec)
-        wrapfun = create_wrapper('Here is the Debian Bug Tracking System page of {}:', parsed_spec)
-        wrapfun_chunk = create_chunk_wrapper('Here is the Debian BTS status of {} (lines {}-{}):', parsed_spec)
+        wrapfun = create_wrapper(
+            'Here is the Debian Bug Tracking System page of {}:', parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Here is the Debian BTS status of {} (lines {}-{}):', parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('buildd:'):
         parsed_spec = spec[7:]
         content = read_buildd(parsed_spec)
-        wrapfun = create_wrapper('Here is the buildd status of package `{}`:', parsed_spec)
-        wrapfun_chunk = create_chunk_wrapper('Here is the buildd status of package {} (lines {}-{}):', parsed_spec)
+        wrapfun = create_wrapper('Here is the buildd status of package `{}`:',
+                                 parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Here is the buildd status of package {} (lines {}-{}):',
+            parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('cmd:'):
         parsed_spec = spec[4:]
         content = read_cmd(parsed_spec)
-        wrapfun = create_wrapper('Here is the output of command `{}`:', parsed_spec)
-        wrapfun_chunk = create_chunk_wrapper('Here is the output of command {} (lines {}-{}):', parsed_spec)
+        wrapfun = create_wrapper('Here is the output of command `{}`:',
+                                 parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Here is the output of command {} (lines {}-{}):', parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('devref:'):
         # e.g., devref:1 loads section 1, devref: loads the whole devref
         parsed_spec = spec[7:]
-        content = debian_policy.DebianDevref(os.path.join(debgpt_home, 'devref.txt'))
+        content = debian_policy.DebianDevref(
+            os.path.join(debgpt_home, 'devref.txt'))
         if parsed_spec:
             source = f'Debian Developer Reference document [{parsed_spec}]'
             content = content[parsed_spec]
-            wrapfun = create_wrapper('Here is the Debian Developer Reference document, section {}:', parsed_spec)
-            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Developer Reference document, section {} (lines {}-{}):', parsed_spec)
+            wrapfun = create_wrapper(
+                'Here is the Debian Developer Reference document, section {}:',
+                parsed_spec)
+            wrapfun_chunk = create_chunk_wrapper(
+                'Here is the Debian Developer Reference document, section {} (lines {}-{}):',
+                parsed_spec)
             results.append((source, content, wrapfun, wrapfun_chunk))
         else:
-            wrapfun = create_wrapper('Here is the Debian Developer Reference document {}:', parsed_spec)
-            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Developer Reference document {} (lines {}-{}):', parsed_spec)
+            wrapfun = create_wrapper(
+                'Here is the Debian Developer Reference document {}:',
+                parsed_spec)
+            wrapfun_chunk = create_chunk_wrapper(
+                'Here is the Debian Developer Reference document {} (lines {}-{}):',
+                parsed_spec)
             for sectionidx in content.indexes:
                 source = f'Debian Developer Reference document [{sectionidx}]'
                 section = content[sectionidx]
@@ -430,21 +450,29 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
         parsed_spec = spec[4:]
         content = read_cmd(f'man {parsed_spec}')
         wrapfun = create_wrapper('Here is the manual page of {}:', parsed_spec)
-        wrapfun_chunk = create_chunk_wrapper('Here is the manual page of {} (lines {}-{}):', parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Here is the manual page of {} (lines {}-{}):', parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('policy:'):
         # e.g., policy:1 loads section 1, policy: loads the whole policy
         parsed_spec = spec[7:]
-        content = debian_policy.DebianPolicy(os.path.join(debgpt_home, 'policy.txt'))
+        content = debian_policy.DebianPolicy(
+            os.path.join(debgpt_home, 'policy.txt'))
         if parsed_spec:
             source = f'Debian Policy section [{parsed_spec}]'
             section = content[parsed_spec]
-            wrapfun = create_wrapper('Here is the Debian Policy document, section {}:', parsed_spec)
-            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Policy document, section {} (lines {}-{}):', parsed_spec)
+            wrapfun = create_wrapper(
+                'Here is the Debian Policy document, section {}:', parsed_spec)
+            wrapfun_chunk = create_chunk_wrapper(
+                'Here is the Debian Policy document, section {} (lines {}-{}):',
+                parsed_spec)
             results.append((source, section, wrapfun, wrapfun_chunk))
         else:
-            wrapfun = create_wrapper('Here is the Debian Policy document {}:', parsed_spec)
-            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Policy document {} (lines {}-{}):', parsed_spec)
+            wrapfun = create_wrapper('Here is the Debian Policy document {}:',
+                                     parsed_spec)
+            wrapfun_chunk = create_chunk_wrapper(
+                'Here is the Debian Policy document {} (lines {}-{}):',
+                parsed_spec)
             for sectionidx in content.indexes:
                 source = f'Debian Policy section [{sectionidx}]'
                 section = content[sectionidx]
@@ -453,27 +481,33 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
         parsed_spec = spec[5:]
         content = read_cmd(f'tldr {parsed_spec}')
         wrapfun = create_wrapper('Here is the tldr of {}:', parsed_spec)
-        wrapfun_chunk = create_chunk_wrapper('Here is the tldr of {} (lines {}-{}):', parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Here is the tldr of {} (lines {}-{}):', parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     # special cases: stdin
     elif spec in ('stdin', '-'):
         parsed_spec = 'stdin'
         content = read_stdin()
-        wrapfun = create_wrapper('Carefully read the following contents {}:', parsed_spec)
-        wrapfun_chunk = create_chunk_wrapper('Carefully read the following contents {} (lines {}-{}):', parsed_spec)
+        wrapfun = create_wrapper('Carefully read the following contents {}:',
+                                 parsed_spec)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Carefully read the following contents {} (lines {}-{}):',
+            parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     else:
-        raise FileNotFoundError(f'File or resource {repr(spec)} not recognized')
+        raise FileNotFoundError(
+            f'File or resource {repr(spec)} not recognized')
     # convert the results to Entry (named tuple)
     results = [Entry(*x) for x in results]
     return results
 
 
-def chunk_lines(lines: List[str],
-                max_chunk_size: int,
-                start: int = -1,
-                end: int = -1,
-                ) -> Dict[Tuple[int, int], List[str]]:
+def chunk_lines(
+    lines: List[str],
+    max_chunk_size: int,
+    start: int = -1,
+    end: int = -1,
+) -> Dict[Tuple[int, int], List[str]]:
     '''
     Chunk the lines into pieces with the specified size.
 
@@ -505,8 +539,6 @@ def chunk_lines(lines: List[str],
         left = chunk_lines(lines, max_chunk_size, start, middle)
         right = chunk_lines(lines, max_chunk_size, middle, end)
         return {**left, **right}
-
-
 
 
 def chunk_entry(entry: Entry, max_chunk_size: int) -> List[Entry]:
@@ -554,8 +586,6 @@ def read_and_wrap(spec: str,
     for entry in entries:
         wrapped += entry.wrapfun(entry.content)
     return wrapped
-
-
 
 
 ##########################################
@@ -827,20 +857,33 @@ def main(argv: List[str] = sys.argv[1:]):
     read something and print to screen
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file', '-f', type=str, default=[], action='extend',
+    parser.add_argument('--file',
+                        '-f',
+                        type=str,
+                        default=[],
+                        action='extend',
                         required=True,
-                        nargs='+', help='file,path,spec,etc to read')
-    parser.add_argument('--wrap', '-w', action='store_true', 
+                        nargs='+',
+                        help='file,path,spec,etc to read')
+    parser.add_argument('--wrap',
+                        '-w',
+                        action='store_true',
                         help='wrap the content with a template')
-    parser.add_argument('--chunk', '-c', type=int, default=-1,
+    parser.add_argument('--chunk',
+                        '-c',
+                        type=int,
+                        default=-1,
                         help='chunk the content into pieces')
-    parser.add_argument('--debgpt_home', type=str, default='.',
+    parser.add_argument('--debgpt_home',
+                        type=str,
+                        default='.',
                         help='the home directory of debgpt')
     args = parser.parse_args(argv)
 
     if args.wrap:
         for file in args.file:
-            string = read_and_wrap(file, max_chunk_size=args.chunk,
+            string = read_and_wrap(file,
+                                   max_chunk_size=args.chunk,
                                    debgpt_home=args.debgpt_home)
             console.log('Specifier:', file)
             console.print(string)
@@ -848,8 +891,9 @@ def main(argv: List[str] = sys.argv[1:]):
         for file in args.file:
             entries = read(file, debgpt_home=args.debgpt_home)
             if args.chunk > 0:
-                entries = ft.reduce(list.__add__,
-                                    [chunk_entry(x, args.chunk) for x in entries])
+                entries = ft.reduce(
+                    list.__add__,
+                    [chunk_entry(x, args.chunk) for x in entries])
             console.log('Specifier:', file)
             console.print(entries)
 

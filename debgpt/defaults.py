@@ -125,8 +125,7 @@ class Config(object):
         emb_model = self.toml[f'{self.embedding_frontend}_embedding_model']
         self.toml['db'] = os.path.join(
             home, 'VectorDB_{model}_dim{dim}.sqlite'.format(
-                model=emb_model,
-                dim=self.toml['embedding_dim']))
+                model=emb_model, dim=self.toml['embedding_dim']))
         # all the above will be overridden by command line arguments
         pass
 

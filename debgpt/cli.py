@@ -704,9 +704,9 @@ def mapreduce_super_long_context(ag) -> str:
         user_question = 'summarize the above contents.'
 
     chunks = reader.mapreduce_load_any_astext(ag.mapreduce,
-                                                ag.mapreduce_chunksize,
-                                                user_question=user_question,
-                                                args=ag)
+                                              ag.mapreduce_chunksize,
+                                              user_question=user_question,
+                                              args=ag)
     console.print(
         f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}'
     )
@@ -733,7 +733,7 @@ def mapreduce_super_long_context(ag) -> str:
     # skip mapreduce if there is only one chunk
     if len(chunks) == 1:
         filepath = reader.mapreduce_parse_path(ag.mapreduce,
-                                                 debgpt_home=ag.debgpt_home)
+                                               debgpt_home=ag.debgpt_home)
         if any(
                 filepath.startswith(x)
                 for x in ('file://', 'http://', 'https://')):

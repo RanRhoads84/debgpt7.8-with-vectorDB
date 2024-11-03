@@ -48,8 +48,7 @@ def task_backend(ag) -> None:
 def task_replay(ag) -> None:
     from . import replay
     if ag.json_file_path is None:
-        json_path = reader._latest_glob(
-            os.path.join(ag.debgpt_home, '*.json'))
+        json_path = reader._latest_glob(os.path.join(ag.debgpt_home, '*.json'))
         console.log('found the latest json:', json_path)
     else:
         json_path = ag.json_file_path

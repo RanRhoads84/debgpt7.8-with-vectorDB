@@ -163,13 +163,13 @@ def _request_frontend_specific_config(frontend: str,
             'Press Esc to abort.').run()
         conf['openai_model'] = value
     if frontend == 'openai' and is_embedding and 'openai_embedding_model' not in current_config:
-        value = SingleEdit(
-            "DebGPT Configurator", "Enter the OpenAI API embedding model name:",
-            default['openai_embedding_model'],
-            'If not sure, just keep the default.',
-            'Press Esc to abort.').run()
+        value = SingleEdit("DebGPT Configurator",
+                           "Enter the OpenAI API embedding model name:",
+                           default['openai_embedding_model'],
+                           'If not sure, just keep the default.',
+                           'Press Esc to abort.').run()
         conf['openai_embedding_model'] = value
-    
+
     # anthropic part
     if frontend == 'anthropic' and 'anthropic_api_key' not in current_config:
         value = SingleEdit(
@@ -202,11 +202,11 @@ def _request_frontend_specific_config(frontend: str,
             "Press Esc to abort.").run()
         conf['gemini_model'] = value
     if frontend == 'gemini' and is_embedding and 'gemini_embedding_model' not in current_config:
-        value = SingleEdit(
-            "DebGPT Configurator", "Enter the Google embedding model name:",
-            default['gemini_embedding_model'],
-            "If not sure, just keep the default.",
-            "Press Esc to abort.").run()
+        value = SingleEdit("DebGPT Configurator",
+                           "Enter the Google embedding model name:",
+                           default['gemini_embedding_model'],
+                           "If not sure, just keep the default.",
+                           "Press Esc to abort.").run()
         conf['gemini_embedding_model'] = value
 
     # ollama part
@@ -354,8 +354,10 @@ using the `--frontend|-F` argument.", "Press Esc to abort.").run()
         'Random    | debug,       DebGPT built-in',
     ]
     embedding_frontend = SingleChoice(
-        "DebGPT Configurator", "Select an embedding frontend that DebGPT will use:",
-        embedding_frontends, "An embedding model turns text into vector embeddings, \
+        "DebGPT Configurator",
+        "Select an embedding frontend that DebGPT will use:",
+        embedding_frontends,
+        "An embedding model turns text into vector embeddings, \
 unlocking use cases like search. Choose a frontend that will compute the \
 embedding vectors.\n\n\
 The embedding frontend can be different from the frontend.\n\n\
@@ -369,7 +371,9 @@ retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'."
     conf['embedding_frontend'] = embedding_frontend
 
     # step 4: ask for the embedding frontend-specific configuration
-    newconf = _request_frontend_specific_config(frontend, conf, is_embedding=True)
+    newconf = _request_frontend_specific_config(frontend,
+                                                conf,
+                                                is_embedding=True)
     conf.update(newconf)
 
     # step 3: ask for the common CLI behavior configuration

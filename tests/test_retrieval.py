@@ -67,6 +67,7 @@ def test_vectorretriever_retrieve_onfly(tmpdir):
             assert np.isclose(score, 1.0)
     print(results)
 
+
 def test_vectorretriever_retrieve_from_db(tmpdir):
     conf = defaults.Config()
     conf.db = os.path.join(tmpdir, 'test.db')
@@ -77,8 +78,8 @@ def test_vectorretriever_retrieve_from_db(tmpdir):
     retriever = retrieval.VectorRetriever(conf)
     # insert some documents
     vectors = retriever.batch_add(
-            ['temp'] * 7,
-            ['fruit', 'sky', 'orange', 'dog', 'cat', 'apple', 'banana'])
+        ['temp'] * 7,
+        ['fruit', 'sky', 'orange', 'dog', 'cat', 'apple', 'banana'])
     assert len(vectors) == 7
     # retrieve from db
     query = 'fruit'
