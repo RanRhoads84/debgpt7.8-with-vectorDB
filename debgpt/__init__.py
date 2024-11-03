@@ -30,4 +30,4 @@ __license__ = 'MIT'
 def version() -> None:
     console.print(f'DebGPT {__version__}')
     console.print(f'Copyright {__copyright__}')
-    console.print(f'Released under {__license__} license.'
+    console.print(f'Released under {__license__} license.')
