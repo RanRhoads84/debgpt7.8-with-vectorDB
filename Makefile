@@ -27,6 +27,7 @@ pytest:
 lint:
 	find . -type f -name '*.py' -exec pyflakes '{}' \;
 	find . -type f -name '*.py' -exec pylint '{}' \;
+	pytype debgpt -j auto
 
 install:
 	pip3 install .
