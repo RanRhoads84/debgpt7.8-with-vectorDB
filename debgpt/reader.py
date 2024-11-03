@@ -45,6 +45,10 @@ from collections import namedtuple
 
 
 # The Entry namedtuple, core data structure for reader outputs
+# path: str
+# content: str
+# wrapfun: callable
+# wrapfun_chunk: callable
 Entry = namedtuple('Entry', ['path', 'content', 'wrapfun', 'wrapfun_chunk'])
 
 
@@ -351,10 +355,10 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
     def create_chunk_wrapper(template: str, spec: str) -> callable:
         '''
         create a wrapper function to wrap the content with a template.
-        The template should contain three placeholders for the spec, start, and stop.
+        The template should contain three placeholders for the spec, start, and end.
         '''
-        def _wrapper(content: str, start: int, stop: int) -> str:
-            lines = [template.format(spec, start, stop)]
+        def _wrapper(content: str, start: int, end: int) -> str:
+            lines = [template.format(spec, start, end)]
             lines.extend(['```'] + content.split('\n') + ['```', ''])
             return '\n'.join(lines)
         return _wrapper
@@ -364,11 +368,11 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
     if os.path.exists(spec) and os.path.isfile(spec):
         parsed_spec = spec
         content = read_file(spec)
-        wrapfun = create_wrapper('Here is the contents of file {}:', spec)
+        wrapfun = create_wrapper('Here is the contents of file `{}`:', spec)
         wrapfun_chunk = create_chunk_wrapper('Here is the contents of file {} (lines {}-{}):', spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif os.path.exists(spec) and os.path.isdir(spec):
-        wrapfun = create_wrapper('Here is the contents of file {}:', spec)
+        wrapfun = create_wrapper('Here is the contents of file `{}`:', spec)
         wrapfun_chunk = create_chunk_wrapper('Here is the contents of file {} (lines {}-{}):', spec)
         parsed_spec = spec
         contents = read_directory(spec)
@@ -384,7 +388,7 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
     elif spec.startswith('archwiki:'):
         parsed_spec = spec[9:]
         content = read_archwiki(parsed_spec)
-        wrapfun = create_wrapper('Here is the Arch Wiki about {}:', parsed_spec)
+        wrapfun = create_wrapper('Here is the Arch Wiki about `{}`:', parsed_spec)
         wrapfun_chunk = create_chunk_wrapper('Here is the Arch Wiki about {} (lines {}-{}):', parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('bts:'):
@@ -396,13 +400,13 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
     elif spec.startswith('buildd:'):
         parsed_spec = spec[7:]
         content = read_buildd(parsed_spec)
-        wrapfun = create_wrapper('Here is the buildd status of package {}:', parsed_spec)
+        wrapfun = create_wrapper('Here is the buildd status of package `{}`:', parsed_spec)
         wrapfun_chunk = create_chunk_wrapper('Here is the buildd status of package {} (lines {}-{}):', parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('cmd:'):
         parsed_spec = spec[4:]
         content = read_cmd(parsed_spec)
-        wrapfun = create_wrapper('Here is the output of command {}:', parsed_spec)
+        wrapfun = create_wrapper('Here is the output of command `{}`:', parsed_spec)
         wrapfun_chunk = create_chunk_wrapper('Here is the output of command {} (lines {}-{}):', parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('devref:'):
@@ -465,6 +469,67 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
     return results
 
 
+def chunk_lines(lines: List[str],
+                max_chunk_size: int,
+                start: int = -1,
+                end: int = -1,
+                ) -> Dict[Tuple[int, int], List[str]]:
+    '''
+    Chunk the lines into pieces with the specified size.
+
+    Args:
+        lines (List[str]): the lines to chunk, always the full list of lines
+        max_chunk_size (int): the maximum chunk size
+        start (int): the start index of the lines
+        end (int): the end index of the lines
+    Returns:
+        Dict[Tuple[int, int], List[str]]: a dictionary, each key is a tuple
+        containing the start and end index of the chunked lines, and the value
+        is the chunked lines.
+    '''
+    #print('DEBUG:', len(lines), len('\n'.join(lines[start:end]).encode('utf8')),
+    #    'c', max_chunk_size, 'start', start, 'end', end)
+    # deal with the unspecified param case. This allows chunk_lines(lines, 1000)
+    # to work properly without specifying the start and end in another wrapper.
+    if end < 0 and start < 0:
+        return chunk_lines(lines, max_chunk_size, 0, len(lines))
+    # real work
+    chunk_size_in_bytes = len('\n'.join(lines[start:end]).encode('utf8'))
+    if chunk_size_in_bytes <= max_chunk_size:
+        return {(start, end): lines[start:end]}
+    elif end - start == 1:
+        return {(start, end): lines[start:end]}
+    else:
+        # split the lines into chunks
+        middle = (start + end) // 2
+        left = chunk_lines(lines, max_chunk_size, start, middle)
+        right = chunk_lines(lines, max_chunk_size, middle, end)
+        return {**left, **right}
+
+
+
+
+def chunk_entry(entry: Entry, max_chunk_size: int) -> List[Entry]:
+    '''
+    Chunk the content of the entry into pieces with the specified size.
+
+    Args:
+        entry (Entry): the entry to chunk
+        max_chunk_size (int): the maximum chunk size
+    Returns:
+        List[Entry]: a list of entries, each entry contains a chunk of the content
+    '''
+    if max_chunk_size < 0:
+        return [entry]
+    results = []
+    chunkdict = chunk_lines(entry.content.split('\n'), max_chunk_size)
+    for (start, end), lines in chunkdict.items():
+        content = '\n'.join(lines)
+        wrapfun = ft.partial(entry.wrapfun_chunk, start=start, end=end)
+        results.append(Entry(entry.path, content, wrapfun, wrapfun))
+    return results
+
+
 def read_and_wrap(spec: str,
                   *,
                   max_chunk_size: int = -1,
@@ -482,14 +547,14 @@ def read_and_wrap(spec: str,
         str: the wrapped content
     '''
     entries = read(spec, debgpt_home=debgpt_home)
+    if max_chunk_size > 0:
+        entries = ft.reduce(list.__add__,
+                            [chunk_entry(x, max_chunk_size) for x in entries])
     wrapped: str = ''
     for entry in entries:
-        if max_chunk_size > 0:
-            raise NotImplementedError('Chunking is not implemented yet.')
-            #wrapped += entry.wrapfun_chunk(entry.content, 0, max_chunk_size)
-        else:
-            wrapped += entry.wrapfun(entry.content)
+        wrapped += entry.wrapfun(entry.content)
     return wrapped
+
 
 
 
@@ -782,6 +847,9 @@ def main(argv: List[str] = sys.argv[1:]):
     else:
         for file in args.file:
             entries = read(file, debgpt_home=args.debgpt_home)
+            if args.chunk > 0:
+                entries = ft.reduce(list.__add__,
+                                    [chunk_entry(x, args.chunk) for x in entries])
             console.log('Specifier:', file)
             console.print(entries)
 

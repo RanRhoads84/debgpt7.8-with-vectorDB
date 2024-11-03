@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-from typing import List, Union
+from typing import List, Union, Dict, Tuple
 import pytest
 from debgpt import reader
 import os
@@ -400,6 +400,16 @@ def test_read_main(spec: str, tmpdir: object):
     else:
         reader.main([*args, '-f', spec])
         reader.main([*args, '-w', '-f', spec])
+        reader.main([*args, '-c', '1024', '-f', spec])
+        reader.main([*args, '-w', '-c', '1024', '-f', spec])
+
+def test_chunk_lines():
+    lines = 'test test test test test test'.split()
+    print('lines:', lines)
+    chunks = reader.chunk_lines(lines, 15)
+    assert len(chunks) == 2
+    chunks = reader.chunk_lines(lines, 5)
+    assert len(chunks) == 6
 
 
 #def test_mapreduce_load_file(tmp_path):
