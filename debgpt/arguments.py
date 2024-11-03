@@ -1,0 +1,667 @@
+'''
+MIT License
+
+Copyright (c) 2024 Mo Zhou <lumin@debian.org>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
+# suppress all warnings.
+import textwrap
+import rich
+import shlex
+import sys
+import os
+import re
+import difflib
+import argparse
+import concurrent.futures
+from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit import PromptSession
+from rich.panel import Panel
+from rich.rule import Rule
+from rich.markup import escape
+from rich.progress import track
+from prompt_toolkit.styles import Style
+from pygments import highlight
+from pygments.lexers import DiffLexer
+from pygments.formatters import TerminalFormatter
+from typing import List, Optional
+import warnings
+from .task import task_backend, task_git, task_git_commit, task_replay
+from .task import task_vdb, task_vdb_ls
+from . import defaults
+from . import reader
+from . import frontend
+from . import configurator
+
+warnings.filterwarnings("ignore")
+console = defaults.console
+
+
+
+def parse_args(argv):
+    '''
+    argparse with subparsers. Generate a config.toml template as byproduct.
+    '''
+
+    # helper functions
+    def __add_arg_to_config(template,
+                            parser,
+                            argname,
+                            formatter: callable = repr):
+        '''
+        We will create a template for the config.toml file, based on the
+        help messages of the argument parser. In that sense I do not have
+        to write everything twice, and this avoids many human errors.
+        '''
+        template += '\n'.join('# ' + x for x in textwrap.wrap(
+            parser._option_string_actions['--' + argname].help))
+        template += f'''\n{argname} = {formatter(getattr(conf, argname))}\n'''
+        return template
+
+    # if ~/.debgpt/config.toml exists, parse it to override the built-in defaults.
+    _verbose = any(x in argv for x in ('-v', '--verbose'))
+    conf = defaults.Config(verbose=_verbose)
+    # override the loaded configurations again with command line arguments
+    ag = argparse.ArgumentParser()
+
+    # CLI Behavior / Frontend Arguments
+    config_template = '''\
+##############################
+# Command Line Interface Behavior
+##############################
+\n'''
+    _g = ag.add_argument_group('Command Line Interface Behavior')
+    _g.add_argument('--quit',
+                    '-q',
+                    '-Q',
+                    action='store_true',
+                    help='directly quit after receiving the first response \
+from LLM, instead of staying in interation.')
+    _g.add_argument('--multiline',
+                    '-M',
+                    action='store_true',
+                    help='enable multi-line input for prompt_toolkit. \
+use Meta+Enter to accept the input instead.')
+    _g.add_argument(
+        '--hide_first',
+        '-H',
+        action='store_true',
+        help='hide the first (generated) prompt; do not print argparse results'
+    )
+    _g.add_argument('--verbose',
+                    '-v',
+                    action='store_true',
+                    help='verbose mode. helpful for debugging')
+    _g.add_argument('--output',
+                    '-o',
+                    type=str,
+                    default=None,
+                    help='write the last LLM message to specified file')
+    _g.add_argument('--inplace',
+                    '-i',
+                    type=str,
+                    default='',
+                    help='read file and perform inplace edit to it. \
+This option will toggle --quit and turn off markdown rendering.')
+    _g.add_argument(
+        '--inplace-git-add-commit',
+        action='store_true',
+        help=
+        'automatically `git add` (no human review) and `git commit` the changes to git repo.'
+    )
+    _g.add_argument(
+        '--inplace-git-add-p-commit',
+        '-I',
+        action='store_true',
+        help=
+        'automatically `git add -p` (with human review) and `git commit commit` the changes to git repo.'
+    )
+    _g.add_argument('--version',
+                    action='store_true',
+                    help='show DebGPT software version and quit.')
+    _g.add_argument('--debgpt_home',
+                    type=str,
+                    default=conf['debgpt_home'],
+                    help='directory to store cache and sessions.')
+    _g.add_argument(
+        '--frontend',
+        '-F',
+        type=str,
+        default=conf['frontend'],
+        choices=(
+            'dryrun',
+            # commercial services
+            'openai',
+            'anthropic',
+            'gemini',
+            # self-hosted services
+            'llamafile',
+            'ollama',
+            'vllm',
+            'zmq'),
+        help=f"default frontend is {conf['frontend']}. Available \
+choices are: (dryrun, zmq, openai, anthropic, gemini, zmq, llamafile, ollama, vllm).\
+The 'dryrun' is a fake frontend that will \
+do nothing other than printing the generated prompt. So that you can copy \
+it to web-based LLMs in that case.")
+    config_template = __add_arg_to_config(config_template, ag, 'frontend')
+
+    _g.add_argument('--monochrome',
+                    type=bool,
+                    default=conf['monochrome'],
+                    help='disable colorized output for prompt_toolkit.')
+    config_template = __add_arg_to_config(config_template,
+                                          _g,
+                                          'monochrome',
+                                          formatter=lambda x: str(x).lower())
+    _g.add_argument('--render_markdown',
+                    '--render',
+                    action=argparse.BooleanOptionalAction,
+                    default=conf['render_markdown'],
+                    help='render the LLM output as markdown with rich.')
+    config_template = __add_arg_to_config(config_template,
+                                          _g,
+                                          'render_markdown',
+                                          formatter=lambda x: str(x).lower())
+
+    # LLM Inference Arguments
+    config_template += '''\n
+###########################
+# Common Frontend Arguments
+###########################
+\n'''
+    _g = ag.add_argument_group('Common Frontend Arguments')
+    _g.add_argument(
+        '--temperature',
+        '-T',
+        type=float,
+        default=conf['temperature'],
+        help='''Sampling temperature. Typically ranges within [0,1]. \
+Low values like 0.2 gives more focused (coherent) answer. \
+High values like 0.8 gives a more random (creative) answer. \
+Not suggested to combine this with with --top_p. See \
+https://platform.openai.com/docs/api-reference/ \
+    ''')
+    config_template = __add_arg_to_config(config_template, _g, 'temperature')
+
+    _g.add_argument('--top_p',
+                    '-P',
+                    type=float,
+                    default=conf['top_p'],
+                    help='Top-p (nucleus) sampling.')
+    config_template = __add_arg_to_config(config_template, _g, 'top_p')
+
+    # Specific to OpenAI Frontend
+    config_template += '''\n
+#############################
+# Specific to OpenAI Frontend
+#############################
+\n'''
+    _g = ag.add_argument_group('OpenAI Frontend Options')
+    _g.add_argument('--openai_base_url',
+                    type=str,
+                    default=conf['openai_base_url'],
+                    help='OpenAI API is a widely adopted standard. You can \
+switch to other compatible service providers, or a self-hosted compatible \
+server.')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'openai_base_url')
+
+    _g.add_argument('--openai_api_key',
+                    type=str,
+                    default=conf['openai_api_key'],
+                    help='API key is necessary to access services including \
+OpenAI API server. https://platform.openai.com/api-keys')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'openai_api_key')
+
+    _g.add_argument('--openai_model',
+                    type=str,
+                    default=conf['openai_model'],
+                    help='For instance, gpt-3.5-turbo (4k context), \
+gpt-3.5-turbo-16k (16k context), gpt-4, gpt-4-32k (32k context). \
+Their prices vary. See https://platform.openai.com/docs/models .')
+    config_template = __add_arg_to_config(config_template, _g, 'openai_model')
+
+    _g.add_argument('--openai_embedding_model',
+                    type=str,
+                    default=conf['openai_embedding_model'],
+                    help='the openai embedding model to use')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'openai_embedding_model')
+
+    # Specific to Anthropic Frontend
+    config_template += '''\n
+##################################
+# Anthropic Frontend Options
+##################################
+\n'''
+    _g = ag.add_argument_group('Anthropic Frontend Options')
+    _g.add_argument('--anthropic_base_url',
+                    type=str,
+                    default=conf['anthropic_base_url'],
+                    help='the URL to the Anthropic JSON API service.')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'anthropic_base_url')
+
+    _g.add_argument('--anthropic_api_key',
+                    type=str,
+                    default=conf['anthropic_api_key'],
+                    help='Anthropic API key')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'anthropic_api_key')
+
+    _g.add_argument(
+        '--anthropic_model',
+        type=str,
+        default=conf['anthropic_model'],
+        help='the anthropic model, e.g., claude-3-5-sonnet-20241022')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'anthropic_model')
+
+    # Specific to Gemini Frontend
+    config_template += '''\n
+#########################
+# Gemini Frontend Options
+#########################
+\n'''
+    _g = ag.add_argument_group('Gemini Frontend Options')
+    _g.add_argument('--gemini_api_key',
+                    type=str,
+                    default=conf['gemini_api_key'],
+                    help='Gemini API key')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'gemini_api_key')
+
+    _g.add_argument('--gemini_model',
+                    type=str,
+                    default=conf['gemini_model'],
+                    help='the gemini model, e.g., gemini-1.5-flash')
+    config_template = __add_arg_to_config(config_template, _g, 'gemini_model')
+
+    _g.add_argument('--gemini_embedding_model',
+                    type=str,
+                    default=conf['gemini_embedding_model'],
+                    help='the gemini embedding model to use')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'gemini_embedding_model')
+
+    # Specific to Llamafile Frontend
+    config_template += '''\n
+############################
+# Llamafile Frontend Options
+############################
+\n'''
+    _g = ag.add_argument_group('Llamafile Frontend Options')
+    _g.add_argument('--llamafile_base_url',
+                    type=str,
+                    default=conf['llamafile_base_url'],
+                    help='the URL to the llamafile JSON API service.')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'llamafile_base_url')
+
+    # Specific to Ollama Frontend
+    config_template += '''\n
+#########################################################
+# Ollama Frontend Options (OpenAI compatibility mode)
+#########################################################
+\n'''
+    _g = ag.add_argument_group('Ollama Frontend Options')
+    _g.add_argument('--ollama_base_url',
+                    type=str,
+                    default=conf['ollama_base_url'],
+                    help='the URL to the Ollama JSON API service.')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'ollama_base_url')
+
+    _g.add_argument('--ollama_model',
+                    type=str,
+                    default=conf['ollama_model'],
+                    help='the model to use in Ollama. For instance, llama3.2')
+    config_template = __add_arg_to_config(config_template, _g, 'ollama_model')
+
+    # Specific to vLLM Frontend
+    config_template += '''\n
+###########################
+# vLLM Frontend Options
+###########################
+\n'''
+    _g = ag.add_argument_group('vLLM Frontend Options')
+    _g.add_argument('--vllm_base_url',
+                    type=str,
+                    default=conf['vllm_base_url'],
+                    help='the URL to the vllm JSON API service.')
+    config_template = __add_arg_to_config(config_template, _g, 'vllm_base_url')
+
+    _g.add_argument('--vllm_api_key',
+                    type=str,
+                    default=conf['vllm_api_key'],
+                    help='vLLM API key is necessary to access services')
+    config_template = __add_arg_to_config(config_template, _g, 'vllm_api_key')
+
+    _g.add_argument('--vllm_model',
+                    type=str,
+                    default=conf['vllm_model'],
+                    help='the model to use in vllm. For instance, llama3.2')
+    config_template = __add_arg_to_config(config_template, _g, 'vllm_model')
+
+    # Specific to ZMQ Frontend
+    config_template += '''\n
+##############################
+# ZMQ Frontend Options
+##############################
+\n'''
+    _g = ag.add_argument_group('ZMQ Frontend Options')
+    _g.add_argument(
+        '--zmq_backend',
+        type=str,
+        default=conf['zmq_backend'],
+        help='the ZMQ backend URL that the frontend will connect to')
+    config_template = __add_arg_to_config(config_template, _g, 'zmq_backend')
+
+    # Embedding Models
+    config_template += '''\n
+##############################
+# Embedding Models
+##############################
+\n'''
+    _g = ag.add_argument_group('Embedding Models')
+    _g.add_argument('--embedding_frontend',
+                    type=str,
+                    default=conf['embedding_frontend'],
+                    help='the embedding frontend to use')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'embedding_frontend')
+    _g.add_argument('--embedding_dim',
+                    type=int,
+                    default=conf['embedding_dim'],
+                    help='the embedding dimension')
+    config_template = __add_arg_to_config(config_template, _g, 'embedding_dim')
+
+    # Prompt Loaders (numbered list). You can specify them multiple times.
+    # for instance, `debgpt -H -f foo.py -f bar.py`.
+    config_template += '''\n
+##############################
+# Prompt reader
+##############################
+\n'''
+    # -- 1. Debian BTS
+    _g = ag.add_argument_group('Prompt reader')
+    _g.add_argument(
+        '--bts',
+        type=str,
+        default=[],
+        action='append',
+        help='Retrieve BTS webpage to prompt. example: "src:pytorch", "1056388"'
+    )
+    _g.add_argument('--bts_raw',
+                    action='store_true',
+                    help='load raw HTML instead of plain text.')
+    # -- 2. Custom Command Line(s)
+    _g.add_argument('--cmd',
+                    type=str,
+                    default=[],
+                    action='append',
+                    help='add the command line output to the prompt')
+    # -- 3. Debian Buildd
+    _g.add_argument('--buildd',
+                    type=str,
+                    default=[],
+                    action='append',
+                    help='Retrieve buildd page for package to prompt.')
+    # -- 4. Arbitrary Plain Text File(s)
+    _g.add_argument('--file',
+                    '-f',
+                    type=str,
+                    default=[],
+                    action='append',
+                    help='load specified file(s) in prompt. A special syntax \
+                    is supported: "--file filename:start_line:end_line"')
+    # -- 5. Debian Policy
+    _g.add_argument(
+        '--policy',
+        type=str,
+        default=[],
+        action='append',
+        help='load specified policy section(s). (e.g., "1", "4.6")')
+    # -- 6. Debian Developers References
+    _g.add_argument('--devref',
+                    type=str,
+                    default=[],
+                    action='append',
+                    help='load specified devref section(s).')
+    # -- 7. TLDR Manual Page
+    _g.add_argument('--tldr',
+                    type=str,
+                    default=[],
+                    action='append',
+                    help='add tldr page to the prompt.')
+    # -- 8. Man Page
+    _g.add_argument(
+        '--man',
+        type=str,
+        default=[],
+        action='append',
+        help='add man page to the prompt. Note the context length!')
+    # -- 9. Arbitrary HTML document
+    _g.add_argument('--html',
+                    type=str,
+                    default=[],
+                    action='append',
+                    help='load HTML document from given URL(s)')
+    # -- 10. CPython What's New
+    _g.add_argument(
+        '--pynew',
+        type=str,
+        default=[],
+        action='append',
+        help=
+        "load CPython What's New website, e.g. '3.12:summary-release-highlights'"
+    )
+    # -- 11. Arch Wiki
+    _g.add_argument('--archw',
+                    type=str,
+                    default=[],
+                    action='append',
+                    help='load Arch Wiki. e.g., "Archiving_and_compression"')
+    # -- 12. PDF File
+    _g.add_argument('--pdf',
+                    type=str,
+                    default=[],
+                    action='append',
+                    help='load texts from PDF file(s)')
+    # -- 998. The special query buider for mapreduce chunks
+    _g.add_argument('--mapreduce',
+                    '--map',
+                    '-x',
+                    action='append',
+                    type=str,
+                    help='load any file or directory for an answer')
+    _g.add_argument('--mapreduce_chunksize',
+                    '--map_chunksize',
+                    type=int,
+                    default=conf['mapreduce_chunksize'],
+                    help='context chunk size for mapreduce')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'mapreduce_chunksize')
+    _g.add_argument('--mapreduce_parallelism',
+                    '--mapreduce_jobs',
+                    '--map_parallelism',
+                    '--map_jobs',
+                    type=int,
+                    default=conf['mapreduce_parallelism'],
+                    help='number of parallel processes in mapreduce')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'mapreduce_parallelism')
+    # -- 999. The Question Template at the End of Prompt
+    _g.add_argument('--ask',
+                    '-A',
+                    '-a',
+                    type=str,
+                    default='',
+                    help="User question to append at the end of the prompt. ")
+
+    # Task Specific Subparsers
+    subps = ag.add_subparsers(dest='subparser_name',
+                              help='specific task handling')
+    ag.set_defaults(func=lambda ag: None)  # if no subparser is specified
+
+    # Specific to ZMQ Backend (self-hosted LLM Inference)
+    ps_backend = subps.add_parser(
+        'backend', help='start backend server (self-hosted LLM inference)')
+    ps_backend.add_argument('--port',
+                            '-p',
+                            type=int,
+                            default=11177,
+                            help='port number "11177" looks like "LLM"')
+    ps_backend.add_argument('--host', type=str, default='tcp://*')
+    ps_backend.add_argument('--backend_impl',
+                            type=str,
+                            default='zmq',
+                            choices=('zmq', ))
+    ps_backend.add_argument('--max_new_tokens', type=int, default=512)
+    ps_backend.add_argument('--llm', type=str, default='Mistral7B')
+    ps_backend.add_argument('--device', type=str, default='cuda')
+    ps_backend.add_argument('--precision', type=str, default='fp16')
+    ps_backend.set_defaults(func=task_backend)
+
+    # Task: git
+    ps_git = subps.add_parser('git', help='git command wrapper')
+    ps_git.set_defaults(func=task_git)
+    git_subps = ps_git.add_subparsers(help='git commands')
+    # Task: git commit
+    ps_git_commit = git_subps.add_parser(
+        'commit',
+        aliases=['co'],
+        help='directly commit staged changes with auto-generated message')
+    ps_git_commit.set_defaults(func=task_git_commit)
+    ps_git_commit.add_argument('--amend',
+                               action='store_true',
+                               help='amend the last commit')
+
+    # subcommand: vdb (VectorDB)
+    ps_vdb = subps.add_parser('vdb', help='VectorDB command')
+    ps_vdb.add_argument('--db',
+                        type=str,
+                        default=conf['db'],
+                        help='path to the VectorDB database')
+    ps_vdb.set_defaults(func=task_vdb)
+    vdb_subps = ps_vdb.add_subparsers(help='vdb subcommands')
+    # subsubcommand: vdb ls
+    ps_vdb_ls = vdb_subps.add_parser('ls',
+                                     help='list all vectors in the database')
+    ps_vdb_ls.set_defaults(func=task_vdb_ls)
+
+    # Task: replay
+    ps_replay = subps.add_parser('replay',
+                                 help='replay a conversation from a JSON file')
+    ps_replay.add_argument('json_file_path',
+                           type=str,
+                           nargs='?',
+                           help='path to the JSON file')
+    ps_replay.set_defaults(func=task_replay)
+
+    # Task: stdin
+    ps_stdin = subps.add_parser(
+        'stdin',
+        help='read stdin as the first prompt. Should combine with -Q.')
+    ps_stdin.set_defaults(func=lambda ag: reader.stdin())
+
+    # Task: pipe
+    ps_pipe = subps.add_parser(
+        'pipe',
+        help='read stdin, print nothing other than LLM response to stdout. \
+This option will automatically mandate --no-render_markdown, -Q and -H.')
+    ps_pipe.set_defaults(func=lambda ag: reader.stdin())
+
+    # Task: genconfig
+    ps_genconfig = subps.add_parser('genconfig',
+                                    aliases=['genconf', 'config.toml'],
+                                    help='generate config.toml file template')
+    ps_genconfig.set_defaults(func=generate_config_file)
+
+    # Task: config or reconfigure
+    ps_config = subps.add_parser('config',
+                                 help='reconfigure debgpt with a wizard')
+    ps_config.set_defaults(func=reconfigure)
+
+    # -- parse and sanitize
+    ag = ag.parse_args(argv)
+    ag.config_template = config_template
+
+    # -- mandate argument requirements for some options
+    if ag.inplace:
+        # we will toggle --quit and turn off markdown rendering
+        ag.quit = True
+        ag.render_markdown = False
+        # we assume the user wants to edit the file inplace, and provides
+        # the editing instruction through --ask|-a. Here we will append
+        # some addition prompt to reduce LLM noise.
+        ag.ask += ' Just show me the result and do not say anything else. No need to enclose the result using "```".'
+    if ag.subparser_name == 'stdin':
+        ag.quit = True
+    if ag.subparser_name == 'pipe':
+        ag.quit = True
+        ag.hide_first = True
+        ag.render_markdown = False
+        ag.ask += 'Just show the full result and do not say anything else. Do not enclose the result using "```".'
+
+    return ag
+
+
+def parse_args_order(argv) -> List[str]:
+    '''
+    parse the order of selected arguments
+
+    We want `debgpt -f file1.txt -f file2.txt` generate different results
+    than    `debgpt -f file2.txt -f file1.txt`. But the standard argparse
+    will not reserve the order.
+
+    For example, we need to match
+    -f, --file, -Hf (-[^-]*f), into --file
+    '''
+    order: List[str] = []
+
+    def _match_ls(probe: str, long: str, short: str, dest: List[str]):
+        if any(probe == x for x in (long, short)) \
+                or any(probe.startswith(x+'=') for x in (long, short)) \
+                or re.match(r'-[^-]*'+short[-1], probe):
+            dest.append(long.lstrip('--'))
+
+    def _match_l(probe: str, long: str, dest: List[str]):
+        if probe == long or probe.startswith(long + '='):
+            dest.append(long.lstrip('--'))
+
+    for item in argv:
+        _match_l(item, '--bts', order)
+        _match_l(item, '--cmd', order)
+        _match_l(item, '--buildd', order)
+        _match_ls(item, '--file', '-f', order)
+        _match_ls(item, '--inplace', '-i', order)
+        _match_l(item, '--policy', order)
+        _match_l(item, '--devref', order)
+        _match_l(item, '--tldr', order)
+        _match_l(item, '--man', order)
+        _match_l(item, '--html', order)
+        _match_l(item, '--pynew', order)
+        _match_l(item, '--archw', order)
+        _match_l(item, '--pdf', order)
+        _match_ls(item, '--mapreduce', '-x', order)
+    return order
