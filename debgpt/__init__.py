@@ -26,3 +26,8 @@ __copyright__ = '2024, Mo Zhou <lumin@debian.org>'
 __license__ = 'MIT'
 # do not load all components.
 # some components like llm, and backend, requires much more dependencies
+
+def version() -> None:
+    console.print(f'DebGPT {__version__}')
+    console.print(f'Copyright {__copyright__}')
+    console.print(f'Released under {__license__} license.'

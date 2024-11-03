@@ -55,13 +55,6 @@ warnings.filterwarnings("ignore")
 console = defaults.console
 
 
-def version() -> None:
-    from debgpt import __version__, __copyright__, __license__
-    console.print(
-        f'DebGPT {__version__}; Copyright {__copyright__}; Released under {__license__} license.'
-    )
-
-
 def generate_config_file(ag) -> None:
     '''
     special task: generate config template, print and quit
