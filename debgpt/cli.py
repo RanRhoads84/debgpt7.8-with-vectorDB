@@ -896,67 +896,6 @@ def gather_information_ordered(msg: Optional[str], ag,
     return msg
 
 
-def interactive_mode(f: frontend.AbstractFrontend, ag):
-    # create prompt_toolkit style
-    if ag.monochrome:
-        prompt_style = Style([])
-    else:
-        prompt_style = Style([('prompt', 'bold fg:ansibrightcyan'),
-                              ('', 'bold ansiwhite')])
-
-    # Completer with several keywords keywords to be completed
-    class CustomCompleter(Completer):
-
-        def get_completions(self, document, complete_event):
-            # Get the current text before the cursor
-            text_before_cursor = document.text_before_cursor
-
-            # Check if the text starts with '/'
-            if text_before_cursor.startswith('/'):
-                # Define the available keywords
-                keywords = ['/save', '/reset']
-
-                # Generate completions for each keyword
-                for keyword in keywords:
-                    if keyword.startswith(text_before_cursor):
-                        yield Completion(keyword, -len(text_before_cursor))
-
-    # start prompt session
-    prompt_session = PromptSession(style=prompt_style,
-                                   multiline=ag.multiline,
-                                   completer=CustomCompleter())
-
-    # loop
-    try:
-        while text := prompt_session.prompt(
-                f'{os.getlogin()}[{max(1, len(f.session))}]> '):
-            # parse escaped interaction commands
-            if text.startswith('/'):
-                cmd = shlex.split(text)
-                if cmd[0] == '/save':
-                    # save the last LLM reply to a file
-                    if len(cmd) != 2:
-                        console.print('syntax error: /save <path>')
-                        continue
-                    path = cmd[-1]
-                    with open(path, 'wt') as fp:
-                        fp.write(f.session[-1]['content'])
-                    console.log(f'The last LLM response is saved at {path}')
-                elif cmd[0] == '/reset':
-                    if len(cmd) != 1:
-                        console.print('syntax error: /reset')
-                        continue
-                    f.reset()
-                else:
-                    console.print(f'unknown command: {cmd[0]}')
-            else:
-                frontend.query_once(f, text)
-    except EOFError:
-        pass
-    except KeyboardInterrupt:
-        pass
-
-
 def main(argv=sys.argv[1:]):
     # parse args and prepare debgpt_home
     ag = parse_args(argv)

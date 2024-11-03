@@ -97,6 +97,7 @@ class AbstractFrontend():
         self.session = []
         self.debgpt_home = args.debgpt_home
         self.monochrome = args.monochrome
+        self.multiline = args.multiline
         self.render_markdown = args.render_markdown
         if args.subparser_name not in ('genconfig', 'genconf', 'config.toml'):
             # in order to avoid including the frontend and UUID into the
@@ -523,7 +524,7 @@ def create_frontend(args):
     return frontend
 
 
-def query_once(f: AbstractFrontend, text: str) -> None:
+def interact_once(f: AbstractFrontend, text: str) -> None:
     '''
     we have prepared text -- let frontend send it to LLM, and this function
     will print the LLM reply.
@@ -544,6 +545,54 @@ def query_once(f: AbstractFrontend, text: str) -> None:
         with Status('LLM', spinner='line'):
             _ = f(text)
 
+
+def interact_with(f: frontend.AbstractFrontend) -> None:
+    # create prompt_toolkit style
+    if f.monochrome:
+        prompt_style = Style([('prompt', 'bold')])
+    else:
+        prompt_style = Style([('prompt', 'bold fg:ansibrightcyan'),
+                              ('', 'bold ansiwhite')])
+
+    # Completer with several keywords keywords to be completed
+    class CustomCompleter(Completer):
+
+        def get_completions(self, document, complete_event):
+            # Get the current text before the cursor
+            text_before_cursor = document.text_before_cursor
+
+            # Check if the text starts with '/'
+            if text_before_cursor.startswith('/'):
+                # Define the available keywords
+                keywords = ['/save', '/reset']
+
+                # Generate completions for each keyword
+                for keyword in keywords:
+                    if keyword.startswith(text_before_cursor):
+                        yield Completion(keyword, -len(text_before_cursor))
+
+    # start prompt session
+    prompt_session = PromptSession(style=prompt_style,
+                                   multiline=f.multiline,
+                                   completer=CustomCompleter())
+
+    # loop
+    try:
+        while text := prompt_session.prompt(
+                f'{os.getlogin()}[{max(1, len(f.session))}]> '):
+            # parse escaped interaction commands
+            if text.startswith('/'):
+                cmd = shlex.split(text)
+                if cmd[0] == '/save':
+                    # save the last LLM reply to a file
+                    if len(cmd) != 2:
+                        console.print('syntax error: /save <path>')
+                        continue
+                    path = cmd[-1]
+                    with open(path, 'wt') as fp:
+                        fp.write(f.session[-1]['content'])
+                    console.log(f'The last LLM response is saved at {path}')
+                elif cmd[0] == '/reset':
 
 if __name__ == '__main__':
     ag = argparse.ArgumentParser()
