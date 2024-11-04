@@ -36,8 +36,6 @@ from pygments.lexers import DiffLexer
 from pygments.formatters import TerminalFormatter
 from typing import List, Optional
 import warnings
-from .task import task_backend, task_git, task_git_commit, task_replay
-from .task import task_vdb, task_vdb_ls
 from . import defaults
 from . import reader
 from . import frontend
@@ -59,7 +57,7 @@ warnings.filterwarnings("ignore")
 console = defaults.console
 
 
-def task_backend(ag) -> None:
+def subcmd_backend(ag) -> None:
     from . import backend
     b = backend.create_backend(ag)
     try:
@@ -70,7 +68,7 @@ def task_backend(ag) -> None:
     exit(0)
 
 
-def task_replay(ag) -> None:
+def subcmd_replay(ag) -> None:
     from . import replay
     if ag.json_file_path is None:
         json_path = reader._latest_glob(os.path.join(ag.debgpt_home, '*.json'))
@@ -81,23 +79,23 @@ def task_replay(ag) -> None:
     exit(0)
 
 
-def task_vdb(ag) -> None:
+def subcmd_vdb(ag) -> None:
     console.print("[red]debgpt: vdb: no subcommand specified.[/red]")
     exit(1)
 
 
-def task_vdb_ls(ag) -> None:
+def subcmd_vdb_ls(ag) -> None:
     vdb = vectordb.VectorDB(ag.db, ag.embedding_dim)
     vdb.ls()
     exit(0)
 
 
-def task_git(ag) -> None:
+def subcmd_git(ag) -> None:
     console.print("[red]debgpt: git: no subcommand specified.[/red]")
     exit(1)
 
 
-def task_git_commit(ag) -> None:
+def subcmd_git_commit(ag) -> None:
     f = ag.frontend_instance
     msg = "Previous commit titles:\n"
     msg += "```"
@@ -487,7 +485,7 @@ def main(argv=sys.argv[1:]):
             else:
                 os.system(f'git add {ag.inplace}')
             ag.amend = False  # no git commit --amend.
-            task_git_commit(ag)
+            subcmd_git_commit(ag)
 
     # dump session to json
     f.dump()
