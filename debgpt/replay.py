@@ -19,7 +19,6 @@ from rich.panel import Panel
 from rich.markdown import Markdown
 import json
 import argparse
-import rich
 from typing import Dict, Any
 from .defaults import console
 

@@ -14,6 +14,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
+from typing import Optional
 import textwrap
 import sys
 from typing import Union, List, Tuple
@@ -212,14 +213,17 @@ class VectorDB:
             documents.append(doc)
         return documents
 
-    def ls(self) -> List[List[Union[int, str, np.ndarray]]]:
+    def ls(self, id: Optional[int] = None) -> List[List[Union[int, str, np.ndarray]]]:
         '''
         List all vectors in the database.
 
         Returns:
             List[List[Union[int, str, np.ndarray]]]: All vectors and their metadata.
         '''
-        vectors: List[List[Union[int, str, np.ndarray]]] = self.get_all()
+        if id is not None:
+            vectors: List[List[Union[int, str, np.ndarray]]] = [self.get_byid(id)]
+        else:
+            vectors: List[List[Union[int, str, np.ndarray]]] = self.get_all()
         for v in vectors:
             idx, source, text, vector = v
             console.print(
@@ -227,7 +231,7 @@ class VectorDB:
                 f'len(vector)={len(vector)},',
                 f'len(text)={len(text):5d}',
                 f'source={repr(source)},',
-                f'text={textwrap.shorten(text, 16)}',
+                f'text={textwrap.shorten(text, 32)}',
             )
         return vectors
 
@@ -242,12 +246,11 @@ class VectorDB:
         idx, source, text, vector = vector
         print(
             f'[{idx:4d}]',
-            f'len(vector)={len(vector)}',
             f'source={repr(source)},',
             f'text={repr(text)}',
+            f'\nlen(vector)={len(vector)}',
+            f'\nvector={vector}',
         )
-        print('vector=', vector)
-        print('text=', text)
 
 
 def main(argv: List[str]) -> None:
@@ -263,24 +266,19 @@ def main(argv: List[str]) -> None:
                         default='VectorDB.sqlite',
                         help='Database file name')
     subparsers = parser.add_subparsers(dest='action')
-    parser_demo = subparsers.add_parser('demo')
+    _ = subparsers.add_parser('demo')
     parser_ls = subparsers.add_parser('ls')
+    parser_ls.add_argument('id', type=int, default=None, nargs='?',
+                           help='ID of the vector to list')
     parser_show = subparsers.add_parser('show')
     parser_show.add_argument('id', type=int, help='ID of the vector to show')
     parser_rm = subparsers.add_parser('rm')
     parser_rm.add_argument('id', type=int, help='ID of the vector to remove')
     args = parser.parse_args(argv)
 
-    if args.action == 'demo':
+    if args.action == 'ls':
         db = VectorDB(args.db)
-        for i in range(10):
-            v: np.ndarray = np.random.rand(256)
-            db.add(f'vector_{i}', str(v), v)
-        db.add(f'ones', str(np.ones(256)), np.ones(256))
-        db.close()
-    elif args.action == 'ls':
-        db = VectorDB(args.db)
-        db.ls()
+        db.ls(args.id)
         db.close()
     elif args.action == 'show':
         db = VectorDB(args.db)
@@ -290,6 +288,13 @@ def main(argv: List[str]) -> None:
         db = VectorDB(args.db)
         db.delete_byid(args.id)
         console.log(f'Deleted vector with id={args.id}')
+        db.close()
+    elif args.action == 'demo':
+        db = VectorDB(args.db)
+        for i in range(10):
+            v: np.ndarray = np.random.rand(256)
+            db.add(f'vector_{i}', str(v), v)
+        db.add('ones', str(np.ones(256)), np.ones(256))
         db.close()
     else:
         parser.print_help()

@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import Iterable, Optional, Dict
 import urwid
 import os
-import rich
 from . import defaults
 
 default = defaults.Config(verbose=True)
