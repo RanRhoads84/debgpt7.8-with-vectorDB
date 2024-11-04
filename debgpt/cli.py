@@ -42,6 +42,7 @@ from . import defaults
 from . import reader
 from . import frontend
 from . import configurator
+from . import arguments
 
 warnings.filterwarnings("ignore")
 
@@ -271,8 +272,13 @@ def gather_information_ordered(msg: Optional[str], ag,
 
 
 def main(argv=sys.argv[1:]):
-    # parse args and prepare debgpt_home
-    ag = parse_args(argv)
+    # parse args, argument order, and prepare debgpt_home
+    ag = arguments.parse_args(argv)
+    ag_order = arguments.parse_args_order(argv)
+    if ag.verbose:
+        console.log('Arguments:', ag)
+        console.log('Argument Order:', ag_order)
+
     if ag.version:
         version()
         exit(0)
@@ -288,11 +294,6 @@ def main(argv=sys.argv[1:]):
             os.path.expanduser('~/.debgpt/config.toml'))
         exit(0)
 
-    # parse argument order
-    ag_order = parse_args_order(argv)
-    if ag.verbose:
-        console.log('Argument Order:', ag_order)
-
     # initialize the frontend
     f = frontend.create_frontend(ag)
     ag.frontend_instance = f
@@ -300,7 +301,7 @@ def main(argv=sys.argv[1:]):
     # create task-specific prompts. note, some special tasks will exit()
     # in their subparser default function when then finished, such as backend,
     # version, etc. They will exit.
-    msg = ag.func(ag)
+    msg = None  # ag.func(ag)
     if ag.subparser_name == 'pipe':
         msg = 'The following content are to be modified:\n```\n' + msg
         msg += '\n```\n\n'
@@ -323,11 +324,11 @@ def main(argv=sys.argv[1:]):
             console.print(Panel(escape(msg), title='Initial Prompt'))
 
         # query the backend
-        frontend.query_once(f, msg)
+        frontend.interact_once(f, msg)
 
     # drop the user into interactive mode if specified (-i)
     if not ag.quit:
-        interactive_mode(f, ag)
+        frontend.interact_with(f)
 
     # inplace mode: write the LLM response back to the file
     if ag.inplace:

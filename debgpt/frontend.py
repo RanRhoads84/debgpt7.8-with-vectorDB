@@ -603,7 +603,7 @@ def interact_with(f: AbstractFrontend) -> None:
                 else:
                     console.print(f'unknown command: {cmd[0]}')
             else:
-                frontend.query_once(f, text)
+                interact_once(f, text)
     except EOFError:
         pass
     except KeyboardInterrupt:
