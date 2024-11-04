@@ -14,30 +14,24 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union
 import argparse
 import os
 import json
-import rich
 import uuid
 import sys
 import time
 import functools as ft
+import shlex
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.styles import Style
-from pygments import highlight
-from pygments.formatters import TerminalFormatter
-from pygments.lexers import DiffLexer
 from rich.console import Console
 from rich.live import Live
+from rich.status import Status
 from rich.markdown import Markdown
 from rich.markup import escape
-from rich.panel import Panel
-from rich.progress import track
-from rich.rule import Rule
-from rich.status import Status
 
 from . import defaults
 
@@ -75,7 +69,7 @@ def retry_ratelimit(func: callable,
             try:
                 result = func(*args, **kwargs)
                 break
-            except exception as e:
+            except exception:
                 console.log(
                     f'Rate limit reached. Will retry after {retry_interval} seconds.'
                 )
@@ -567,7 +561,7 @@ def interact_with(f: AbstractFrontend) -> None:
             # Check if the text starts with '/'
             if text_before_cursor.startswith('/'):
                 # Define the available keywords
-                keywords = ['/save', '/reset']
+                keywords = ['/quit', '/save', '/reset']
 
                 # Generate completions for each keyword
                 for keyword in keywords:
@@ -600,6 +594,11 @@ def interact_with(f: AbstractFrontend) -> None:
                         console.print('syntax error: /reset')
                         continue
                     f.reset()
+                elif cmd[0] == '/quit':
+                    if len(cmd) != 1:
+                        console.print('syntax error: /quit')
+                        continue
+                    break
                 else:
                     console.print(f'unknown command: {cmd[0]}')
             else:
