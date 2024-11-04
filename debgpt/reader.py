@@ -30,7 +30,7 @@ import mimetypes
 import tenacity
 import concurrent.futures
 from urllib.parse import urlparse
-from urllib.request import urlopen, Request
+from urllib.request import urlopen
 import urllib.parse
 from . import policy as debian_policy
 from .defaults import console
@@ -161,7 +161,7 @@ def read_directory(path: str) -> List[Tuple[str, str]]:
             path = os.path.join(root, file)
             try:
                 content = read_file(path)
-            except TypeError as e:
+            except TypeError:
                 console.log(f'Skipping unsupported file `{path}`.')
                 content = ''
             contents.append((path, content))

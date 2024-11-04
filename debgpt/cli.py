@@ -43,6 +43,7 @@ from . import reader
 from . import frontend
 from . import configurator
 from . import arguments
+from debgpt import version
 
 warnings.filterwarnings("ignore")
 

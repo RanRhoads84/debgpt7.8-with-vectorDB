@@ -18,7 +18,6 @@ from rich.status import Status
 from typing import List, Dict
 import argparse
 import zmq
-import rich
 import torch as th
 from . import llm
 from .defaults import console

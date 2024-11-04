@@ -15,13 +15,11 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
 from typing import List, Union, Callable, Any
+import time
 import sys
-import os
 import argparse
-import rich
 import numpy as np
 import functools as ft
-from rich.console import Console
 from . import defaults
 
 console = defaults.console
@@ -51,7 +49,7 @@ def retry_ratelimit(func: Callable,
             try:
                 result = func(*args, **kwargs)
                 break
-            except exception as e:
+            except exception:
                 console.log(
                     f'Rate limit reached. Will retry after {retry_interval} seconds.'
                 )
@@ -298,13 +296,13 @@ def main(argv: List[str]) -> None:
 
     model = get_embedding_model(conf)
     vector = model.embed(args.text)
-    print(f'vector.shape:', vector.shape)
-    print(f'vector.min:', vector.min())
-    print(f'vector.max:', vector.max())
-    print(f'vector.mean:', vector.mean())
-    print(f'vector.std:', vector.std())
-    print(f'vector[:10]:', vector[:10])
-    print(f'vector[-10:]:', vector[-10:])
+    print('vector.shape:', vector.shape)
+    print('vector.min:', vector.min())
+    print('vector.max:', vector.max())
+    print('vector.mean:', vector.mean())
+    print('vector.std:', vector.std())
+    print('vector[:10]:', vector[:10])
+    print('vector[-10:]:', vector[-10:])
 
 
 if __name__ == '__main__':  # pragma: no cover

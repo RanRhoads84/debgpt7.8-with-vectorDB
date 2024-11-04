@@ -129,7 +129,6 @@ class DebianDevref(DebianPolicy):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    import numpy as np
     # Test the DebianPolicy class.
     p = DebianPolicy()
     print('Policy total length', len(str(p).encode()), 'bytes')

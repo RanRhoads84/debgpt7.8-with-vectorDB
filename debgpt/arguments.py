@@ -454,6 +454,7 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
     # subsubcommand: vdb ls
     ps_vdb_ls = vdb_subps.add_parser('ls',
                                      help='list all vectors in the database')
+    ps_vdb_ls.add_argument('id', type=str, default=None, nargs='?', help='vector ID')
 
     # Task: replay
     ps_replay = subps.add_parser('replay',
@@ -464,23 +465,23 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
                            help='path to the JSON file')
 
     # Task: stdin
-    ps_stdin = subps.add_parser(
+    _ = subps.add_parser(
         'stdin',
         help='read stdin as the first prompt. Should combine with -Q.')
 
     # Task: pipe
-    ps_pipe = subps.add_parser(
+    _ = subps.add_parser(
         'pipe',
         help='read stdin, print nothing other than LLM response to stdout. \
 This option will automatically mandate --no-render_markdown, -Q and -H.')
 
     # Task: genconfig
-    ps_genconfig = subps.add_parser('genconfig',
+    _ = subps.add_parser('genconfig',
                                     aliases=['genconf', 'config.toml'],
                                     help='generate config.toml file template')
 
     # Task: config or reconfigure
-    ps_config = subps.add_parser('config',
+    _ = subps.add_parser('config',
                                  help='reconfigure debgpt with a wizard')
 
     # -- parse and sanitize

@@ -22,6 +22,6 @@ __license__ = 'LGPL-3.0-or-later'
 
 
 def version() -> None:
-    console.print(f'DebGPT {__version__}')
-    console.print(f'Copyright {__copyright__}')
-    console.print(f'Released under {__license__} license.')
+    print(f'DebGPT {__version__}')
+    print(f'Copyright {__copyright__}')
+    print(f'Released under {__license__} license.')

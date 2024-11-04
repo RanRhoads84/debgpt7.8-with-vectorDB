@@ -14,12 +14,10 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-from typing import List, Union
+from typing import List
 import sys
 import argparse
-import rich
 import numpy as np
-import functools as ft
 from rich.status import Status
 from . import defaults
 from . import vectordb
@@ -101,7 +99,7 @@ class VectorRetriever(object):
         Returns:
             the computed vector.
         '''
-        with Status(f'computing embedding ...', console=console) as status:
+        with Status('computing embedding ...', console=console):
             vector = self.model.embed(text)
         self.vdb.add(source, text, vector)
         return vector
@@ -117,7 +115,7 @@ class VectorRetriever(object):
         Returns:
             a list of computed vectors.
         '''
-        with Status(f'computing embedding ...', console=console) as status:
+        with Status('computing embedding ...', console=console):
             vectors = self.model.batch_embed(texts)
         for source, text, vector in zip(sources, texts, vectors):
             self.vdb.add(source, text, vector)
