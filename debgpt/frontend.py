@@ -573,6 +573,10 @@ def interact_with(f: AbstractFrontend) -> None:
                                    multiline=f.multiline,
                                    completer=CustomCompleter())
 
+    # if multiline is enabled, print additional help message
+    if f.multiline:
+        console.print('In multiline mode, please press [Meta+Enter], or [Esc] followed by [Enter] to send the message.')
+
     # loop
     try:
         while text := prompt_session.prompt(
