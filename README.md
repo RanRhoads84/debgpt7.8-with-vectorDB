@@ -12,34 +12,24 @@ DebGPT - General Purpose Terminal LLM Tool with Some Debian-Specific Design
 SYNOPSIS
 ========
 
-`debgpt [CLI-options] [frontend-options] [readers] [subcommands [subcommand-args]]`
+`debgpt [arguments] [subcommand [subcommand-arguments]]`
 
 DESCRIPTION
 ===========
 
-Large Language Models (LLMs) are capable of handling tasks that traditional
-software could never achieve or even imagine, such as writing/editing code
-based on user instruction. DebGPT is a light-weight (depend on as less Python
-libraries as possible) terminal tool designed for general daily usage of LLM in
-terminal, as well as exploring the possibility of leveraging LLMs to aid Debian
-development, in any extent.
+DebGPT is a lightweight terminal tool designed for everyday use with Large
+Language Models (LLMs), aiming to explore their potential in aiding
+Debian/Linux development.
 
-With DebGPT, you can ask LLM to read a file, summarize a document, answer a
-question based on a long context, edit a file, generate a git commit message
-for staged files, as long as you can imagine and provide the necessary
-information for it.  The information sources supported by this tool include
-but are not limited to files, directories, URLs, PDFs, Debian BTS, Debian
-buildd, Debian Policy, system manual pages, tldr manuals, Debian Developer
-References, command lines, Google search results, retrieval results (for
-retrieval-augmented generation), and more.
+LLMs can perform tasks beyond the capabilities of traditional software, such as
+summarizing documents, answering questions, and writing or editing code. DebGPT
+gathers relevant information from various sources like files, directories, and
+URLs, and compiles it into a prompt for the LLM.
 
-Essentially, the idea of this tool is to gather information that might be
-relevant to the user instruction, including some Debian/Linux-specific
-knowledge, and combine them together in a prompt to be sent to LLM.
-
-DebGPT supports various LLM service providers, either commercial or
+DebGPT supports a range of LLM service providers, both commercial and
 self-hosted, including OpenAI, Anthropic, Google Gemini, Ollama, LlamaFile,
-vLLM, and ZMQ (DebGPT's built-in backend to make it self-contained). 
+vLLM, and ZMQ (DebGPT's built-in backend for self-containment). It also offers
+Retrieval-Augmented Generation (RAG) using language embedding models.
 
 
 QUICK START
