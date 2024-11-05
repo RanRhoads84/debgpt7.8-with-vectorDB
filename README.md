@@ -42,8 +42,8 @@ self-hosted, including OpenAI, Anthropic, Google Gemini, Ollama, LlamaFile,
 vLLM, and ZMQ (DebGPT's built-in backend to make it self-contained). 
 
 
-QUICK START AND CONFIGURATION
-=============================
+QUICK START
+===========
 
 First, install `DebGPT` from PyPI or Git repository:
 
@@ -52,21 +52,19 @@ pip3 install debgpt
 pip3 install git+https://salsa.debian.org/deeplearning-team/debgpt.git
 ```
 
-Upon fresh installation, running `debgpt` or `debgpt config` command will
-launch a configuration wizard. Follow the guide to setup, and it will create
-a minimal config file. If you want to reconfigure, use `$ debgpt config`.
-The configuration file is placed at `$HOME/.debgpt/config.toml`.
+Upon fresh installation, the user needs to first configure it with
+`debgpt config` (a TUI-based configuration wizard):
 
 ```
 # configure or re-configure the tool through a TUI wizard
 debgpt config
 ```
 
-After that you can start using the tool. Here are some quick examples:
+After the configuration process, we can try some quick examples:
 
 ```
 # Make a quick question and quit
-debgpt -qa 'translate "unix is user-friendly" to chinese'
+debgpt -qa 'what can you do?'
 
 # Start interactive chat with LLM
 debgpt
@@ -76,8 +74,9 @@ Tips: The bare minimum "configuration" required to make `debgpt` work is
 `export OPENAI_API_KEY="your-api-key"`. This can even skip `debgpt config`.
 
 Tips: For advanced usage such as switching to different frontends using 
-`--frontend|-F`, you may use `debgpt genconfig` or `debgpt config.toml`
-to generate a complete config template.
+`--frontend|-F`, you may use `debgpt genconfig` to generate a complete
+config template. Place the edited configuration file
+at `$HOME/.debgpt/config.toml`
 
 
 TUTORIAL
@@ -102,7 +101,9 @@ available escaped commands that will not be seen as LLM prompt.
 
 * `/reset`: clear the context. So you can start a new conversation without quiting.
 
-The first prompt can be provided through argument (`--ask|-A|-a`):
+* `/quit`: quit the chatting mode. You can press `Ctrl-D` to quit as well.
+
+The first user prompt can be provided through argument (`--ask|-A|-a`):
 
 ```
 debgpt -A "Who are you? And what can LLM do?"
@@ -117,9 +118,8 @@ debgpt -T 1.0 -QA 'Greet with me, and tell me a joke.'
 ```
 
 After each session, the chatting history will be saved in `~/.debgpt` as a
-json file in a unique name. The command `debgpt replay <file_name>` can be
-used to replay the session in specified file. When `<file_name>` is not given,
-`debgpt replay` will replay the last session.
+json file in a unique name. The command `debgpt replay` can replay the last
+session if you forgot what LLM has replied to you.
 
 The program can write the last LLM response to a file through `-o <file>`,
 and read question from `stdin`:
@@ -128,6 +128,143 @@ and read question from `stdin`:
 debgpt -Qa 'write a hello world in rakudo for me' -o hello.raku
 debgpt -HQ stdin < question.txt | tee result.txt
 ```
+
+After gettting familiarized with the fundamental usage and its CLI behavior,
+we can directly move on to the most important feature of this tool, namely the
+special prompt reader -- `MapReduce`.
+
+
+#### 2. Context Readers for Additional Information
+
+Context Reader is a function that reads the plain text contents from the
+specified resource, and wrap them as a part of a prompt for the LLM. Note, the
+context readers can be arbitrarily combined together or specified multiple
+times through the unified argument `--file|-f`.
+
+It can read from a file, a directory, a URL, a Debian Policy section, a Debian
+Developer Reference section, a Debian BTS page, a Debian build status page
+(buildd), a Google search result, etc.
+
+For example, we can ask LLM to explain the contents of a file, or mimick
+the `licensecheck` command:
+
+```
+# read a plain text file and ask a question
+debgpt -Hf README.md -a 'very briefly teach me how to use this software.'
+debgpt -Hf debgpt/policy.py -A 'explain this file'  # --file|-f for small file
+debgpt -Hf debgpt/frontend.py -A 'Briefly tell me an SPDX identifier of this file.'
+
+# PDF file is supported as well
+debgpt -Hf my-resume.pdf -a 'Does this person have any foss-related experience?'
+```
+
+It can also read from a directory, or a URL:
+
+```
+debgpt -Hf 'https://www.debian.org/vote/2022/vote_003' -A 'Please explain the differences among the above choices.'
+```
+
+
+The unified reader `--file|-f` can also read from other sources with a special
+syntax:
+
+* `-f bts:<bug_number>` for Debian bug tracking system
+
+```
+debgpt -Hf bts:src:pytorch -A 'Please summarize the above information. Make a table to organize it.'
+debgpt -Hf bts:1056388 -A 'Please summarize the above information.'
+```
+
+* `-f buildd:<package>` for Debian buildd status
+
+```
+debgpt -Hf buildd:glibc -A 'Please summarize the above information. Make a table to organize it.'
+```
+
+* `-f cmd:<command_line>` for piping other commands' stdout
+
+```
+debgpt -Hf cmd:'apt list --upgradable' -A 'Briefly summarize the upgradable packages. You can categorize these packages.'
+debgpt -Hf cmd:'git diff --staged' -A 'Briefly describe the change as a git commit message.'
+```
+
+* `-f man:<man_page>` and `-f tldr:<tldr_page>` for reading system manual pages
+
+```
+debgpt -Hf man:debhelper-compat-upgrade-checklist -A "what's the change between compat 13 and compat 14?"
+debgpt -H -f tldr:curl -f cmd:'curl -h' -A "download https://localhost/bigfile.iso to /tmp/workspace, in silent mode"
+```
+
+* `-f policy:<section>` and `-f devref:<section>` for reading Debian Policy and Developer Reference
+
+```
+debgpt -Hf policy:7.2 -A "what is the difference between Depends: and Pre-Depends: ?"
+debgpt -Hf devref:5.5 -A 'Please summarize the above information.'
+
+# when section is not specified, it will read the whole document. This may exceed the LLM context size limit.
+debgpt -Hf policy: -A 'what is the latest changes in this policy?'
+
+# more examples
+debgpt -Hf pytorch/debian/control -f policy:7.4 -A "Explain what Conflicts+Replaces means in pytorch/debian/control based on the provided policy document"
+debgpt -Hf pytorch/debian/rules -f policy:4.9.1 -A "Implement the support for the 'nocheck' tag based on the example provided in the policy document."
+```
+
+
+**[--inplace|-i]**
+
+We have a kind of special reader `--inplace|-i` (read-write) that reads
+the contents of a file like `--file|-f` (read-only), but it will also write
+the LLM response (I assume it is the file editing result) back to the file.
+It will also print the diff of the changes to the screen.
+
+The following example will ask LLM to edit the `pyproject.toml` file, adding
+`pygments` to its dependencies. This really works correctly.
+
+```
+debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencies.'
+```
+
+The `--inplace|-i` will mandate the `--quit|-Q` behavior, and will turn
+off markdown rendering.
+
+If working in a Git repository, we can make things more absurd:
+
+```
+debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencies.' --inplace-git-add-commit
+```
+
+The commit resulted by the above example can be seen at [this link](https://salsa.debian.org/deeplearning-team/debgpt/-/commit/968d7ab31cb3541f6733eb34bdf6cf13b6552b7d).
+
+
+
+
+
+
+
+#### 3. Language Retriever for Any Length Context
+
+debgpt -Hx debgpt/cli.py -a 'explain this file'     # Use --mapreduce|-x if file too large
+
+The key difference between the Language Retriever and Vector Retriever is that
+language retriever will really make the language model read all information
+you passed to it, while vector retriever will only make language model read
+the most relevant several pieces of information stored in the database.
+
+In the
+previous section we have seens the special prompt reader `MapReduce`, which
+works differently from the standard prompt readers that will be introduced
+here. 
+
+#### 4. Vector Retriever for Most Relevant Information
+
+> This is WIP. Leveraging the embeddings to retrieve.  Basically RAG.
+
+
+#### 5. Subcommands and Piping through Everywhere
+
+Being able to pipe the inputs and outputs among different programs is one of
+the reasons why I love the UNIX philosophy.
+
 
 The pipe mode is useful when you want to use `debgpt` in a shell script Try the
 follows on the Makefile in debgpt repo. Later we will introduce a in-place
@@ -144,14 +281,28 @@ The pipe mode can be used for editing something in vim in-place.
 :'<,'>!debgpt -a 'add type annotations and comments to this function' pipe
 ```
 
-After gettting familiarized with the fundamental usage and its CLI behavior,
-we can directly move on to the most important feature of this tool, namely the
-special prompt reader -- `MapReduce`.
+This looks interesting, right? `debgpt` has a git wrapper that automatically
+generates the git commit message for the staged contents and commit the message.
+Just try `debgpt git commit --amend` to see how it works. This will also be
+mentioned in the subcommands section.
 
 
-#### Special Retrieval Prompt reader for Document Library
+#### 6. Prompt Engineering
 
-> This is WIP. Leveraging the embeddings to retrieve.  Basically RAG.
+As you may have seen, the biggest variation in LLM usage happens in the context
+including how you provide the context readers, and how you ask the question
+through `--ask|-A|-a`. By adjusting the way you provide those information
+and ask the question, you can get significantly different results. To properly
+make LLM work for you, you may need to go through some basic prompt engineering
+methods.
+
+The following are some references on this topic:
+
+
+
+Advanced usage of LLM such as chain of thoughts will not be covered in this
+tutorial. Please refer external resources for more information.
+
 
 #### 2. Special MapReduce Prompt reader for Any Length Context
 
@@ -233,172 +384,6 @@ with long texts. Please keep an eye on your bill when you try this on a paied
 API service.
 
 #### 3. Standard Prompt readers for Texts that Fit in Context Window
-
-Prompt reader is a function that reads the plain text contents from the
-specified resource, and wrap them as a part of a prompt for the LLM. In the
-previous section we have seens the special prompt reader `MapReduce`, which
-works differently from the standard prompt readers that will be introduced
-here. Note, the query readers (including special one) can be arbitrarily
-combined together or specified multiple times through command line arguments.
-
-
-**[-f|--file]**
-
-The first to introduce is the very general `--file|-f` query reader,
-which loads a text file from the specified path.
-
-```
-debgpt -Hf README.md -a 'very briefly teach me how to use this software.'
-debgpt -Hf debgpt/policy.py -A 'explain this file'  # --file|-f for small file
-debgpt -Hx debgpt/cli.py -a 'explain this file'     # Use --mapreduce|-x if file too large
-
-# Mimicking `licensecheck` command
-debgpt -Hf debgpt/frontend.py -A 'Briefly tell me an SPDX identifier of this file.'
-```
-
-The `-f|--file` argument supports the line range grammar for:
-
-```
-debgpt -Hf pyproject.toml:3-10 -A 'explain it'  # select the [3,10) lines
-debgpt -Hf pyproject.toml:-10  -A 'explain it'  # select the [0,10) lines
-debgpt -Hf pyproject.toml:3-   -A 'explain it'  # select the [3,end) lines
-```
-
-The rest prompt readers are ordered alphabetically.
-
-
-**[--inplace|-i]**
-
-We have a kind of special reader `--inplace|-i` (read-write) that reads
-the contents of a file like `--file|-f` (read-only), but it will also write
-the LLM response (I assume it is the file editing result) back to the file.
-It will also print the diff of the changes to the screen.
-
-The following example will ask LLM to edit the `pyproject.toml` file, adding
-`pygments` to its dependencies. This really works correctly.
-
-```
-debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencies.'
-```
-
-The `--inplace|-i` will mandate the `--quit|-Q` behavior, and will turn
-off markdown rendering.
-
-If working in a Git repository, we can make things more absurd:
-
-```
-debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencies.' --inplace-git-add-commit
-```
-
-The commit resulted by the above example can be seen at [this link](https://salsa.debian.org/deeplearning-team/debgpt/-/commit/968d7ab31cb3541f6733eb34bdf6cf13b6552b7d).
-
-
-**[--bts]**
-
-Ask LLM to summarize the BTS page for `src:pytorch`.
-
-```
-debgpt -HQ --bts src:pytorch -A 'Please summarize the above information. Make a table to organize it.'
-debgpt -HQ --bts 1056388 -A 'Please summarize the above information.'
-```
-
-
-**[--buildd]**
-
-Lookup the build status for package `glibc` and summarize as a table.
-
-```
-debgpt -HQ --buildd glibc -A 'Please summarize the above information. Make a table to organize it.'
-```
-
-
-**[--cmd]**
-
-Being able to pipe the inputs and outputs among different programs is one of
-the reasons why I love the UNIX philosophy.
-
-For example, we can let debgpt read the command line outputs of `apt`, and
-summarize the upgradable packages for us:
-
-```
-debgpt -HQ --cmd 'apt list --upgradable' -A 'Briefly summarize the upgradable packages. You can categorize these packages.' -F openai --openai_model 'gpt-3.5-turbo-16k'
-```
-
-And we can also ask LLM to automatically generate a git commit message for you
-based on the currently staged changes:
-
-```
-debgpt -HQ --cmd 'git diff --staged' -A 'Briefly describe the change as a git commit message.'
-```
-
-This looks interesting, right? `debgpt` has a git wrapper that automatically
-generates the git commit message for the staged contents and commit the message.
-Just try `debgpt git commit --amend` to see how it works. This will also be
-mentioned in the subcommands section.
-
-
-**[--html]**
-
-Make the mailing list long story short:
-
-```
-debgpt -H --html 'https://lists.debian.org/debian-project/2023/12/msg00029.html' -A 'Please summarize the above information.',
-```
-
-Explain the differences among voting options:
-
-```
-debgpt -H --html 'https://www.debian.org/vote/2022/vote_003' -A 'Please explain the differences among the above choices.'
-```
-
-
-**[--man, --tldr]**
-
-Load the debhelper manpage and ask it to extract a part of it.
-
-```
-debgpt -HQ --man debhelper-compat-upgrade-checklist -A "what's the change between compat 13 and compat 14?"
-debgpt -HQ --tldr curl --cmd 'curl -h' -A "download https://localhost/bigfile.iso to /tmp/workspace, in silent mode"
-```
-
-
-**[--pdf]**
-
-Load a PDF file and ask a question.
-
-```
-debgpt -H --pdf ./some.pdf -a 'what is this?'
-```
-
-
-**[--policy, --devref]**
-
-Load a section of debian policy document, such as section "7.2", and ask a question
-
-```
-debgpt -H --policy 7.2 -A "what is the difference between Depends: and Pre-Depends: ?"
-debgpt -H --devref 5.5 -A :summary
-    'Please summarize the above information.',
-```
-
-
-**Arbitrary Combination of Prompt readers**
-
-We can add code file and Debian Policy simultaneously. 
-In the following example, we put the `debian/control` file from the
-PyTorch package, as well as the Debian Policy section 7.4, and asks the LLM
-to explain some details:
-
-```
-debgpt -H -f pytorch/debian/control --policy 7.4 -A "Explain what Conflicts+Replaces means in pytorch/debian/control based on the provided policy document"
-```
-
-Similarly, we can also let LLM read the Policy section 4.9.1, and ask it to
-write some code:
-
-```
-debgpt -H -f pytorch/debian/rules --policy 4.9.1 -A "Implement the support for the 'nocheck' tag based on the example provided in the policy document."
-```
 
 
 #### 4. External Command Wrapper and Subcommands
