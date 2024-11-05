@@ -78,6 +78,15 @@ def subcmd_replay(ag) -> None:
     replay.replay(json_path)
     exit(0)
 
+def subcmd_config(ag) -> None:
+    '''
+    re-run the configurator.fresh_install_guide() to reconfigure.
+    Ask the user whether to overwrite the existing config file.
+    '''
+    configurator.fresh_install_guide(
+        os.path.expanduser('~/.debgpt/config.toml'))
+    exit(0)
+
 
 def subcmd_vdb(ag) -> None:
     console.print("[red]debgpt: vdb: no subcommand specified.[/red]")
@@ -183,15 +192,6 @@ def generate_config_file(ag) -> None:
     print(ag.config_template)  # should go to stdout
     exit(0)
 
-
-def reconfigure(ag) -> None:
-    '''
-    re-run the configurator.fresh_install_guide() to reconfigure.
-    Force rewrite.
-    '''
-    configurator.fresh_install_guide(
-        os.path.expanduser('~/.debgpt/config.toml'))
-    exit(0)
 
 
 def mapreduce_super_long_context(ag) -> str:
@@ -436,6 +436,8 @@ def main(argv=sys.argv[1:]):
             subcmd_vdb(ag)
     elif ag.subparser_name == 'replay':
         subcmd_replay(ag)
+    elif ag.subparser_name == 'config':
+        subcmd_config(ag)
 
     # initialize the frontend
     f = frontend.create_frontend(ag)
