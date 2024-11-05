@@ -410,10 +410,23 @@ def test_read_main(spec: str, tmpdir: object):
 def test_chunk_lines():
     lines = 'test test test test test test'.split()
     print('lines:', lines)
+
     chunks = reader.chunk_lines(lines, 15)
+    print('chunks:', chunks)
     assert len(chunks) == 2
+    chunks_nr = reader.chunk_lines_nonrecursive(lines, 15)
+    print('chunks_nr:', chunks_nr)
+    assert len(chunks_nr) == 2
+
     chunks = reader.chunk_lines(lines, 5)
     assert len(chunks) == 6
+    chunks_nr = reader.chunk_lines_nonrecursive(lines, 5)
+    assert len(chunks_nr) == 6
+
+    chunks = reader.chunk_lines(lines, 1)
+    assert len(chunks) == 6
+    chunks_nr = reader.chunk_lines_nonrecursive(lines, 1)
+    assert len(chunks_nr) == 6
 
 
 #def test_mapreduce_load_file(tmp_path):

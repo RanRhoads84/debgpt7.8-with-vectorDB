@@ -541,6 +541,48 @@ def chunk_lines(
         return {**left, **right}
 
 
+def chunk_lines_nonrecursive(
+        lines: List[str],
+        max_chunk_size: int,
+        start: int = -1,
+        end: int = -1,
+        ) -> Dict[Tuple[int, int], List[str]]:
+    '''
+    Chunk the lines into pieces with the specified size.
+
+    Args:
+        lines (List[str]): the lines to chunk, always the full list of lines
+        max_chunk_size (int): the maximum chunk size
+        start (int): the start index of the lines
+        end (int): the end index of the lines
+    Returns:
+        Dict[Tuple[int, int], List[str]]: a dictionary, each key is a tuple
+        containing the start and end index of the chunked lines, and the value
+        is the chunked lines.
+    '''
+    if end < 0 and start < 0:
+        return chunk_lines(lines, max_chunk_size, 0, len(lines))
+    # real work
+    result: Dict[Tuple[int, int], List[str]] = {}
+    stack = [(start, end)]
+    while stack:
+        current_start, current_end = stack.pop()
+        chunk_size_in_bytes = len('\n'.join(lines[current_start:current_end]).encode('utf8'))
+
+        if chunk_size_in_bytes <= max_chunk_size:
+            # if the chunk is within the size limit, we add it to the result
+            result[(current_start, current_end)] = lines[current_start:current_end]
+        elif current_end - current_start == 1:
+            # if the chunk is too large but cannot be split, we add it to the result
+            result[(current_start, current_end)] = lines[current_start:current_end]
+        else:
+            middle = (current_start + current_end) // 2
+            stack.append((current_start, middle))
+            stack.append((middle, current_end))
+    return result
+
+
+
 def chunk_entry(entry: Entry, max_chunk_size: int) -> List[Entry]:
     '''
     Chunk the content of the entry into pieces with the specified size.
