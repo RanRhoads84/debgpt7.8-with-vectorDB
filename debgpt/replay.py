@@ -14,6 +14,8 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
+from typing import List
+import sys
 from rich.markup import escape
 from rich.panel import Panel
 from rich.markdown import Markdown
@@ -77,7 +79,7 @@ def replay(path: str, render: bool = True) -> None:
         process_entry(entry, render)
 
 
-def main() -> None:
+def main(argv: List[str] = sys.argv[1:]) -> None:
     """
     The main function to parse command-line arguments and initiate the replay of chat messages.
     """
@@ -91,9 +93,9 @@ def main() -> None:
         action=argparse.BooleanOptionalAction,
         default=True,
         help='Render assistant messages with rich Markdown (default: True)')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     replay(args.input_file, args.render)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()
