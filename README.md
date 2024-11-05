@@ -211,6 +211,8 @@ debgpt -Hf pytorch/debian/control -f policy:7.4 -A "Explain what Conflicts+Repla
 debgpt -Hf pytorch/debian/rules -f policy:4.9.1 -A "Implement the support for the 'nocheck' tag based on the example provided in the policy document."
 ```
 
+#### 3. Inplace Editing of a File
+
 
 **[--inplace|-i]**
 
@@ -241,11 +243,11 @@ The commit resulted by the above example can be seen at [this link](https://sals
 
 
 
+#### 3. Mapreducer for Condensing Any Length Context
 
-
-#### 3. Language Retriever for Any Length Context
-
+```
 debgpt -Hx debgpt/cli.py -a 'explain this file'     # Use --mapreduce|-x if file too large
+```
 
 The key difference between the Language Retriever and Vector Retriever is that
 language retriever will really make the language model read all information

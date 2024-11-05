@@ -47,13 +47,6 @@ class AbstrastRetriever(object):  # pragma: no cover
         pass
 
 
-class LanguageRetriever(AbstrastRetriever):
-    '''
-    Language-based retriever.
-    '''
-    pass
-
-
 class VectorRetriever(object):
     '''
     Vector-based retriever.
