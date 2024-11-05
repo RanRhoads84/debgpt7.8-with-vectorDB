@@ -19,7 +19,7 @@ import urwid
 import os
 from . import defaults
 
-default = defaults.Config(verbose=True)
+default = defaults.Config()
 console = defaults.console
 
 #FIXME: keep other configs existing in the original toml unchanged.

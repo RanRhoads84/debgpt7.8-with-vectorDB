@@ -51,6 +51,7 @@ from . import frontend
 from . import reader
 from . import defaults
 from . import vectordb
+from . import replay
 
 warnings.filterwarnings("ignore")
 
@@ -69,9 +70,8 @@ def subcmd_backend(ag) -> None:
 
 
 def subcmd_replay(ag) -> None:
-    from . import replay
     if ag.json_file_path is None:
-        json_path = reader._latest_glob(os.path.join(ag.debgpt_home, '*.json'))
+        json_path = reader.latest_glob(os.path.join(ag.debgpt_home, '*.json'))
         console.log('found the latest json:', json_path)
     else:
         json_path = ag.json_file_path
@@ -86,7 +86,7 @@ def subcmd_vdb(ag) -> None:
 
 def subcmd_vdb_ls(ag) -> None:
     vdb = vectordb.VectorDB(ag.db, ag.embedding_dim)
-    vdb.ls()
+    vdb.ls(ag.id)
     exit(0)
 
 
@@ -398,6 +398,17 @@ def gather_information_ordered(msg: Optional[str], ag,
     return msg
 
 
+def _debgpt_is_not_configured(ag) -> bool:
+    '''
+    '''
+    return all([
+        ag.frontend == 'openai',
+        ag.openai_api_key == 'your-openai-api-key',
+        ag.openai_base_url == 'https://api.openai.com/v1',
+        ag.subparser_name not in ('genconfig', 'genconf', 'config.toml'),
+    ])
+
+
 def main(argv=sys.argv[1:]):
     # parse args, argument order, and prepare debgpt_home
     ag = arguments.parse_args(argv)
@@ -406,24 +417,29 @@ def main(argv=sys.argv[1:]):
         console.log('Arguments:', ag)
         console.log('Argument Order:', ag_order)
 
+    # process --version (if any) and exit normally.
     if ag.version:
         version()
         exit(0)
-    # detect first-time launch (fresh install)
-    whether_show_fresh_install_guide = all([
-        ag.frontend == 'openai',
-        ag.openai_api_key == 'your-openai-api-key',
-        ag.openai_base_url == 'https://api.openai.com/v1',
-        ag.subparser_name not in ('genconfig', 'genconf', 'config.toml'),
-    ])
-    if whether_show_fresh_install_guide:
+
+    # detect first-time launch (fresh install) where config is missing
+    if _debgpt_is_not_configured(ag):
         configurator.fresh_install_guide(
             os.path.expanduser('~/.debgpt/config.toml'))
         exit(0)
 
+    # process subcommands. Note, the subcommands will exit() when finished.
+    if ag.subparser_name == 'vdb':
+        if ag.vdb_subparser_name == 'ls':
+            subcmd_vdb_ls(ag)
+        else:
+            subcmd_vdb(ag)
+    elif ag.subparser_name == 'replay':
+        subcmd_replay(ag)
+
     # initialize the frontend
     f = frontend.create_frontend(ag)
-    ag.frontend_instance = f
+    #ag.frontend_instance = f
 
     # create task-specific prompts. note, some special tasks will exit()
     # in their subparser default function when then finished, such as backend,

@@ -450,7 +450,8 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
                         type=str,
                         default=conf['db'],
                         help='path to the VectorDB database')
-    vdb_subps = ps_vdb.add_subparsers(help='vdb subcommands')
+    vdb_subps = ps_vdb.add_subparsers(dest='vdb_subparser_name',
+                                      help='vdb subcommands')
     # subsubcommand: vdb ls
     ps_vdb_ls = vdb_subps.add_parser('ls',
                                      help='list all vectors in the database')
