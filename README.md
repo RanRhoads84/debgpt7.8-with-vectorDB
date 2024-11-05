@@ -19,17 +19,16 @@ DESCRIPTION
 
 DebGPT is a lightweight terminal tool designed for everyday use with Large
 Language Models (LLMs), aiming to explore their potential in aiding
-Debian/Linux development.
+Debian/Linux development. The possible use cases include code generation,
+documentation writing, code editing, and more, far beyond the capabilities of
+traditional software.
 
-LLMs can perform tasks beyond the capabilities of traditional software, such as
-summarizing documents, answering questions, and writing or editing code. DebGPT
-gathers relevant information from various sources like files, directories, and
-URLs, and compiles it into a prompt for the LLM.
-
-DebGPT supports a range of LLM service providers, both commercial and
+To achieve that, DebGPT gathers relevant information from various sources like
+files, directories, and URLs, and compiles it into a prompt for the LLM.  It
+also supports Retrieval-Augmented Generation (RAG) using language embedding
+models. DebGPT supports a range of LLM service providers, both commercial and
 self-hosted, including OpenAI, Anthropic, Google Gemini, Ollama, LlamaFile,
-vLLM, and ZMQ (DebGPT's built-in backend for self-containment). It also offers
-Retrieval-Augmented Generation (RAG) using language embedding models.
+vLLM, and ZMQ (DebGPT's built-in backend for self-containment). 
 
 
 QUICK START
