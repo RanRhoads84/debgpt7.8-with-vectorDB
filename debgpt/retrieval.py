@@ -131,12 +131,20 @@ class VectorRetriever(object):
 
 
 def main(argv):
-    # configuration
-    conf = defaults.Config()
-    retriever = VectorRetriever(conf)
     # argument parser
     parser = argparse.ArgumentParser(description='retrieval')
+    parser.add_argument('--db',
+                        type=str,
+                        default='test.db',
+                        help='database file')
+    parser.add_argument('--embedding_frontend',
+                        '-E',
+                        type=str,
+                        default='openai',
+                        choices=['openai', 'gemini', 'random'], 
+                        help='embedding frontend')
     subparsers = parser.add_subparsers(dest='subcommand')
+
     # subcommand: add
     parser_add = subparsers.add_parser('add')
     parser_add.add_argument('-s',
@@ -151,8 +159,12 @@ def main(argv):
                                  type=int,
                                  default=3,
                                  help='number of documents to retrieve')
-    # parse arguments
+    # parse arguments and create configuration
     args = parser.parse_args(argv)
+    conf = defaults.Config()
+    conf.db = args.db
+    conf.embedding_frontend = args.embedding_frontend
+    retriever = VectorRetriever(conf)
 
     if args.subcommand == 'add':
         vector = retriever.add(args.s, args.text)
@@ -163,5 +175,5 @@ def main(argv):
             print(doc)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main(sys.argv[1:])

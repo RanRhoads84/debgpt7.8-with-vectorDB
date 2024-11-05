@@ -88,3 +88,12 @@ def test_vectorretriever_retrieve_from_db(tmpdir):
             assert text == 'fruit'
             assert np.isclose(score, 1.0)
     print(results)
+
+
+def test_retrieval_main(tmpdir):
+    common_args = ['--db', os.path.join(tmpdir, 'test.db'), '-E', 'random']
+    retrieval.main([*common_args, 'add', 'x'])
+    retrieval.main([*common_args, 'add', 'y'])
+    retrieval.main([*common_args, 'add', 'z'])
+    retrieval.main([*common_args, 'ret', 'w'])
+    retrieval.main([*common_args, 'retrieve', 'w'])

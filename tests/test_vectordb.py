@@ -184,7 +184,14 @@ def test_main_ls(tmpdir):
     """
     temp_file = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
     path = os.path.join(tmpdir, temp_file.name)
+    vdb = VectorDB(os.path.join(tmpdir, temp_file.name))
+    # Adding random vectors
+    for i in range(10):
+        v = np.random.rand(256)
+        vdb.add(f'vector_{i}', str(v), v)
+    vdb.close()
     vectordb.main(['--db', path, 'ls'])
+    vectordb.main(['--db', path, 'ls', '1'])
 
 
 def test_main_show(tmpdir):
