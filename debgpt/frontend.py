@@ -96,10 +96,7 @@ class AbstractFrontend():
         self.monochrome = args.monochrome
         self.multiline = args.multiline
         self.render_markdown = args.render_markdown
-        if args.subparser_name not in ('genconfig', 'genconf', 'config.toml'):
-            # in order to avoid including the frontend and UUID into the
-            # configuration file.
-            console.log(f'{self.NAME}> Starting conversation {self.uuid}')
+        console.log(f'{self.NAME}> Starting conversation {self.uuid}')
 
     def reset(self):
         '''

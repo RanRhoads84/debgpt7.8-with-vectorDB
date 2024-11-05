@@ -478,7 +478,7 @@ This option will automatically mandate --no-render_markdown, -Q and -H.')
 
     # Task: genconfig
     _ = subps.add_parser('genconfig',
-                                    aliases=['genconf', 'config.toml'],
+                                    aliases=['config.toml'],
                                     help='generate config.toml file template')
 
     # Task: config or reconfigure

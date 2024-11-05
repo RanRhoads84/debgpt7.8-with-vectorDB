@@ -405,7 +405,7 @@ def _debgpt_is_not_configured(ag) -> bool:
         ag.frontend == 'openai',
         ag.openai_api_key == 'your-openai-api-key',
         ag.openai_base_url == 'https://api.openai.com/v1',
-        ag.subparser_name not in ('genconfig', 'genconf', 'config.toml'),
+        ag.subparser_name not in ('genconfig', 'config.toml'),
     ])
 
 
