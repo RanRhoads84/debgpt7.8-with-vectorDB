@@ -454,7 +454,6 @@ retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'."
     conf.update(extra)
 
     # edit the configuration template
-    print('Configuration Template:')
     for k, v in conf.items():
         if isinstance(v, bool):
             v = 'true' if v else 'false'
@@ -470,7 +469,7 @@ retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'."
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, 'wt') as f:
             f.write(config_template)
-        console.print('Config written to:', dest)
+        console.log('Config written to:', dest)
         console.print('[white on violet]>_< Enjoy DebGPT!')
     else:
         # verbose print
