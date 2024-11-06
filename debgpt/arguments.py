@@ -54,9 +54,9 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
 
     # CLI Behavior / Frontend Arguments
     config_template = '''\
-##############################
+###################################
 # Command Line Interface Behavior
-##############################
+###################################
 \n'''
     _g = ag.add_argument_group('Command Line Interface Behavior')
     _g.add_argument('--quit',
@@ -154,9 +154,9 @@ it to web-based LLMs in that case.")
 
     # LLM Inference Arguments
     config_template += '''\n
-###########################
+#############################
 # Common Frontend Arguments
-###########################
+#############################
 \n'''
     _g = ag.add_argument_group('Common Frontend Arguments')
     _g.add_argument(
@@ -181,9 +181,9 @@ https://platform.openai.com/docs/api-reference/ \
 
     # Specific to OpenAI Frontend
     config_template += '''\n
-#############################
-# Specific to OpenAI Frontend
-#############################
+###########################
+# OpenAI Frontend Options
+###########################
 \n'''
     _g = ag.add_argument_group('OpenAI Frontend Options')
     _g.add_argument('--openai_base_url',
@@ -220,9 +220,9 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # Specific to Anthropic Frontend
     config_template += '''\n
-##################################
+##############################
 # Anthropic Frontend Options
-##################################
+##############################
 \n'''
     _g = ag.add_argument_group('Anthropic Frontend Options')
     _g.add_argument('--anthropic_base_url',
@@ -249,9 +249,9 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # Specific to Gemini Frontend
     config_template += '''\n
-#########################
+###########################
 # Gemini Frontend Options
-#########################
+###########################
 \n'''
     _g = ag.add_argument_group('Gemini Frontend Options')
     _g.add_argument('--gemini_api_key',
@@ -276,9 +276,9 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # Specific to xAI Frontend
     config_template += '''\n
-#########################
+########################
 # xAI Frontend Options
-#########################
+########################
 \n'''
     _g = ag.add_argument_group('xAI Frontend Options')
     _g.add_argument('--xai_api_key',
@@ -296,9 +296,9 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # Specific to Llamafile Frontend
     config_template += '''\n
-############################
+##############################
 # Llamafile Frontend Options
-############################
+##############################
 \n'''
     _g = ag.add_argument_group('Llamafile Frontend Options')
     _g.add_argument('--llamafile_base_url',
@@ -330,9 +330,9 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # Specific to vLLM Frontend
     config_template += '''\n
-###########################
+#########################
 # vLLM Frontend Options
-###########################
+#########################
 \n'''
     _g = ag.add_argument_group('vLLM Frontend Options')
     _g.add_argument('--vllm_base_url',
@@ -369,9 +369,9 @@ Their prices vary. See https://platform.openai.com/docs/models .')
 
     # Embedding Models
     config_template += '''\n
-##############################
-# Embedding Models
-##############################
+#################################
+# Embedding Frontend and Models
+#################################
 \n'''
     _g = ag.add_argument_group('Embedding Models')
     _g.add_argument('--embedding_frontend',
@@ -389,9 +389,9 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     # Prompt Loaders (numbered list). You can specify them multiple times.
     # for instance, `debgpt -H -f foo.py -f bar.py`.
     config_template += '''\n
-##################
-# Context Reader #
-##################
+#####################
+# MapReduce Options
+#####################
 \n'''
     # -- 1. Debian BTS
     _g = ag.add_argument_group('Prompt reader')

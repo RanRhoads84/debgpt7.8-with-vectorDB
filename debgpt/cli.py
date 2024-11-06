@@ -89,6 +89,14 @@ def subcmd_config(ag) -> None:
     exit(0)
 
 
+def subcmd_genconfig(ag) -> None:
+    '''
+    special task: generate config template, print and quit
+    '''
+    print(ag.config_template)  # should go to stdout
+    exit(0)
+
+
 def subcmd_vdb(ag) -> None:
     console.print("[red]debgpt: vdb: no subcommand specified.[/red]")
     exit(1)
@@ -186,15 +194,6 @@ or
     exit(0)
 
 
-def generate_config_file(ag) -> None:
-    '''
-    special task: generate config template, print and quit
-    '''
-    print(ag.config_template)  # should go to stdout
-    exit(0)
-
-
-
 def gather_information_ordered(msg: Optional[str], ag,
                                ag_order) -> Optional[str]:
     '''
@@ -281,6 +280,8 @@ def main(argv=sys.argv[1:]):
         subcmd_replay(ag)
     elif ag.subparser_name == 'config':
         subcmd_config(ag)
+    elif ag.subparser_name in ('genconfig', 'config.toml'):
+        subcmd_genconfig(ag)
 
     # initialize the frontend
     f = frontend.create_frontend(ag)
