@@ -17,7 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import Iterable, Optional, Dict
 import urwid
 import os
+import re
 from . import defaults
+from . import arguments
 
 default = defaults.Config()
 console = defaults.console
@@ -303,9 +305,33 @@ def _request_overwrite_config(dest: str) -> bool:
     value = SingleChoice(
         "DebGPT Configurator",
         f"Configuration file {repr(dest)} already exists. \
-Overwrite?", ['no', 'yes'], "Press Esc to abort.",
+Overwrite?", ['no', 'yes'], "The existing options will be inherited. We will \
+simply refresh the configuration file with the updates from this wizard. Press Esc to abort.",
         "Press Esc to abort.").run()
     return value == 'yes'
+
+
+def _edit_config_template(config_template: str,
+                          key: str,
+                          value: str) -> str:
+    '''
+    Edit the configuration template (toml file). Updating the value of
+    the specified key.
+
+    Args:
+        config_template: the configuration template as a string
+        key: the key to be updated
+        value: the value to be updated
+    Returns:
+        the updated configuration template
+    '''
+    lines = config_template.split('\n')
+    newlines = []
+    for line in lines:
+        if re.match(r'^\s*{}\s*='.format(key), line):
+            line = '{} = {}'.format(key, value)
+        newlines.append(line)
+    return '\n'.join(newlines)
 
 
 def fresh_install_guide(dest: Optional[str] = None) -> dict:
@@ -313,6 +339,7 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
     This function is a configuration guide for fresh installation of DebGPT.
     '''
     conf = dict()
+    config_template: str = arguments.parse_args([]).config_template
 
     if dest and os.path.exists(dest):
         overwrite = _request_overwrite_config(dest)
@@ -391,28 +418,30 @@ retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'."
     extra = _request_common_cli_behavior_config()
     conf.update(extra)
 
+    # edit the configuration template
+    print('Configuration Template:')
+    for k, v in conf.items():
+        if isinstance(v, bool):
+            v = 'true' if v else 'false'
+            config_template = _edit_config_template(config_template, k, v)
+        elif isinstance(v, str):
+            config_template = _edit_config_template(config_template, k, repr(v))
+        else:
+            raise ValueError('Unexpected type:', type(v))
+    config_template += '\n'  # new line at the end
+
     # final: write configuration to specified destination
     if dest:
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, 'wt') as f:
-            for k, v in conf.items():
-                if isinstance(v, bool):
-                    v = 'true' if v else 'false'
-                    f.write('{} = {}\n'.format(k, v))
-                else:
-                    f.write('{} = {}\n'.format(k, repr(v)))
+            f.write(config_template)
         console.print('Config written to:', dest)
         console.print('[white on violet]>_< Enjoy DebGPT!')
     else:
         # verbose print
-        console.print('Minimal Configuration (config.toml):')
+        console.print('Configuration (config.toml):')
         print('```')
-        for k, v in conf.items():
-            if isinstance(v, bool):
-                v = 'true' if v else 'false'
-                print('{} = {}'.format(k, v))
-            else:
-                print('{} = {}'.format(k, repr(v)))
+        print(config_template)
         print('```')
 
     return conf
