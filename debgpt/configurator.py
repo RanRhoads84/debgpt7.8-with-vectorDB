@@ -24,8 +24,14 @@ from . import arguments
 default = defaults.Config()
 console = defaults.console
 
-#FIXME: keep other configs existing in the original toml unchanged.
-# i.e., do not delete api keys for other frontends when we switch to a new one.
+class ListBoxVimKeys(urwid.ListBox):
+    def keypress(self, size, key) -> None:
+        key_map = {
+                'k': 'up',
+                'j': 'down',
+                }
+        super().keypress(size, key_map.get(key, key))
+
 
 class SingleChoice(object):
 
@@ -65,7 +71,7 @@ class SingleChoice(object):
             urwid.Text(helpmsg),
         ])
         # assemble the widgets
-        body = urwid.ListBox(urwid.SimpleFocusListWalker(body))
+        body = ListBoxVimKeys(urwid.SimpleFocusListWalker(body))
         frame = urwid.Frame(header=header, body=body, footer=footer)
         frame = urwid.Padding(frame, left=1, right=1)
         loop = urwid.MainLoop(frame,
@@ -143,27 +149,27 @@ def _request_frontend_specific_config(frontend: str,
         value = SingleEdit(
             _TITLE, "Enter the OpenAI base url:", default['openai_base_url'],
             "Keep the default as is, if you do not intend to use this API on a different compatible service.",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['openai_base_url'] = value
     if frontend == 'openai' and 'openai_api_key' not in current_config:
         value = SingleEdit(
             _TITLE, "Enter the OpenAI API key:", default['openai_api_key'],
             "Typically your key can be found here: https://platform.openai.com/settings/organization/api-keys",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['openai_api_key'] = value
     if frontend == 'openai' and not is_embedding and 'openai_model' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the OpenAI API model name:",
             default['openai_model'],
             'If not sure, just keep the default. Available options: https://platform.openai.com/docs/models',
-            'Press Esc to abort.').run()
+            'Press Enter to confirm. Press Esc to abort.').run()
         conf['openai_model'] = value
     if frontend == 'openai' and is_embedding and 'openai_embedding_model' not in current_config:
         value = SingleEdit("DebGPT Configurator",
                            "Enter the OpenAI API embedding model name:",
                            default['openai_embedding_model'],
                            'If not sure, just keep the default.',
-                           'Press Esc to abort.').run()
+                           'Press Enter to confirm. Press Esc to abort.').run()
         conf['openai_embedding_model'] = value
 
     # anthropic part
@@ -172,14 +178,14 @@ def _request_frontend_specific_config(frontend: str,
             "DebGPT Configurator", "Enter the Anthropic API key:",
             default['anthropic_api_key'],
             "Typicall your key can be found here: https://console.anthropic.com/settings/keys",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['anthropic_api_key'] = value
     if frontend == 'anthropic' and 'anthropic_model' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Anthropic model name:",
             default['anthropic_model'],
             "If not sure, just keep the default. Available options: https://docs.anthropic.com/en/docs/about-claude/models",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['anthropic_model'] = value
 
     # google part
@@ -188,21 +194,21 @@ def _request_frontend_specific_config(frontend: str,
             "DebGPT Configurator", "Enter the Google Gemini API key:",
             default['google_api_key'],
             "Typically found here: https://aistudio.google.com/app/apikey",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['google_api_key'] = value
     if frontend == 'google' and not is_embedding and 'google_model' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Google model name:",
             default['google_model'],
             "If not sure, just keep the default. Available options: https://ai.google.dev/gemini-api/docs/models/gemini",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['google_model'] = value
     if frontend == 'google' and is_embedding and 'google_embedding_model' not in current_config:
         value = SingleEdit("DebGPT Configurator",
                            "Enter the Google embedding model name:",
                            default['google_embedding_model'],
                            "If not sure, just keep the default.",
-                           "Press Esc to abort.").run()
+                           "Press Enter to confirm. Press Esc to abort.").run()
         conf['google_embedding_model'] = value
 
     # xai part
@@ -211,14 +217,14 @@ def _request_frontend_specific_config(frontend: str,
             "DebGPT Configurator", "Enter the xAI API key:",
             default['xai_api_key'],
             "Typically found here: https://console.x.ai/",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['xai_api_key'] = value
     if frontend == 'xai' and not is_embedding and 'xai_model' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the xAI model name:",
             default['xai_model'],
             "If not sure, just keep the default. Available options: https://console.x.ai/",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['xai_model'] = value
 
     # ollama part
@@ -227,14 +233,14 @@ def _request_frontend_specific_config(frontend: str,
             "DebGPT Configurator", "Enter the Ollama service url:",
             default['ollama_base_url'],
             "Reference: https://github.com/ollama/ollama/blob/main/README.md",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['ollama_base_url'] = value
     if frontend == 'ollama' and 'ollama_model' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Ollama model name:",
             default['ollama_model'],
             "Reference: https://github.com/ollama/ollama/blob/main/README.md",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['ollama_model'] = value
 
     # llamafile part
@@ -243,7 +249,7 @@ def _request_frontend_specific_config(frontend: str,
             "DebGPT Configurator", "Enter the LlamaFile service url:",
             default['llamafile_base_url'],
             "Reference: https://github.com/Mozilla-Ocho/llamafile",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['llamafile_base_url'] = value
 
     # vllm part
@@ -252,19 +258,19 @@ def _request_frontend_specific_config(frontend: str,
                            "Enter the vLLM service url:",
                            default['vllm_base_url'],
                            "Reference: https://docs.vllm.ai/en/stable/",
-                           "Press Esc to abort.").run()
+                           "Press Enter to confirm. Press Esc to abort.").run()
         conf['vllm_base_url'] = value
     if frontend == 'vllm' and 'vllm_api_key' not in current_config:
         value = SingleEdit("DebGPT Configurator", "Enter the vLLM API key:",
                            default['vllm_api_key'],
                            "Reference: https://docs.vllm.ai/en/stable/",
-                           "Press Esc to abort.").run()
+                           "Press Enter to confirm. Press Esc to abort.").run()
         conf['vllm_api_key'] = value
     if frontend == 'vllm' and 'vllm_model' not in current_config:
         value = SingleEdit("DebGPT Configurator", "Enter the vLLM model name:",
                            default['vllm_model'],
                            "Reference: https://docs.vllm.ai/en/stable/",
-                           "Press Esc to abort.").run()
+                           "Press Enter to confirm. Press Esc to abort.").run()
         conf['vllm_model'] = value
 
     # zmq part
@@ -273,7 +279,7 @@ def _request_frontend_specific_config(frontend: str,
             "DebGPT Configurator", "Enter the DebGPT ZMQ Backend URL:",
             default['zmq_backend'],
             "The service endpoint where you launched debgpt backend.",
-            "Press Esc to abort.").run()
+            "Press Enter to confirm. Press Esc to abort.").run()
         conf['zmq_backend'] = value
 
     # dryrun part
@@ -293,7 +299,7 @@ def _request_common_cli_behavior_config() -> dict:
         "DebGPT Configurator", "Render LLM response (Markdown) in terminal?",
         ['yes', 'no'], "Default is 'yes' (recommended). This option \
 produces fancy terminal printing with markdown stream.",
-        "Press Esc to abort.").run()
+        "Press Enter to confirm. Press Esc to abort.").run()
     conf['render_markdown'] = value == 'yes'
     return conf
 
@@ -307,7 +313,7 @@ def _request_overwrite_config(dest: str) -> bool:
         f"Configuration file {repr(dest)} already exists. \
 Overwrite?", ['no', 'yes'], "The existing options will be inherited. We will \
 simply refresh the configuration file with the updates from this wizard. Press Esc to abort.",
-        "Press Esc to abort.").run()
+        "Press Enter to confirm. Press Esc to abort.").run()
     return value == 'yes'
 
 
@@ -374,7 +380,7 @@ For advanced usages and more options, you may generate a configuration \
 template with the following command for manual editing:\n\n\
   $ debgpt genconfig > ~/.debgpt/config.yaml\n\n\
 This could be useful if you wish to switch among multiple frontends \
-using the `--frontend|-F` argument.", "Press Esc to abort.").run()
+using the `--frontend|-F` argument.", "Press Enter to confirm. Press Esc to abort.").run()
     if not frontend:
         print('Aborted.')
         exit(1)
@@ -401,7 +407,7 @@ embedding vectors.\n\n\
 The embedding frontend can be different from the frontend.\n\n\
 If you are not going to use the embedding-realted feature, such as vectordb,\
 retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'.",
-        "Press Esc to abort.").run()
+        "Press Enter to confirm. Press Esc to abort.").run()
     if not embedding_frontend:
         print('Aborted.')
         exit(1)
