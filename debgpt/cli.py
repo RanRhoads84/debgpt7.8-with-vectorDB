@@ -117,16 +117,16 @@ def subcmd_git_commit(ag) -> None:
     f = ag.frontend_instance
     msg = "Previous commit titles:\n"
     msg += "```"
-    msg += reader.command_line('git log --pretty=format:%s --max-count=10')
+    msg += reader.read_cmd('git log --pretty=format:%s --max-count=10')
     msg += "```"
     msg += "\n"
     msg += "Change diff:\n"
     msg += "```\n"
-    msg += reader.command_line('git diff --staged')
+    msg += reader.read_cmd('git diff --staged')
     msg += "```\n"
     msg += "\n"
     msg += 'Write a good git commit message subject line for the change diff shown above, using the project style visible in previous commits titles above.'
-    frontend.query_once(f, msg)
+    frontend.interact_once(f, msg)
     tmpfile = tempfile.mktemp()
     commit_message = f.session[-1]['content']
     if getattr(ag, 'inplace_git_add_commit', False) or getattr(
@@ -282,6 +282,12 @@ def main(argv=sys.argv[1:]):
         subcmd_config(ag)
     elif ag.subparser_name in ('genconfig', 'config.toml'):
         subcmd_genconfig(ag)
+    elif ag.subparser_name == 'git':
+        if ag.git_subparser_name == 'commit':
+            ag.frontend_instance = frontend.create_frontend(ag)
+            subcmd_git_commit(ag)
+        else:
+            subcmd_git(ag)
 
     # initialize the frontend
     f = frontend.create_frontend(ag)

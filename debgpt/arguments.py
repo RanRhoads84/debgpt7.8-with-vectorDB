@@ -454,7 +454,7 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
 
     # Task: git
     ps_git = subps.add_parser('git', help='git command wrapper')
-    git_subps = ps_git.add_subparsers(help='git commands')
+    git_subps = ps_git.add_subparsers(dest='git_subparser_name', help='git commands')
     # Task: git commit
     ps_git_commit = git_subps.add_parser(
         'commit',
