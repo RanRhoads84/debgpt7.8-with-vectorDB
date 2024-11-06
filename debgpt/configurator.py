@@ -388,7 +388,7 @@ using the `--frontend|-F` argument.", "Press Esc to abort.").run()
     # step 3: ask for the embedding frontend
     embedding_frontends = [
         'OpenAI    | commercial,  OpenAI-API',
-        'Gemini    | commercial,  Google-API',
+        'Google    | commercial,  Google-API',
         'Random    | debug,       DebGPT built-in',
     ]
     embedding_frontend = SingleChoice(
