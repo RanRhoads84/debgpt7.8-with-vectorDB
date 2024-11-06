@@ -251,6 +251,31 @@ def _debgpt_is_not_configured(ag) -> bool:
     ])
 
 
+def _dispatch_subcommand(ag):
+    if ag.subparser_name == 'vdb':
+        if ag.vdb_subparser_name == 'ls':
+            subcmd_vdb_ls(ag)
+        else:
+            subcmd_vdb(ag)
+    elif ag.subparser_name == 'replay':
+        subcmd_replay(ag)
+    elif ag.subparser_name == 'config':
+        subcmd_config(ag)
+    elif ag.subparser_name in ('genconfig', 'config.toml'):
+        subcmd_genconfig(ag)
+    elif ag.subparser_name == 'git':
+        if ag.git_subparser_name == 'commit':
+            ag.frontend_instance = frontend.create_frontend(ag)
+            subcmd_git_commit(ag)
+        else:
+            subcmd_git(ag)
+    elif ag.subparser_name is not None:
+        raise NotImplementedError(f'Subcommand {ag.subparser_name} seems unimplemented.')
+    else:
+        # If no subparser specified, we go to the chatting mode.
+        pass
+
+
 def main(argv=sys.argv[1:]):
     # parse args, argument order, and prepare debgpt_home
     ag = arguments.parse_args(argv)
@@ -271,23 +296,8 @@ def main(argv=sys.argv[1:]):
         exit(0)
 
     # process subcommands. Note, the subcommands will exit() when finished.
-    if ag.subparser_name == 'vdb':
-        if ag.vdb_subparser_name == 'ls':
-            subcmd_vdb_ls(ag)
-        else:
-            subcmd_vdb(ag)
-    elif ag.subparser_name == 'replay':
-        subcmd_replay(ag)
-    elif ag.subparser_name == 'config':
-        subcmd_config(ag)
-    elif ag.subparser_name in ('genconfig', 'config.toml'):
-        subcmd_genconfig(ag)
-    elif ag.subparser_name == 'git':
-        if ag.git_subparser_name == 'commit':
-            ag.frontend_instance = frontend.create_frontend(ag)
-            subcmd_git_commit(ag)
-        else:
-            subcmd_git(ag)
+    # some subcommands will require a frontend instance, such as git commit.
+    _dispatch_subcommand(ag)
 
     # initialize the frontend
     f = frontend.create_frontend(ag)
