@@ -36,6 +36,7 @@ from pygments.lexers import DiffLexer
 from pygments.formatters import TerminalFormatter
 from typing import List, Optional
 import warnings
+import functools as ft
 from . import defaults
 from . import reader
 from . import frontend
@@ -210,34 +211,25 @@ def gather_information_ordered(msg: Optional[str], ag,
     # following the argument order, dispatch to reader.* functions with
     # different function signatures
     for key in ag_order:
-        if key in ('file', 'tldr', 'man', 'buildd', 'pynew', 'archw', 'pdf'):
-            spec = getattr(ag, key).pop(0)
-            func = getattr(reader, key)
-            msg = _append_info(msg, func(spec))
-        elif key == 'cmd':
-            cmd_line = ag.cmd.pop(0)
-            msg = _append_info(msg, reader.command_line(cmd_line))
-        elif key == 'bts':
-            bts_id = ag.bts.pop(0)
-            msg = _append_info(msg, reader.bts(bts_id, raw=ag.bts_raw))
-        elif key == 'html':
-            url = ag.html.pop(0)
-            msg = _append_info(msg, reader.html(url, raw=False))
-        elif key in ('policy', 'devref'):
-            spec = getattr(ag, key).pop(0)
-            func = getattr(reader, key)
-            msg = _append_info(msg, func(spec, debgpt_home=ag.debgpt_home))
-        elif key == 'inplace':
-            # This is a special case. It reads the file as does by
-            # `--file` (read-only), but `--inplace` (read-write) will write
-            # the result back to the file. This serves code editing purpose.
-            msg = _append_info(msg, reader.file(ag.inplace))
-        elif key == 'mapreduce':
+        if key == 'mapreduce':
             # but we only do once for mapreduce
             if __has_done_mapreduce:
                 continue
             msg = _append_info(msg, mapreduce_super_long_context(ag))
             __has_done_mapreduce = True
+        elif key == 'retrieve':
+            raise NotImplementedError(key)
+        elif key == 'embed':
+            raise NotImplementedError(key)
+        elif key in ('file',):
+            spec = getattr(ag, key).pop(0)
+            func = ft.partial(reader.read_and_wrap, debgpt_home=ag.debgpt_home)
+            msg = _append_info(msg, func(spec))
+        elif key == 'inplace':
+            # This is a special case. It reads the file as does by
+            # `--file` (read-only), but `--inplace` (read-write) will write
+            # the result back to the file. This serves code editing purpose.
+            msg = _append_info(msg, reader.file(ag.inplace))
         else:
             raise NotImplementedError(key)
 
