@@ -182,28 +182,28 @@ def _request_frontend_specific_config(frontend: str,
             "Press Esc to abort.").run()
         conf['anthropic_model'] = value
 
-    # gemini part
-    if frontend == 'gemini' and 'gemini_api_key' not in current_config:
+    # google part
+    if frontend == 'google' and 'google_api_key' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Google Gemini API key:",
-            default['gemini_api_key'],
+            default['google_api_key'],
             "Typically found here: https://aistudio.google.com/app/apikey",
             "Press Esc to abort.").run()
-        conf['gemini_api_key'] = value
-    if frontend == 'gemini' and not is_embedding and 'gemini_model' not in current_config:
+        conf['google_api_key'] = value
+    if frontend == 'google' and not is_embedding and 'google_model' not in current_config:
         value = SingleEdit(
             "DebGPT Configurator", "Enter the Google model name:",
-            default['gemini_model'],
+            default['google_model'],
             "If not sure, just keep the default. Available options: https://ai.google.dev/gemini-api/docs/models/gemini",
             "Press Esc to abort.").run()
-        conf['gemini_model'] = value
-    if frontend == 'gemini' and is_embedding and 'gemini_embedding_model' not in current_config:
+        conf['google_model'] = value
+    if frontend == 'google' and is_embedding and 'google_embedding_model' not in current_config:
         value = SingleEdit("DebGPT Configurator",
                            "Enter the Google embedding model name:",
-                           default['gemini_embedding_model'],
+                           default['google_embedding_model'],
                            "If not sure, just keep the default.",
                            "Press Esc to abort.").run()
-        conf['gemini_embedding_model'] = value
+        conf['google_embedding_model'] = value
 
     # xai part
     if frontend == 'xai' and 'xai_api_key' not in current_config:

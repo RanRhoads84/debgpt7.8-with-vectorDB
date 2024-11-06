@@ -121,14 +121,14 @@ This option will toggle --quit and turn off markdown rendering.')
             # commercial services
             'openai',
             'anthropic',
-            'gemini',
+            'google',
             # self-hosted services
             'llamafile',
             'ollama',
             'vllm',
             'zmq'),
         help=f"default frontend is {conf['frontend']}. Available \
-choices are: (dryrun, zmq, openai, anthropic, gemini, zmq, llamafile, ollama, vllm).\
+choices are: (dryrun, zmq, openai, anthropic, google, zmq, llamafile, ollama, vllm).\
 The 'dryrun' is a fake frontend that will \
 do nothing other than printing the generated prompt. So that you can copy \
 it to web-based LLMs in that case.")
@@ -247,32 +247,32 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     config_template = __add_arg_to_config(config_template, _g,
                                           'anthropic_model')
 
-    # Specific to Gemini Frontend
+    # Specific to Google Frontend
     config_template += '''\n
 ###########################
-# Gemini Frontend Options
+# Google Frontend Options
 ###########################
 \n'''
-    _g = ag.add_argument_group('Gemini Frontend Options')
-    _g.add_argument('--gemini_api_key',
+    _g = ag.add_argument_group('Google Frontend Options')
+    _g.add_argument('--google_api_key',
                     type=str,
-                    default=conf['gemini_api_key'],
-                    help='Gemini API key')
+                    default=conf['google_api_key'],
+                    help='Google API key')
     config_template = __add_arg_to_config(config_template, _g,
-                                          'gemini_api_key')
+                                          'google_api_key')
 
-    _g.add_argument('--gemini_model',
+    _g.add_argument('--google_model',
                     type=str,
-                    default=conf['gemini_model'],
-                    help='the gemini model, e.g., gemini-1.5-flash')
-    config_template = __add_arg_to_config(config_template, _g, 'gemini_model')
+                    default=conf['google_model'],
+                    help='the google model, e.g., gemini-1.5-flash')
+    config_template = __add_arg_to_config(config_template, _g, 'google_model')
 
-    _g.add_argument('--gemini_embedding_model',
+    _g.add_argument('--google_embedding_model',
                     type=str,
-                    default=conf['gemini_embedding_model'],
-                    help='the gemini embedding model to use')
+                    default=conf['google_embedding_model'],
+                    help='the google embedding model to use')
     config_template = __add_arg_to_config(config_template, _g,
-                                          'gemini_embedding_model')
+                                          'google_embedding_model')
 
     # Specific to xAI Frontend
     config_template += '''\n

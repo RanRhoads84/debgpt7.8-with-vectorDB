@@ -70,7 +70,7 @@ maintaining a history of interactions.
 Available frontend options (specified by the `--frontend|-F`) are:
 [`openai`](https://platform.openai.com/docs/overview),
 [`anthropic`](https://console.anthropic.com/),
-[`gemini`](https://ai.google.dev/gemini-api/),
+[`google`](https://ai.google.dev/gemini-api/),
 [`xai`](https://console.x.ai/),
 [`llamafile`](https://github.com/Mozilla-Ocho/llamafile),
 [`ollama`](https://github.com/ollama/ollama),

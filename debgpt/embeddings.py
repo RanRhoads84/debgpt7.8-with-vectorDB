@@ -200,9 +200,9 @@ class OpenAIEmbedding(AbstractEmbeddingModel):
         return matrix
 
 
-class GeminiEmbedding(AbstractEmbeddingModel):
+class GoogleEmbedding(AbstractEmbeddingModel):
     '''
-    Gemini embedding model implementation.
+    Google embedding model implementation.
 
     Example model: "models/text-embedding-004"
     This model has a maximum dimension of 768.
@@ -214,9 +214,9 @@ class GeminiEmbedding(AbstractEmbeddingModel):
 
     def __init__(self, args: object = None) -> None:
         import google.generativeai as genai
-        genai.configure(api_key=args.gemini_api_key)
+        genai.configure(api_key=args.google_api_key)
         self.client = genai
-        self.model = args.gemini_embedding_model
+        self.model = args.google_embedding_model
         self.dim = args.embedding_dim
 
     def embed(self, text: str) -> np.ndarray:
@@ -270,8 +270,8 @@ def get_embedding_model(args: object) -> AbstractEmbeddingModel:
     '''
     if args.embedding_frontend == 'openai':
         return OpenAIEmbedding(args)
-    elif args.embedding_frontend == 'gemini':
-        return GeminiEmbedding(args)
+    elif args.embedding_frontend == 'google':
+        return GoogleEmbedding(args)
     elif args.embedding_frontend == 'random':
         return RandomEmbedding(args)
     else:

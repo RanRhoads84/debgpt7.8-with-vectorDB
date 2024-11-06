@@ -88,19 +88,19 @@ def test_openai_embedding_batch_embed(conf):
     assert np.isclose(np.linalg.norm(emb, axis=1), 1.0).all()
 
 
-def test_gemini_embedding_embed(conf):
-    if conf.gemini_api_key == 'your-google-gemini-api-key':
-        pytest.skip('Gemini API key is not provided')
-    model = embeddings.GeminiEmbedding(conf)
+def test_google_embedding_embed(conf):
+    if conf.google_api_key == 'your-google-api-key':
+        pytest.skip('Google API key is not provided')
+    model = embeddings.GoogleEmbedding(conf)
     vector = model.embed('hello world')
     assert vector.ndim == 1
     assert np.isclose(np.linalg.norm(vector), 1.0)
 
 
-def test_gemini_embedding_batch_embed(conf):
-    if conf.gemini_api_key == 'your-google-gemini-api-key':
-        pytest.skip('Gemini API key is not provided')
-    model = embeddings.GeminiEmbedding(conf)
+def test_google_embedding_batch_embed(conf):
+    if conf.google_api_key == 'your-google-api-key':
+        pytest.skip('Google API key is not provided')
+    model = embeddings.GoogleEmbedding(conf)
     matrix = model.batch_embed(['hello world', 'goodbye world'])
     assert matrix.ndim == 2
     assert np.isclose(np.linalg.norm(matrix, axis=1), 1.0).all()

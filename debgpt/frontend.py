@@ -325,11 +325,11 @@ class AnthropicFrontend(AbstractFrontend):
         return self.session[-1]['content']
 
 
-class GeminiFrontend(AbstractFrontend):
+class GoogleFrontend(AbstractFrontend):
     '''
     https://ai.google.dev/gemini-api/docs
     '''
-    NAME = 'GeminiFrontend'
+    NAME = 'GoogleFrontend'
     debug: bool = False
     stream: bool = True
 
@@ -342,13 +342,13 @@ class GeminiFrontend(AbstractFrontend):
                 'please install gemini package: "pip install google-generativeai"'
             )
             exit(1)
-        genai.configure(api_key=args.gemini_api_key)
-        self.client = genai.GenerativeModel(args.gemini_model)
+        genai.configure(api_key=args.google_api_key)
+        self.client = genai.GenerativeModel(args.google_model)
         self.chat = self.client.start_chat()
         self.kwargs = genai.types.GenerationConfig(
             temperature=args.temperature, top_p=args.top_p)
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(args.gemini_model)}, ' +
+            console.log(f'{self.NAME}> model={repr(args.google_model)}, ' +
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
     def oneshot(self, message: str, *, retry: bool = True) -> str:
@@ -523,8 +523,8 @@ def create_frontend(args):
         frontend = OpenAIFrontend(args)
     elif args.frontend == 'anthropic':
         frontend = AnthropicFrontend(args)
-    elif args.frontend == 'gemini':
-        frontend = GeminiFrontend(args)
+    elif args.frontend == 'google':
+        frontend = GoogleFrontend(args)
     elif args.frontend == 'xai':
         frontend = XAIFrontend(args)
     elif args.frontend == 'llamafile':
@@ -638,7 +638,7 @@ if __name__ == '__main__':
     ag.add_argument('--frontend',
                     '-F',
                     default='zmq',
-                    choices=('dryrun', 'zmq', 'openai', 'anthropic', 'gemini',
+                    choices=('dryrun', 'zmq', 'openai', 'anthropic', 'google',
                              'llamafile', 'ollama', 'vllm'))
     ag.add_argument('--debgpt_home', default=os.path.expanduser('~/.debgpt'))
     ag = ag.parse_args()

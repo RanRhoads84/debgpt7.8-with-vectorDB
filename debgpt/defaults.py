@@ -75,9 +75,9 @@ class Config(object):
             'anthropic_api_key': 'your-anthropic-api-key',
             'anthropic_model': 'claude-3-5-sonnet-20241022',
             # Gemini Frontend Specific
-            'gemini_api_key': 'your-google-gemini-api-key',
-            'gemini_model': 'gemini-1.5-flash',
-            'gemini_embedding_model': 'models/text-embedding-004',
+            'google_api_key': 'your-google-api-key',
+            'google_model': 'gemini-1.5-flash',
+            'google_embedding_model': 'models/text-embedding-004',
             # xAI Frontend Specific
             'xai_api_key': 'your-xai-api-key',
             'xai_model': 'grok-beta',
@@ -114,10 +114,10 @@ class Config(object):
             if verbose:
                 console.log('Found environment variable ANTHROPIC_API_KEY.')
             self.toml['anthropic_api_key'] = anthropic_api_key
-        if (gemini_api_key := os.getenv('GOOGLE_API_KEY', None)) is not None:
+        if (google_api_key := os.getenv('GOOGLE_API_KEY', None)) is not None:
             if verbose:
                 console.log('Found environment variable GOOGLE_API_KEY.')
-            self.toml['gemini_api_key'] = gemini_api_key
+            self.toml['google_api_key'] = google_api_key
         # create default vector db name
         emb_model = self.toml[f'{self.embedding_frontend}_embedding_model']
         self.toml['db'] = os.path.join(

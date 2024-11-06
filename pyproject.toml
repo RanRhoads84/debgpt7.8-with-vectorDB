@@ -24,7 +24,8 @@ dependencies = [
     'tenacity',
     'pygments',
     'urwid',
-    'lz4'
+    'lz4',
+    'numpy',
 ]
 authors = [
   {name = "Mo Zhou", email = "lumin@debian.org"},
@@ -45,31 +46,16 @@ Issues = "https://salsa.debian.org/deeplearning-team/debgpt/-/issues"
 debgpt = "debgpt.cli:main"
 
 [project.optional-dependencies]
-gemini = [
-    'google-generativeai',
-]
-anthropic = [
-    'anthropic',
-]
-test = [
-    "pytest>=7.0",
-    "pytest-cov",
-    "pytest-xdist",
-    "pytest-timeout",
-]
 dev = [
-    "debgpt[test]",
     "pyflakes",
     "pylint",
-]
-backend = [
+    "pypdf",
+    "pytest-cov",
+    "pytest-timeout",
+    "pytest-xdist",
+    "pytest>=7.0",
+    'anthropic',
+    'google-generativeai',
     'pytorch',
     'transformers',
-]
-features = [
-    "pypdf",
-]
-all = [
-    "debgpt[gemini]",
-    "debgpt[anthropic]",
 ]

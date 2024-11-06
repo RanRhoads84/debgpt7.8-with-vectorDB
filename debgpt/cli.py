@@ -149,9 +149,9 @@ def subcmd_git_commit(ag) -> None:
             commit_message += '\n'.join(
                 textwrap.wrap(f"\n\nOpenAI model: {ag.openai_model}.",
                               width=80))
-        elif ag.frontend == "gemini":
+        elif ag.frontend == "google":
             commit_message += '\n'.join(
-                textwrap.wrap(f"\n\nGemini model: {ag.gemini_model}.",
+                textwrap.wrap(f"\n\nGoogle model: {ag.google_model}.",
                               width=80))
         elif ag.frontend == "anthropic":
             commit_message += '\n'.join(
