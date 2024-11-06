@@ -62,6 +62,9 @@ class Config(object):
             # Embedding Settings
             'embedding_frontend': 'openai',
             'embedding_dim': 256,
+            # Mapreduce Settings
+            'mapreduce_chunksize': 65536,
+            'mapreduce_parallelism': 8,
             # OpenAI Frontend Specific
             'openai_base_url': 'https://api.openai.com/v1',
             'openai_model': 'gpt-4o',
@@ -75,6 +78,9 @@ class Config(object):
             'gemini_api_key': 'your-google-gemini-api-key',
             'gemini_model': 'gemini-1.5-flash',
             'gemini_embedding_model': 'models/text-embedding-004',
+            # xAI Frontend Specific
+            'xai_api_key': 'your-xai-api-key',
+            'xai_model': 'grok-beta',
             # Llamafile Frontend Specific
             'llamafile_base_url': 'http://localhost:8080/v1',
             # Ollama Frontend Specific
@@ -86,9 +92,6 @@ class Config(object):
             'vllm_model': 'NousResearch/Meta-Llama-3-8B-Instruct',
             # ZMQ Frontend Specific
             'zmq_backend': 'tcp://localhost:11177',
-            # Prompt Composer Settings
-            'mapreduce_chunksize': 65536,
-            'mapreduce_parallelism': 8,
         }
         # the built-in defaults will be overridden by config file
         if not os.path.exists(home):

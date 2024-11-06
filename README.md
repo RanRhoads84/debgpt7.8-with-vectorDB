@@ -69,8 +69,9 @@ maintaining a history of interactions.
 
 Available frontend options (specified by the `--frontend|-F`) are:
 [`openai`](https://platform.openai.com/docs/overview),
-`anthropic`,
-`gemini`,
+[`anthropic`](https://console.anthropic.com/),
+[`gemini`](https://ai.google.dev/gemini-api/),
+[`xai`](https://console.x.ai/),
 [`llamafile`](https://github.com/Mozilla-Ocho/llamafile),
 [`ollama`](https://github.com/ollama/ollama),
 [`vllm`](https://docs.vllm.ai/en/latest/),

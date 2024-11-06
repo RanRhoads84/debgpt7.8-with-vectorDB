@@ -203,6 +203,22 @@ def _request_frontend_specific_config(frontend: str,
                            "Press Esc to abort.").run()
         conf['gemini_embedding_model'] = value
 
+    # xai part
+    if frontend == 'xai' and 'xai_api_key' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the xAI API key:",
+            default['xai_api_key'],
+            "Typically found here: https://console.x.ai/",
+            "Press Esc to abort.").run()
+        conf['xai_api_key'] = value
+    if frontend == 'xai' and not is_embedding and 'xai_model' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the xAI model name:",
+            default['xai_model'],
+            "If not sure, just keep the default. Available options: https://console.x.ai/",
+            "Press Esc to abort.").run()
+        conf['xai_model'] = value
+
     # ollama part
     if frontend == 'ollama' and 'ollama_base_url' not in current_config:
         value = SingleEdit(
@@ -306,14 +322,15 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
 
     # step 1: select a frontend
     frontends = [
-        'OpenAI    | commercial,  OpenAI-API',
-        'Anthropic | commercial,  Anthropic-API',
-        'Gemini    | commercial,  Google-API',
-        'Ollama    | self-hosted, OpenAI-API',
-        'LlamaFile | self-hosted, OpenAI-API',
-        'vLLM      | self-hosted, OpenAI-API',
-        'ZMQ       | self-hosted, DebGPT built-in',
-        'Dryrun    | debug,       DebGPT built-in',
+        'OpenAI    (GPT)    | commercial,  OpenAI-API',
+        'Anthropic (Claude) | commercial,  Anthropic-API',
+        'Google    (Gemini) | commercial,  Google-API',
+        'xAI       (Grok)   | commercial,  OpenAI-API',
+        'Ollama    (*)      | self-hosted, OpenAI-API',
+        'LlamaFile (*)      | self-hosted, OpenAI-API',
+        'vLLM      (*)      | self-hosted, OpenAI-API',
+        'ZMQ       (*)      | self-hosted, DebGPT built-in',
+        'Dryrun    (N/A)    | debug,       DebGPT built-in',
     ]
 
     frontend = SingleChoice(
@@ -365,7 +382,7 @@ retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'."
     conf['embedding_frontend'] = embedding_frontend
 
     # step 4: ask for the embedding frontend-specific configuration
-    newconf = _request_frontend_specific_config(frontend,
+    newconf = _request_frontend_specific_config(embedding_frontend,
                                                 conf,
                                                 is_embedding=True)
     conf.update(newconf)

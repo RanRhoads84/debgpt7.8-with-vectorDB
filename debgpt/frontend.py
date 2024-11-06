@@ -396,6 +396,26 @@ class GeminiFrontend(AbstractFrontend):
         return self.session[-1]['content']
 
 
+class XAIFrontend(OpenAIFrontend):
+    '''
+    https://console.x.ai/
+    '''
+    NAME = 'xAIFrontend'
+
+    def __init__(self, args):
+        super().__init__(args)
+        from openai import OpenAI
+        self.client = OpenAI(api_key=args.xai_api_key,
+                             base_url='https://api.x.ai/v1/')
+        self.session.append({"role": "system", "content": self.system_message})
+        self.model = args.xai_model
+        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+        if args.verbose:
+            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                        f'temperature={args.temperature}, top_p={args.top_p}.')
+
+
+
 class LlamafileFrontend(OpenAIFrontend):
     '''
     https://github.com/Mozilla-Ocho/llamafile
@@ -505,6 +525,8 @@ def create_frontend(args):
         frontend = AnthropicFrontend(args)
     elif args.frontend == 'gemini':
         frontend = GeminiFrontend(args)
+    elif args.frontend == 'xai':
+        frontend = XAIFrontend(args)
     elif args.frontend == 'llamafile':
         frontend = LlamafileFrontend(args)
     elif args.frontend == 'ollama':

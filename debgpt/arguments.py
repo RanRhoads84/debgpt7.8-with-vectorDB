@@ -274,6 +274,26 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     config_template = __add_arg_to_config(config_template, _g,
                                           'gemini_embedding_model')
 
+    # Specific to xAI Frontend
+    config_template += '''\n
+#########################
+# xAI Frontend Options
+#########################
+\n'''
+    _g = ag.add_argument_group('xAI Frontend Options')
+    _g.add_argument('--xai_api_key',
+                    type=str,
+                    default=conf['xai_api_key'],
+                    help='xAI API key')
+    config_template = __add_arg_to_config(config_template, _g, 'xai_api_key')
+    
+    _g.add_argument('--xai_model',
+                    type=str,
+                    default=conf['xai_model'],
+                    help='the xAI model, e.g., grok-beta')
+    config_template = __add_arg_to_config(config_template, _g, 'xai_model')
+
+
     # Specific to Llamafile Frontend
     config_template += '''\n
 ############################
