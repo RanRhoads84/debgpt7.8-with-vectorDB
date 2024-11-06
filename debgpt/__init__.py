@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
 __version__ = '0.6'
 __copyright__ = '2024, Mo Zhou <lumin@debian.org>'
-__license__ = 'LGPL-3.0-or-later'
+__license__ = 'LGPL-3.0+'
 # do not load all components.
 # some components like llm, and backend, requires much more dependencies
 

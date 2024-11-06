@@ -31,10 +31,10 @@ authors = [
   {name = "Mo Zhou", email = "lumin@debian.org"},
 ]
 readme = "README.md"
-license = {text = "LGPL-3.0-or-later"}
+license = {text = "LGPL-3.0+"}
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: LGPL-3.0-or-later",
+    "License :: OSI Approved :: LGPL-3.0+",
     "Operating System :: OS Independent",
 ]
 
