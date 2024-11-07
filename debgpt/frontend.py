@@ -14,7 +14,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 import argparse
 import os
 import json
@@ -23,6 +23,7 @@ import sys
 import time
 import functools as ft
 import shlex
+import textwrap
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
@@ -151,6 +152,29 @@ class AbstractFrontend():
         with open(fpath, 'wt') as f:
             json.dump(self.session, f, indent=2)
         console.log(f'{self.NAME}> Conversation saved at {fpath}')
+
+
+class EchoFrontend(AbstractFrontend):
+    '''
+    A frontend that echoes the input text. Don't worry, this is just for
+    running unit tests.
+    '''
+    NAME = 'EchoFrontend'
+
+    def __init__(self, args: Optional[object] = None):
+        # do not call super().__init__(args) here.
+        self.session = []
+
+    def oneshot(self, message: str) -> str:
+        return textwrap.wrap(message, width=80)[0]
+
+    def query(self, messages: Union[List, Dict, str]) -> list:
+        self.update_session(messages)
+        new_input = self.session[-1]['content']
+        response = textwrap.wrap(new_input, width=80)[0]
+        new_message = {'role': 'assistant', 'content': response}
+        self.update_session(new_message)
+        return self.session[-1]['content']
 
 
 class OpenAIFrontend(AbstractFrontend):
@@ -535,6 +559,8 @@ def create_frontend(args):
         frontend = vLLMFrontend(args)
     elif args.frontend == 'dryrun':
         frontend = None
+    elif args.frontend == 'echo':
+        frontend = EchoFrontend(args)
     else:
         raise NotImplementedError
     return frontend
