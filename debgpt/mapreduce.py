@@ -73,43 +73,6 @@ def entries2dict(entries: List[Entry],
 
 
 
-def mapreduce_load_any(
-    path: str,
-    chunk_size: int = 8192,
-    *,
-    user_question: str = '',
-    args: Optional[object] = None,
-) -> Dict[Tuple[str, int, int], List[str]]:
-    '''
-    load file or directory and return the chunked contents
-    '''
-    elif path.startswith('google:'):
-        query = path[7:] if len(path) > 7 else user_question
-        urls = google_search(query)
-        if args.verbose:
-            console.log(f'Google Search Results for {repr(query)}:', urls)
-        else:
-            console.log(
-                f'Got {len(urls)} Google Search Results for {repr(query)}.')
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = {
-                executor.submit(_load_url_parsed, url): url
-                for url in urls
-            }
-            chunkdict = {}
-            for future in concurrent.futures.as_completed(futures):
-                url = futures[future]
-                lines = future.result()
-                chunkdict.update(
-                    _mapreduce_chunk_lines(url,
-                                           0,
-                                           len(lines),
-                                           lines,
-                                           chunk_size=chunk_size))
-        return chunkdict
-
-
-
 def mapreduce_load_any_astext(
     path: Union[str | List[str]],
     chunk_size: int = 8192,

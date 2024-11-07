@@ -29,6 +29,7 @@ import shlex
 import mimetypes
 import tenacity
 from rich.rule import Rule
+from rich.progress import track
 import concurrent.futures
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -312,6 +313,18 @@ def google_search(query: str) -> List[str]:
     return results
 
 
+def read_google(spec: str, *, verbose: bool = True) -> str:
+    urls = google_search(spec)
+    if verbose:
+        console.log(f'Google Search Results for {repr(spec)}:', urls)
+    else:
+        console.log(
+            f'Got {len(urls)} Google Search Results for {repr(spec)}.')
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        results = list(track(executor.map(read_url, urls), total=len(urls)))
+    return [(x, y) for x, y in zip(urls, results)]
+
+
 def read_archwiki(spec: str) -> str:
     '''
     Archwiki. e.g.,
@@ -337,7 +350,9 @@ def read_buildd(spec: str, ):
     return '\n'.join([x.rstrip() for x in text])
 
 
-def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
+def read(spec: str, *,
+         user_question: Optional[str] = None,
+         debgpt_home: str = '.') -> List[Entry]:
     '''
     Unified reader for reading text contents from various sources
     specified by the user. We will detect the type of the resource specified,
@@ -464,6 +479,15 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
                 source = f'Debian Developer Reference document [{sectionidx}]'
                 section = content[sectionidx]
                 results.append((source, section, wrapfun, wrapfun_chunk))
+    elif spec.startswith('google:'):
+        parsed_spec = spec[7:] if spec[7:] else user_question
+        if not parsed_spec:
+            raise ValueError('Please provide a search query.')
+        for url, content in read_google(parsed_spec):
+            wrapfun = create_wrapper('Here is the contents from URL `{}`:', url)
+            wrapfun_chunk = create_chunk_wrapper(
+                'Here is the contents from URL `{}` (lines {}-{}):', url)
+            results.append((url, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('man:'):
         parsed_spec = spec[4:]
         content = read_cmd(f'man {parsed_spec}')
