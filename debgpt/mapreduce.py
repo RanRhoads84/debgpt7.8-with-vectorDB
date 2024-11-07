@@ -33,159 +33,44 @@ from urllib.parse import urlparse
 from urllib.request import urlopen
 import urllib.parse
 from . import policy as debian_policy
+from . import reader
+from .reader import Entry
 from .defaults import console
 from collections import namedtuple
 
 
-def _mapreduce_chunk_lines(path: str, start: int, end: int, lines: List[str],
-                           *, chunk_size: int):
-    chunk_size_in_bytes = sum(len(x.encode('utf8')) for x in lines[start:end])
-    if chunk_size_in_bytes < chunk_size:
-        return {(path, start, end): lines[start:end]}
-    elif end - start == 1:
-        return {(path, start, end): lines[start:end]}
-    else:
-        # split the lines into chunks
-        middle = (start + end) // 2
-        left = _mapreduce_chunk_lines(path,
-                                      start,
-                                      middle,
-                                      lines,
-                                      chunk_size=chunk_size)
-        right = _mapreduce_chunk_lines(path,
-                                       middle,
-                                       end,
-                                       lines,
-                                       chunk_size=chunk_size)
-        return {**left, **right}
-
-
-def _mapreduce_chunk_lines_norecussion(path: str, start: int, end: int,
-                                       lines: List[str], *, chunk_size: int):
+def entry2dict(entry: Entry,
+               max_chunk_size: int = 8192
+               ) -> Dict[Tuple[str, int, int], List[str]]:
     '''
-    the non-recursion version of the above function
-    the above version seems to be problematic when dealing with large files
-
-    this function is modified from re-written of the above function with chatgpt.
+    convert an Entry object to a chunked dictionary
     '''
+    try:
+        d = reader.chunk_lines(entry.content.split('\n'), max_chunk_size)
+    except RecursionError:
+        d = reader.chunk_lines_nonrecursive(entry.content.split('\n'),
+                                            max_chunk_size)
     result = {}
-    stack = [(start, end)]
-    lens = [len(line.encode('utf8')) for line in lines]
-
-    while stack:
-        current_start, current_end = stack.pop()
-        chunk_size_in_bytes = sum(lens[current_start:current_end])
-
-        if chunk_size_in_bytes < chunk_size:
-            # If the chunk is within the size limit, add to result
-            result[(path, current_start,
-                    current_end)] = lines[current_start:current_end]
-        elif current_end - current_start == 1:
-            # If the chunk is too large, but only one line, add to result
-            result[(path, current_start,
-                    current_end)] = lines[current_start:current_end]
-        else:
-            # If the chunk is too large, split it and add to stack
-            middle = (current_start + current_end) // 2
-            stack.append((current_start, middle))
-            stack.append((middle, current_end))
-        print('number of lines:', len(lines), 'stack size:', len(stack))
-
+    for (start, end), lines in d.items():
+        result[(entry.path, start, end)] = lines
     return result
 
 
-def mapreduce_load_url(
-    url: str,
-    chunk_size: int = 8192,
-) -> Dict[Tuple[str, int, int], List[str]]:
+def entries2dict(entries: List[Entry],
+                 max_chunk_size: int = 8192
+                 ) -> Dict[Tuple[str, int, int], List[str]]:
     '''
-    load text contents from a URL and return the chunked contents
+    convert a list of Entry objects to a chunked dictionary
+
+    Args:
+        entries: a list of Entry objects
+        max_chunk_size: the maximum chunk size in bytes
+    Returns:
+        a dictionary of chunked contents
     '''
-    with urlopen(url) as response:
-        content = response.read().decode('utf-8')
-        lines = content.splitlines()
-    lines = [x.rstrip() for x in lines]
-    chunkdict = _mapreduce_chunk_lines(url,
-                                       0,
-                                       len(lines),
-                                       lines,
-                                       chunk_size=chunk_size)
-    return chunkdict
+    return ft.reduce(dict.__or__, [entry2dict(e, max_chunk_size) for e in entries])
 
 
-def mapreduce_load_file(
-    path: str,
-    chunk_size: int = 8192,
-) -> Dict[Tuple[str, int, int], List[str]]:
-    '''
-    load the file and return the content as a list of lines
-    '''
-    # tell the file type and load the file as lines
-    mime_type, _ = mimetypes.guess_type(path)
-    if mime_type == 'application/pdf':
-        lines = _load_pdf(path)
-    else:
-        with open(path, 'rt') as f:
-            lines = [x.rstrip() for x in f.readlines()]
-
-    # chunk the lines
-    try:
-        chunkdict = _mapreduce_chunk_lines(path,
-                                           0,
-                                           len(lines),
-                                           lines,
-                                           chunk_size=chunk_size)
-    except RecursionError:
-        console.log(
-            'Oops! falling back to non-recursion chunking due to RecursionError'
-        )
-        chunkdict = _mapreduce_chunk_lines_norecussion(path,
-                                                       0,
-                                                       len(lines),
-                                                       lines,
-                                                       chunk_size=chunk_size)
-    return chunkdict
-
-
-def mapreduce_load_directory(
-    path: str,
-    chunk_size: int = 8192,
-) -> Dict[Tuple[str, int, int], List[str]]:
-    '''
-    load a whole directory and return the chunked contents
-    '''
-    all_chunks = dict()
-    for root, _, files in os.walk(path):
-        for file in files:
-            path = os.path.join(root, file)
-            if not is_text_file(path):
-                continue
-            chunkdict = mapreduce_load_file(path, chunk_size=chunk_size)
-            all_chunks.update(chunkdict)
-    return all_chunks
-
-
-def mapreduce_parse_path(path: str, debgpt_home: str) -> str:
-    '''
-    parse the path string and return the actual path or URL.
-
-    e.g. policy: -> <debgpt_home>/policy.txt
-    '''
-    if path.startswith(':'):
-        if path == 'policy:':
-            return os.path.join(debgpt_home, 'policy.txt')
-        elif path == 'devref:':
-            return os.path.join(debgpt_home, 'devref.txt')
-        else:
-            raise ValueError(f'Undefined special path {path}')
-    elif path == 'sbuild:':
-        if not os.path.exists('./debian'):
-            raise FileNotFoundError(
-                './debian directory not found. Are you in the right directory?'
-            )
-        return _latest_glob('../*.build')
-    else:
-        return path
 
 
 def mapreduce_load_any(
@@ -258,6 +143,8 @@ def mapreduce_load_any(
     elif os.path.isdir(path):
         return mapreduce_load_directory(path, chunk_size=chunk_size)
     elif os.path.isfile(path):
+        entries = reader.read(path)
+        chunkdict = entries2dict(entries, chunk_size)
         return mapreduce_load_file(path, chunk_size=chunk_size)
     else:
         raise FileNotFoundError(f'{path} not found')

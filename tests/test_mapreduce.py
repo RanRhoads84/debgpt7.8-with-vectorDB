@@ -17,11 +17,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import List, Union, Dict, Tuple
 import pytest
 from debgpt import reader
+from debgpt import mapreduce
 import os
 import time
 import numpy as np
 import sys
 import io
+
+
+def test_mapreduce_entry2chunk():
+    entry = reader.Entry('void', '\n'.join(['a', 'b', 'c', 'd', 'e']),
+                         lambda x: x, lambda x: x)
+    print('entry:', entry)
+    cdict = mapreduce.entry2dict(entry, 2)
+    assert len(cdict) == 5
+    print('cdict:', cdict)
 
 
 #def test_mapreduce_load_file(tmp_path):
