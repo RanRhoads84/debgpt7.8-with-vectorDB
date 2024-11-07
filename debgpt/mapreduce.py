@@ -83,36 +83,6 @@ def mapreduce_load_any(
     '''
     load file or directory and return the chunked contents
     '''
-    if path == 'policy:':
-        lines = debgpt_policy.DebianPolicy(
-            os.path.join(args.debgpt_home, 'policy.txt')).lines
-        return _mapreduce_chunk_lines('Debian Policy',
-                                      0,
-                                      len(lines),
-                                      lines,
-                                      chunk_size=chunk_size)
-
-    elif path == 'devref:':
-        lines = debgpt_policy.DebianDevref(
-            os.path.join(args.debgpt_home, 'devref.txt')).lines
-        return _mapreduce_chunk_lines('Debian Developer Reference',
-                                      0,
-                                      len(lines),
-                                      lines,
-                                      chunk_size=chunk_size)
-
-    elif path == 'sbuild:':
-        '''
-        load the latest sbuild buildlog. we will automatically figure out the
-        latest buildlog file in the parent directory.
-        '''
-        if not os.path.exists('./debian'):
-            raise FileNotFoundError(
-                './debian directory not found. Are you in the right directory?'
-            )
-        latest_build_log = _latest_glob('../*.build')
-        return mapreduce_load_file(latest_build_log, chunk_size)
-
     elif path.startswith('google:'):
         query = path[7:] if len(path) > 7 else user_question
         urls = google_search(query)
@@ -138,16 +108,6 @@ def mapreduce_load_any(
                                            chunk_size=chunk_size))
         return chunkdict
 
-    elif any(path.startswith(x) for x in ('file://', 'http://', 'https://')):
-        return mapreduce_load_url(path, chunk_size=chunk_size)
-    elif os.path.isdir(path):
-        return mapreduce_load_directory(path, chunk_size=chunk_size)
-    elif os.path.isfile(path):
-        entries = reader.read(path)
-        chunkdict = entries2dict(entries, chunk_size)
-        return mapreduce_load_file(path, chunk_size=chunk_size)
-    else:
-        raise FileNotFoundError(f'{path} not found')
 
 
 def mapreduce_load_any_astext(

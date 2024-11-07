@@ -99,6 +99,23 @@ def read_file_plaintext(path: str) -> str:
     return content
 
 
+def read_sbuild(*, return_path: bool = False) -> str:
+    '''
+    load the latest sbuild buildlog. we will automatically figure out the
+    latest buildlog file in the parent directory.
+    '''
+    if not os.path.exists('./debian'):
+        raise FileNotFoundError(
+            './debian directory not found. Cannot detect sbuild log location. Are you in the right directory?'
+        )
+    latest_build_log = latest_glob('../*.build')
+    result = read_file_plaintext(latest_build_log)
+    if return_path:
+        return result, latest_build_log
+    else:
+        return result
+
+
 def read_file_pdf(path: str) -> str:
     '''
     read the PDF file and return the content as a string
@@ -477,6 +494,12 @@ def read(spec: str, *, debgpt_home: str = '.') -> List[Entry]:
                 source = f'Debian Policy section [{sectionidx}]'
                 section = content[sectionidx]
                 results.append((source, section, wrapfun, wrapfun_chunk))
+    elif spec.startswith('sbuild:'):
+        content, logpath = read_sbuild(return_path=True)
+        wrapfun = create_wrapper('Here is the sbuild buildlog {}:', logpath)
+        wrapfun_chunk = create_chunk_wrapper(
+            'Here is the sbuild buildlog {} (lines {}-{}):', logpath)
+        results.append((logpath, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('tldr:'):
         parsed_spec = spec[5:]
         content = read_cmd(f'tldr {parsed_spec}')
