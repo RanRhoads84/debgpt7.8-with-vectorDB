@@ -428,27 +428,3 @@ def test_chunk_lines():
     chunks_nr = reader.chunk_lines_nonrecursive(lines, 1)
     assert len(chunks_nr) == 6
 
-
-#def test_mapreduce_load_file(tmp_path):
-#    policypath = os.path.join(tmp_path, 'policy.txt')
-#    # just download the policy text file
-#    reader.policy('1', debgpt_home=tmp_path)
-#    chunks = reader.mapreduce_load_file(policypath)
-#    for k, v in chunks.items():
-#        encoded = '\n'.join(v).encode('utf-8')
-#        print(k, len(encoded))
-#        print(encoded.decode())
-#
-#
-#def test_mapreduce_load_directory(tmp_path):
-#    chunks = reader.mapreduce_load_directory('./debian')
-#    for k, v in chunks.items():
-#        encoded = '\n'.join(v).encode('utf-8')
-#        print(k, len(encoded))
-#        print(encoded.decode())
-#
-#
-#def test_mapreduce_load_any_astext():
-#    chunks = reader.mapreduce_load_any_astext('./debian')
-#    for v in chunks:
-#        print(v)
