@@ -604,6 +604,28 @@ def chunk_entry(entry: Entry, max_chunk_size: int) -> List[Entry]:
     return results
 
 
+def read_and_chunk(spec: str,
+                   *,
+                   max_chunk_size: int = -1,
+                   debgpt_home: str = '.') -> List[Entry]:
+    '''
+    Read contents from the specified resource and chunk the content into pieces.
+
+    Args:
+        spec (str): the path or URL to the file
+        max_chunk_size (int): the maximum chunk size of the content. If the
+            number is less than 0, we shall not chunk the contents.
+        debgpt_home (str): the home directory of debgpt
+    Returns:
+        List[Entry]: a list of entries, each entry contains a chunk of the content
+    '''
+    entries = read(spec, debgpt_home=debgpt_home)
+    if max_chunk_size > 0:
+        entries = ft.reduce(list.__add__,
+                            [chunk_entry(x, max_chunk_size) for x in entries])
+    return entries
+
+
 def read_and_wrap(spec: str,
                   *,
                   max_chunk_size: int = -1,
