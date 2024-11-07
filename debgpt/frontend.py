@@ -164,6 +164,10 @@ class EchoFrontend(AbstractFrontend):
     def __init__(self, args: Optional[object] = None):
         # do not call super().__init__(args) here.
         self.session = []
+        self.stream = False
+        self.monochrome = False
+        self.multiline = False
+        self.render_markdown = False
 
     def oneshot(self, message: str) -> str:
         return textwrap.wrap(message, width=80)[0]
@@ -172,9 +176,13 @@ class EchoFrontend(AbstractFrontend):
         self.update_session(messages)
         new_input = self.session[-1]['content']
         response = textwrap.wrap(new_input, width=80)[0]
+        console_stdout.print(response)
         new_message = {'role': 'assistant', 'content': response}
         self.update_session(new_message)
         return self.session[-1]['content']
+
+    def dump(self):
+        pass
 
 
 class OpenAIFrontend(AbstractFrontend):

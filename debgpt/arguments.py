@@ -117,11 +117,14 @@ This option will toggle --quit and turn off markdown rendering.')
         type=str,
         default=conf['frontend'],
         choices=(
+            # development and debugging
             'dryrun',
+            'echo',
             # commercial services
             'openai',
             'anthropic',
             'google',
+            'xai',
             # self-hosted services
             'llamafile',
             'ollama',
