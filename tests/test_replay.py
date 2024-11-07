@@ -30,12 +30,13 @@ illegal_session = [
 ]
 
 def test_replay(tmpdir):
-    with open('test_replay.json', 'w') as f:
+    with open(tmpdir.join('test_replay.json'), 'w') as f:
         json.dump(demo_session, f)
-    replay.replay('test_replay.json')
-    replay.main(['test_replay.json'])
-    replay.main(['test_replay.json', '--render'])
-    replay.main(['test_replay.json', '--no-render'])
+    sample_json_path = str(tmpdir.join('test_replay.json'))
+    replay.replay(sample_json_path)
+    replay.main([sample_json_path])
+    replay.main([sample_json_path, '--render'])
+    replay.main([sample_json_path, '--no-render'])
 
 @pytest.mark.parametrize('render', (True, False))
 def test_process_entry(render: bool):

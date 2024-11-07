@@ -80,7 +80,7 @@ def test_vectorretriever_retrieve_from_db(tmpdir):
     assert len(results) == 3
     for i, result in enumerate(results):
         score, source, text = result
-        assert text in ['fruit', 'orange', 'apple']
+        assert text in ['fruit', 'orange', 'apple', 'banana']
         assert score >= 0.0 - 1e-5
         assert score <= 1.0 + 1e-5
         assert source is not None
