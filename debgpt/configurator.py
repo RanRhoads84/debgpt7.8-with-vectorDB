@@ -60,7 +60,7 @@ class SingleChoice(object):
         raise urwid.ExitMainLoop(choice)
 
     def __init__(self, title: str, question: str, choices: Iterable[str],
-                 helpmsg: str, statusmsg: str):
+                 helpmsg: str, statusmsg: str, *, focus: int = 0):
         # header
         header = urwid.AttrMap(urwid.Text(title, align='center'), 'reversed')
         footer = urwid.Text(statusmsg)
@@ -76,7 +76,9 @@ class SingleChoice(object):
             button = urwid.Button(c)
             urwid.connect_signal(button, "click", self.item_chosen, c)
             buttons.append(urwid.AttrMap(button, None, focus_map="reversed"))
-        body.append(urwid.LineBox(urwid.Pile(buttons)))
+        pile = urwid.Pile(buttons)
+        pile.set_focus(focus)
+        body.append(urwid.LineBox(pile))
         # build the help message between menu and footer
         body.extend([
             urwid.Divider(),
@@ -328,11 +330,13 @@ def _request_common_cli_behavior_config() -> dict:
     '''
     conf = dict()
     # 1. whether to render LLM response markdown
+    focus = {True: 0, False: 1}[default['render_markdown']]
     value = SingleChoice(
         "DebGPT Configurator", "Render LLM response (Markdown) in terminal?",
         ['yes', 'no'], "Default is 'yes' (recommended). This option \
 produces fancy terminal printing with markdown stream.",
-        "Press Enter to confirm. Press Esc to abort.").run()
+        "Press Enter to confirm. Press Esc to abort.",
+        focus=focus).run()
     _abort_on_None(value)
     conf['render_markdown'] = value == 'yes'
     return conf
@@ -385,6 +389,9 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
     if dest and os.path.exists(dest):
         overwrite = _request_overwrite_config(dest)
         _abort_on_None(overwrite)
+        if overwrite == False:
+            print('Aborted.')
+            exit(0)
 
     # step 1: select a frontend
     frontends = [
@@ -398,6 +405,17 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
         'ZMQ       (*)      | self-hosted, DebGPT built-in',
         'Dryrun    (N/A)    | debug,       DebGPT built-in',
     ]
+    frontends_focus = {
+            'openai': 0,
+            'anthropic': 1,
+            'google': 2,
+            'xai': 3,
+            'ollama': 4,
+            'llamafile': 5,
+            'vllm': 6,
+            'zmq': 7,
+            'dryrun': 8,
+    }[default['frontend']]
 
     frontend = SingleChoice(
         "DebGPT Configurator", "Select a frontend that DebGPT will use:",
@@ -413,7 +431,8 @@ For advanced usages and more options, you may generate a configuration \
 template with the following command for manual editing:\n\n\
   $ debgpt genconfig > ~/.debgpt/config.yaml\n\n\
 This could be useful if you wish to switch among multiple frontends \
-using the `--frontend|-F` argument.", "Press Enter to confirm. Press Esc to abort.").run()
+using the `--frontend|-F` argument.", "Press Enter to confirm. Press Esc to abort.",
+        focus=frontends_focus).run()
     _abort_on_None(frontend)
     frontend = frontend.split(' ')[0].lower()
     conf['frontend'] = frontend
@@ -428,6 +447,11 @@ using the `--frontend|-F` argument.", "Press Enter to confirm. Press Esc to abor
         'Google    | commercial,  Google-API',
         'Random    | debug,       DebGPT built-in',
     ]
+    embedding_frontends_focus = {
+            'openai': 0,
+            'google': 1,
+            'random': 2,
+            }[default['embedding_frontend']]
     embedding_frontend = SingleChoice(
         "DebGPT Configurator",
         "Select an embedding frontend that DebGPT will use:",
@@ -438,7 +462,8 @@ embedding vectors.\n\n\
 The embedding frontend can be different from the frontend.\n\n\
 If you are not going to use the embedding-realted feature, such as vectordb,\
 retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'.",
-        "Press Enter to confirm. Press Esc to abort.").run()
+        "Press Enter to confirm. Press Esc to abort.",
+        focus=embedding_frontends_focus).run()
     _abort_on_None(embedding_frontend)
     embedding_frontend = embedding_frontend.split(' ')[0].lower()
     conf['embedding_frontend'] = embedding_frontend
