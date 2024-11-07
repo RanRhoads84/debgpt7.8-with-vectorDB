@@ -28,6 +28,7 @@ import glob
 import shlex
 import mimetypes
 import tenacity
+from rich.rule import Rule
 import concurrent.futures
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -175,13 +176,13 @@ def read_directory(path: str) -> List[Tuple[str, str]]:
         if any(x in root.split('/') for x in SKIPLIST):
             continue
         for file in files:
-            path = os.path.join(root, file)
+            cursor = os.path.join(root, file)
             try:
-                content = read_file(path)
+                content = read_file(cursor)
             except TypeError:
                 console.log(f'Skipping unsupported file `{path}`.')
                 content = ''
-            contents.append((path, content))
+            contents.append((cursor, content))
     return contents
 
 
@@ -709,6 +710,7 @@ def main(argv: List[str] = sys.argv[1:]):
             string = read_and_wrap(file,
                                    max_chunk_size=args.chunk,
                                    debgpt_home=args.debgpt_home)
+            console.print(Rule())
             console.log('Specifier:', file)
             console.print(string)
             tally += 1
@@ -720,6 +722,7 @@ def main(argv: List[str] = sys.argv[1:]):
                 entries = ft.reduce(
                     list.__add__,
                     [chunk_entry(x, args.chunk) for x in entries])
+            console.print(Rule())
             console.log('Specifier:', file)
             console.print(entries)
             tally += len(entries)
