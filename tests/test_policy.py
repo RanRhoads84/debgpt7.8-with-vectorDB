@@ -27,7 +27,7 @@ def test_policy(tmpdir: str) -> None:
     Args:
         tmpdir (str): The temporary directory to use for testing.
     """
-    policy = DebianPolicy(os.path.join(tmpdir, 'policy.txt'))
+    policy = DebianPolicy()
     # specific section of the policy, indexed by section number (as string)
     for section in ('1', '4.6', '4.9.1'):
         text = policy[section]
@@ -58,7 +58,7 @@ def test_devref(tmpdir: str, section: str) -> None:
         tmpdir (str): The temporary directory to use for testing.
         section (str): The section of the Debian Developer's Reference to test.
     """
-    devref = DebianDevref(os.path.join(tmpdir, 'devref.txt'))
+    devref = DebianDevref()
     # Print the specific section of the developer's reference
     print(devref[section])
     # Convert the entire developer's reference to a string

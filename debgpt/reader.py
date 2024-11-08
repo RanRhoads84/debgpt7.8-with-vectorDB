@@ -596,8 +596,7 @@ def read(spec: str,
     elif spec.startswith('devref:'):
         # e.g., devref:1 loads section 1, devref: loads the whole devref
         parsed_spec = spec[7:]
-        content = debian_policy.DebianDevref(
-            os.path.join(debgpt_home, 'devref.txt'))
+        content = debian_policy.DebianDevref()
         if parsed_spec:
             source = f'Debian Developer Reference document [{parsed_spec}]'
             content = content[parsed_spec]
@@ -639,8 +638,7 @@ def read(spec: str,
     elif spec.startswith('policy:'):
         # e.g., policy:1 loads section 1, policy: loads the whole policy
         parsed_spec = spec[7:]
-        content = debian_policy.DebianPolicy(
-            os.path.join(debgpt_home, 'policy.txt'))
+        content = debian_policy.DebianPolicy()
         if parsed_spec:
             source = f'Debian Policy section [{parsed_spec}]'
             section = content[parsed_spec]

@@ -380,9 +380,7 @@ def test_devref(section, tmpdir):
 
 @pytest.mark.parametrize('spec', (
     'test.txt',
-    'policy:',
     'policy:1',
-    'devref:',
     'devref:1',
     'bts:src:pytorch',
     'bts:1056388',

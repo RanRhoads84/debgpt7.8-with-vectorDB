@@ -14,10 +14,13 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-from typing import Union
+from typing import Union, List
 import os
 import requests
 from .defaults import console
+from .defaults import HOME
+from .cache import Cache
+cache = Cache(os.path.join(HOME, 'cache.sqlite'))
 
 
 class DebianPolicy:
@@ -30,19 +33,17 @@ class DebianPolicy:
     SEP_SUBSECTION: str = '==='
     SEP_SUBSUBSECTION: str = '---'
 
-    def __init__(self, cache: str = 'policy.txt') -> None:
-        # Check if the cache file exists, if not, download and cache it.
-        if not os.path.exists(cache):
+    def __init__(self) -> None:
+        # Check if the cache exists and read lines
+        if self.URL not in cache:
             r = requests.get(self.URL)
-            with open(cache, 'wb') as f:
-                f.write(r.content)
-            console.log(f'DebianPolicy> cached {self.NAME} at {cache}')
+            cache[self.URL] = r.text
+            lines = r.text.split('\n')
+        else:
+            lines = cache[self.URL].split('\n')
 
-        # Read the cached file into lines.
-        with open(cache, 'rt') as f:
-            self.lines: list[str] = [x.rstrip() for x in f.readlines()]
-
-        # Scan the document and cache the section indexes.
+        # Scan the document and prepare the section indexes.
+        self.lines: List[str] = [x.rstrip() for x in lines]
         self.indexes: list[str] = self.__scan_indexes()
 
     def __iter__(self):
@@ -122,10 +123,6 @@ class DebianPolicy:
 class DebianDevref(DebianPolicy):
     NAME: str = "Debian Developer's Reference"
     URL: str = 'https://www.debian.org/doc/manuals/developers-reference/developers-reference.en.txt'
-
-    def __init__(self, cache: str = 'devref.txt') -> None:
-        # Initialize the DebianDevref class, inheriting from DebianPolicy.
-        super().__init__(cache)
 
 
 if __name__ == '__main__':  # pragma: no cover
