@@ -38,6 +38,12 @@ from . import policy as debian_policy
 from .defaults import console
 from collections import namedtuple
 
+try:
+    import pycurl
+    __use_pycurl = True
+except ImportError:
+    __use_pycurl = False
+
 # The Entry namedtuple, core data structure for reader outputs
 # path: str
 # content: str
@@ -187,9 +193,109 @@ def read_directory(path: str) -> List[Tuple[str, str]]:
     return contents
 
 
+def read_url(url: str) -> str:
+    '''
+    Dispatcher based on the availability of the pycurl library.
+    '''
+    if __use_pycurl:
+        return read_url__pycurl(url)
+    else:
+        return read_url__requests(url)
+
+
 @tenacity.retry(stop=tenacity.stop_after_attempt(3),
                 wait=tenacity.wait_fixed(5))
-def read_url(url: str) -> str:
+def read_url__pycurl(url: str) -> str:
+    '''
+    read the content from the URL using pycurl
+
+    Args:
+        url (str): the URL to read
+    Returns:
+        str: the content from the URL
+    '''
+    headers = {}
+    # copied from pycurl: http://pycurl.io/docs/latest/quickstart.html
+    def header_function(header_line):
+        # HTTP standard specifies that headers are encoded in iso-8859-1.
+        # On Python 2, decoding step can be skipped.
+        # On Python 3, decoding step is required.
+        header_line = header_line.decode('iso-8859-1')
+
+        # Header lines include the first status line (HTTP/1.x ...).
+        # We are going to ignore all lines that don't have a colon in them.
+        # This will botch headers that are split on multiple lines...
+        if ':' not in header_line:
+            return
+
+        # Break the header line into header name and value.
+        name, value = header_line.split(':', 1)
+
+        # Remove whitespace that may be present.
+        # Header lines include the trailing newline, and there may be whitespace
+        # around the colon.
+        name = name.strip()
+        value = value.strip()
+
+        # Header names are case insensitive.
+        # Lowercase name here.
+        name = name.lower()
+
+        # Now we can actually record the header name and value.
+        # Note: this only works when headers are not duplicated, see below.
+        headers[name] = value
+
+    def _is_content_type_html(headers: dict) -> bool:
+        if 'content-type' not in headers:
+            return False
+        content_type = headers['content-type']
+        return content_type.startswith('text/html')
+
+    buffer = io.BytesIO()
+    c = pycurl.Curl()
+    c.setopt(c.URL, url)
+    c.setopt(pycurl.FOLLOWLOCATION, 1)
+    c.setopt(c.WRITEFUNCTION, buffer.write)
+    c.setopt(c.HEADERFUNCTION, header_function)
+    c.perform()
+    status = c.getinfo(c.RESPONSE_CODE)
+    c.close()
+    if status != 200:
+        console.log(f'Failed to read {url}: HTTP {status}')
+        return ''
+    try:
+        content = buffer.getvalue().decode('utf-8')
+        #console.log(f'Content-Type: {headers}')
+        # if HTML, parse it
+        if _is_content_type_html(headers):
+            soup = BeautifulSoup(content, features='html.parser')
+            text = soup.get_text().strip()
+            text = re.sub('\n\n+\n', '\n\n', text)
+            text = [x.rstrip() for x in text.split('\n')]
+            content = '\n'.join(text)
+        return content
+    except UnicodeDecodeError:
+        if url.endswith('.pdf'):
+            try:
+                from pypdf import PdfReader
+            except ImportError:
+                console.log('Please install pypdf using `pip install pypdf`')
+                return ''
+            pdf_bytes = io.BytesIO(buffer.getvalue())
+            reader = PdfReader(pdf_bytes)
+            text = ''
+            for page in reader.pages:
+                text += page.extract_text()
+            return text
+        else:
+            console.log(f'Failed to read {repr(url)} as utf-8. Giving up.')
+            return ''
+
+
+
+@tenacity.retry(stop=tenacity.stop_after_attempt(3),
+                wait=tenacity.wait_fixed(5))
+def read_url__requests(url: str) -> str:
     '''
     read the content from the URL. We will detect the content type.
 
