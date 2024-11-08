@@ -23,7 +23,6 @@ import sys
 import time
 import functools as ft
 import shlex
-import textwrap
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
@@ -160,6 +159,7 @@ class EchoFrontend(AbstractFrontend):
     running unit tests.
     '''
     NAME = 'EchoFrontend'
+    lossy_mode: bool = False
 
     def __init__(self, args: Optional[object] = None):
         # do not call super().__init__(args) here.
@@ -170,12 +170,18 @@ class EchoFrontend(AbstractFrontend):
         self.render_markdown = False
 
     def oneshot(self, message: str) -> str:
-        return textwrap.wrap(message, width=80)[0]
+        if self.lossy_mode:
+            return message[::2]
+        else:
+            return message
 
     def query(self, messages: Union[List, Dict, str]) -> list:
         self.update_session(messages)
         new_input = self.session[-1]['content']
-        response = textwrap.wrap(new_input, width=80)[0]
+        if self.lossy_mode:
+            response = new_input[::2]
+        else:
+            response = new_input
         console_stdout.print(response)
         new_message = {'role': 'assistant', 'content': response}
         self.update_session(new_message)

@@ -29,6 +29,8 @@ import shlex
 import mimetypes
 import tenacity
 import concurrent.futures
+import textwrap
+from rich.progress import track
 from rich.rule import Rule
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -39,6 +41,8 @@ from .reader import Entry
 from .defaults import console
 from collections import namedtuple
 from . import frontend
+
+_VERBOSE_WRAP_LENGTH = 512
 
 
 # TODO: move this to a retrieval module
@@ -81,7 +85,7 @@ def shorten(s: str, maxlen: int = 100) -> str:
     Shorten the string to a maximum length. Different from default textwrap
     behavior, we will shorten from the other side of the string.
     '''
-    return textwrap.shorten(s[::-1], width=maxlen, placeholder='......')[::-1]
+    return textwrap.shorten(s, width=maxlen)
 
 
 def pad_chunk_before_map(chunk: str, question: str) -> str:
@@ -92,7 +96,7 @@ def pad_chunk_before_map(chunk: str, question: str) -> str:
     template += f'{repr(question)} from the following file part. '
     template += 'Note, if there is no relevant information, just briefly say nothing.'
     template += '\n\n\n'
-    template += chunk
+    template += chunk.wrapfun_chunk(chunk.content)
     return template
 
 
@@ -105,10 +109,11 @@ def map_chunk(chunk: str,
     '''
     padded_input = pad_chunk_before_map(chunk, question)
     if verbose:
-        console.log('mapreduce:send:', shorten(template, 80))
+        console.print('[white on blue]map:->[/white on blue]',
+                      shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
-    if ag.verbose:
-        console.log('mapreduce:recv:', shorten(answer, 80))
+    if verbose:
+        console.print('[white on red]map:<-[/white on red]', shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
 
@@ -122,7 +127,7 @@ def map_serial(chunks: List[Entry],
     '''
     results = []
     for chunk in track(chunks, total=len(chunks), description='MapReduce:'):
-        results.append(map_chunk(chunk, user_question, frtnd, verbose=False))
+        results.append(map_chunk(chunk, user_question, frtnd, verbose=verbose))
     return results
 
 
@@ -158,17 +163,17 @@ def pad_two_results_for_reduce(a: str, b: str, question: str) -> str:
     return template
 
 
-def reduce_two(a: str,
+def reduce_two_chunks(a: str,
                b: str,
                question: str,
                frtnd: frontend.AbstractFrontend,
                verbose: bool = False) -> str:
     padded_input = pad_two_results_for_reduce(a, b, question)
     if verbose:
-        console.log('mapreduce:send:', shorten(template, 80))
+        console.print('[white on blue]reduce:->[/white on blue]', shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
-        console.log('mapreduce:recv:', shorten(answer, 80))
+        console.print('[white on red]reduce:<-[/white on red]', shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
 # TODO: add a compact mode, instead of binary reduction, we can use a
@@ -177,11 +182,33 @@ def reduce_two(a: str,
 def pad_many_results_for_reduce(results: List[str], question: str) -> str:
     raise NotImplementedError
 
-def reduce_many(results: List[str],
+def reduce_many_chunks(results: List[str],
                 question: str,
                 frtnd: frontend.AbstractFrontend,
                 verbose: bool = False) -> str:
     raise NotImplementedError
+
+
+def reduce_serial(results: List[str],
+                  question: str,
+                  frtnd: frontend.AbstractFrontend,
+                  verbose: bool = False) -> str:
+    '''
+    recursive reduction of multiple results, until only one result is left
+    '''
+    while len(results) > 1:
+        console.print(
+            f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
+        )
+        new_results = []
+        for (a, b) in track(zip(results[::2], results[1::2]),
+                            total=len(results) // 2,
+                            description='Mapreduce:'):
+            new_results.append(reduce_two_chunks(a, b, question, frtnd, verbose))
+        if len(results) % 2 == 1:
+            new_results.append(results[-1])
+        results = new_results
+    return results[0]
 
 
 def mapreduce_super_long_context(
@@ -240,16 +267,20 @@ def mapreduce_super_long_context(
         return chunks[0].wrapfun_chunk(chunks[0].content)
     assert len(chunks) > 1  # at least two chunks
 
-    # prepare the chunks before mapreduce
-    chunktexts: List[str] = [
-        pad_chunk_before_map(chunk.wrapfun_chunk(chunk.content))
-        for chunk in chunks
-    ]
-
-    exit(0)
-
-    # start the reduce of chunks from super long context
+    # map phase
     if parallelism > 1:
+        intermediate_results = map_parallel(chunks,
+                                            user_question,
+                                            frtnd,
+                                            verbose=verbose,
+                                            parallelism=parallelism)
+    else:
+        intermediate_results = map_serial(chunks, user_question, frtnd,
+                                          verbose=verbose)
+
+    # reduce phase
+    if parallelism > 1:
+        raise NotImplementedError()
         '''
         Parallel processing. Note, we may easily exceed the TPM limit set
         by the service provider. We will automatically retry until success.
@@ -280,25 +311,8 @@ def mapreduce_super_long_context(
             results = new_results
         aggregated_result = results[0]
     else:
-        '''
-        serial processing
-        '''
-        # map phase
-        results = map_serial(chunks, user_question, frtnd, verbose=verbose)
-        # mapreduce::recursive processing
-        while len(results) > 1:
-            console.print(
-                f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
-            )
-            new_results = []
-            for (a, b) in track(zip(results[::2], results[1::2]),
-                                total=len(results) // 2,
-                                description='Mapreduce: intermediate pass'):
-                new_results.append(_process_two_results(a, b, user_question))
-            if len(results) % 2 == 1:
-                new_results.append(results[-1])
-            results = new_results
-        aggregated_result = results[0]
+        aggregated_result = reduce_serial(intermediate_results,
+                                          user_question, frtnd, verbose=verbose)
     return aggregated_result + '\n\n'
 
 
@@ -328,6 +342,8 @@ def main(argv: List[str] = sys.argv[1:]):
                         default=False,
                         action='store_true',
                         help='verbose mode')
+    parser.add_argument('--parallelism', '-j',
+                        default=1, type=int, help='parallelism')
     args = parser.parse_args(argv)
 
     # read the requested files
@@ -342,12 +358,17 @@ def main(argv: List[str] = sys.argv[1:]):
 
     # do the mapreduce
     f = frontend.EchoFrontend()
+    f.lossy_mode = True
     reduced = []
     for file in args.file:
         result = mapreduce_super_long_context(file,
                                               args.chunk_size,
+                                              f,
                                               args.ask,
-                                              verbose=args.verbose)
+                                              verbose=args.verbose,
+                                              debgpt_home='.',
+                                              compact_reduce_mode=True,
+                                              parallelism=args.parallelism)
         reduced.append(result)
     console.print(reduced)
 
