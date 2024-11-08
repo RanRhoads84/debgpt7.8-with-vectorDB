@@ -285,6 +285,7 @@ def mapreduce_super_long_context(
     # read the specified texts
     chunks: List[Entry] = reader.read_and_chunk(spec,
                                                 max_chunk_size=max_chunk_size,
+                                                user_question=user_question,
                                                 debgpt_home=debgpt_home)
     console.print(
         f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {repr(spec)}')

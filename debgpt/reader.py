@@ -660,6 +660,7 @@ def chunk_entry(entry: Entry, max_chunk_size: int) -> List[Entry]:
 def read_and_chunk(spec: str,
                    *,
                    max_chunk_size: int = -1,
+                   user_question: Optional[str] = None,
                    debgpt_home: str = '.') -> List[Entry]:
     '''
     Read contents from the specified resource and chunk the content into pieces.
@@ -672,7 +673,7 @@ def read_and_chunk(spec: str,
     Returns:
         List[Entry]: a list of entries, each entry contains a chunk of the content
     '''
-    entries = read(spec, debgpt_home=debgpt_home)
+    entries = read(spec, user_question=user_question, debgpt_home=debgpt_home)
     if max_chunk_size > 0:
         entries = ft.reduce(list.__add__,
                             [chunk_entry(x, max_chunk_size) for x in entries])
@@ -682,6 +683,7 @@ def read_and_chunk(spec: str,
 def read_and_wrap(spec: str,
                   *,
                   max_chunk_size: int = -1,
+                  user_question: Optional[str] = None,
                   debgpt_home: str = '.') -> str:
     '''
     Read contents from the specified resource and wrap the content to make it
@@ -695,7 +697,7 @@ def read_and_wrap(spec: str,
     Returns:
         str: the wrapped content
     '''
-    entries = read(spec, debgpt_home=debgpt_home)
+    entries = read(spec, user_question=user_question, debgpt_home=debgpt_home)
     if max_chunk_size > 0:
         entries = ft.reduce(list.__add__,
                             [chunk_entry(x, max_chunk_size) for x in entries])
