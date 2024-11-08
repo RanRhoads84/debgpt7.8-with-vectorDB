@@ -41,6 +41,7 @@ from collections import namedtuple
 from . import frontend
 
 
+# TODO: move this to a retrieval module
 def entry2dict(entry: Entry,
                max_chunk_size: int = 8192
                ) -> Dict[Tuple[str, int, int], List[str]]:
@@ -58,6 +59,7 @@ def entry2dict(entry: Entry,
     return result
 
 
+# TODO: move this to a retrieval module
 def entries2dict(entries: List[Entry],
                  max_chunk_size: int = 8192
                  ) -> Dict[Tuple[str, int, int], List[str]]:
@@ -94,10 +96,71 @@ def pad_chunk_before_map(chunk: str, question: str) -> str:
     return template
 
 
+def map_chunk(chunk: str, question: str, frtnd: frontend.AbstractFrontend, verbose: bool = False) -> str:
+    '''
+    process a chunk of text with a question
+    '''
+    padded_input = pad_chunk_before_map(chunk, question)
+    if verbose:
+        console.log('mapreduce:send:', shorten(template, 80))
+    answer = frtnd.oneshot(padded_input)
+    if ag.verbose:
+        console.log('mapreduce:recv:', shorten(answer, 80))
+    return answer
+
+
+def map_serial(chunks: List[Entry], user_question: str, frtnd: frontend.AbstractFrontend, verbose:bool=False) -> List[str]:
+    '''
+    This is the first pass of mapreduce. We map each chunk to LLM and get the
+    result. This is a serial implementation.
+    '''
+    results = []
+    for chunk in track(chunks,
+                       total=len(chunks),
+                       description='MapReduce:'):
+        results.append(map_chunk(chunk, user_question, frtnd, verbose: bool = False))
+    return results
+
+
+def map_parallel(chunks: List[Entry], user_question: str, frtnd: frontend.AbstractFrontend, verbose:bool=False, parallelism: int = 2) -> List[str]:
+    '''
+    This is the first pass of mapreduce. We map each chunk to LLM and get the
+    result. This is a parallel implementation.
+    '''
+    worker = ft.partial(map_chunk, question=user_question, frtnd=frtnd, verbose=verbose)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism) as ex:
+        results = list(track(ex.map(worker, chunks), total=len(chunks),
+                       description=f'MapReduce[{parallelism}]:',
+                       transient=True))
+    return results
+
+def pad_two_results_for_reduce(a: str, b: str, question: str) -> str:
+    template = 'Extract any information that is relevant to question '
+    template += f'{repr(question)} from the following contents and aggregate them. '
+    template += 'Note, if there is no relevant information, just briefly say nothing.'
+    template += '\n\n\n'
+    template += '```\n' + a + '\n```\n\n'
+    template += '```\n' + b + '\n```\n\n'
+    return template
+
+
+def reduce_two(a: str, b: str, question: str, frtnd: frontend.AbstractFrontend, verbose: bool = False) -> str:
+    padded_input = pad_two_results_for_reduce(a, b, question)
+    if verbose:
+        console.log('mapreduce:send:', shorten(template, 80))
+    answer = frtnd.oneshot(padded_input)
+    if verbose:
+        console.log('mapreduce:recv:', shorten(answer, 80))
+    return answer
+
+
 def mapreduce_super_long_context(spec: str, max_chunk_size: int,
+                                 frtnd: frontend.AbstractFrontend,
                                  user_question: Optional[str] = None,
                                  debgpt_home: str = '.',
-                                 verbose: bool = False) -> str:
+                                 verbose: bool = False,
+                                 parallelism: int = 1,
+                                 ) -> str:
     '''
     Divide and conquer any-length-context.
 
@@ -112,8 +175,10 @@ def mapreduce_super_long_context(spec: str, max_chunk_size: int,
       4. return the aggregated LLM output
     '''
     assert max_chunk_size > 0
+
     # detect user question. If asked nothing, let LLM summarize by default.
     user_question = user_question if user_question else 'summarize the provided contents.'
+
     # read the specified texts
     chunks: List[Entry] = reader.read_and_chunk(spec, max_chunk_size=max_chunk_size, debgpt_home=debgpt_home)
     console.print(
@@ -123,67 +188,27 @@ def mapreduce_super_long_context(spec: str, max_chunk_size: int,
         for i, chunk in enumerate(chunks):
             firstline = chunk.wrapfun_chunk('').split('\n')[0].rstrip(':')
             console.print(f'  [bold]Chunk {i}[/bold]: {firstline}...')
-    exit(0)
-
 
     # skip mapreduce if there is only one chunk
     if len(chunks) == 1:
-        filepath = reader.mapreduce_parse_path(ag.mapreduce,
-                                               debgpt_home=ag.debgpt_home)
-        if any(
-                filepath.startswith(x)
-                for x in ('file://', 'http://', 'https://')):
-            return reader.url(filepath)
-        else:
-            if filepath.endswith('.pdf'):
-                return reader.pdf(filepath)
-            else:
-                return reader.file(filepath)
+        return chunks[0].wrapfun_chunk(chunks[0].content)
+    assert len(chunks) > 1  # at least two chunks
 
-    def _process_chunk(chunk: str, question: str) -> str:
-        '''
-        process a chunk of text with a question
-        '''
-        template = _pad_chunk(chunk, question)
-        if ag.verbose:
-            console.log('mapreduce:send:', _shorten(template, 100))
-        answer = ag.frontend_instance.oneshot(template)
-        if ag.verbose:
-            console.log('mapreduce:recv:', _shorten(answer, 100))
-        return answer
+    # prepare the chunks before mapreduce
+    chunktexts: List[str] = [
+            pad_chunk_before_map(chunk.wrapfun_chunk(chunk.content))
+            for chunk in chunks]
 
-    def _pad_two_results(a: str, b: str, question: str) -> str:
-        template = 'Extract any information that is relevant to question '
-        template += f'{repr(question)} from the following contents and aggregate them. '
-        template += 'Note, if there is no relevant information, just briefly say nothing.'
-        template += '\n\n\n'
-        template += '```\n' + a + '\n```\n\n'
-        template += '```\n' + b + '\n```\n\n'
-        return template
-
-    def _process_two_results(a: str, b: str, question: str) -> str:
-        template = _pad_two_results(a, b, question)
-        if ag.verbose:
-            console.log('mapreduce:send:', _shorten(template, 100))
-        answer = ag.frontend_instance.oneshot(template)
-        if ag.verbose:
-            console.log('mapreduce:recv:', _shorten(answer, 100))
-        return answer
+    exit(0)
 
     # start the reduce of chunks from super long context
-    if ag.mapreduce_parallelism > 1:
+    if parallelism > 1:
         '''
         Parallel processing. Note, we may easily exceed the TPM limit set
         by the service provider. We will automatically retry until success.
         '''
-        with concurrent.futures.ThreadPoolExecutor(
-                max_workers=ag.mapreduce_parallelism) as executor:
-            results = list(
-                track(executor.map(lambda x: _process_chunk(x, user_question),
-                                   chunks),
-                      total=len(chunks),
-                      description=f'MapReduce[{ag.mapreduce_parallelism}]:',
-                      transient=True))
+        # map phase
+        results = map_parallel(chunks, user_question, frtnd, verbose=verbose, parallelism=parallelism)
         while len(results) > 1:
             console.print(
                 f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
@@ -207,12 +232,8 @@ def mapreduce_super_long_context(spec: str, max_chunk_size: int,
         '''
         serial processing
         '''
-        # mapreduce::first pass
-        results = []
-        for chunk in track(chunks,
-                           total=len(chunks),
-                           description='MapReduce: initial pass'):
-            results.append(_process_chunk(chunk, user_question))
+        # map phase
+        results = map_serial(chunks, user_question, frtnd, verbose=verbose)
         # mapreduce::recursive processing
         while len(results) > 1:
             console.print(
@@ -255,6 +276,8 @@ def main(argv: List[str] = sys.argv[1:]):
     reduced = []
     for file in args.file:
         result = mapreduce_super_long_context(file, args.chunk_size, args.ask, verbose=args.verbose)
+        reduced.append(result)
+    console.print(reduced)
 
 
 if __name__ == '__main__':  # pragma: no cover
