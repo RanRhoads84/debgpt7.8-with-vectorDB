@@ -204,7 +204,7 @@ def reduce_serial(results: List[str],
     '''
     while len(results) > 1:
         console.print(
-            f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
+            f'[bold]MapReduce[/bold]: reducing {len(results)} intermediate results'
         )
         new_results = []
         for (a, b) in track(zip(results[::2], results[1::2]),
@@ -228,7 +228,7 @@ def reduce_serial_compact(results: List[str],
     '''
     while len(results) > 1:
         console.print(
-            f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
+            f'[bold]MapReduce[/bold]: reducing {len(results)} intermediate results'
         )
         new_results = []
         groups = group_strings_by_length(results, max_chunk_size)
@@ -252,7 +252,7 @@ def reduce_parallel(results: List[str],
                         verbose=verbose)
     while len(results) > 1:
         console.print(
-            f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
+            f'[bold]MapReduce[/bold]: reducing {len(results)} intermediate results'
         )
         pairs = list(zip(results[::2], results[1::2]))
         with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism) as ex:
@@ -281,7 +281,7 @@ def reduce_parallel_compact(results: List[str],
                         verbose=verbose)
     while len(results) > 1:
         console.print(
-            f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
+            f'[bold]MapReduce[/bold]: reducing {len(results)} intermediate results'
         )
         groups = group_strings_by_length(results, max_chunk_size)
         with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism) as ex:
