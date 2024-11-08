@@ -176,17 +176,57 @@ def reduce_two_chunks(a: str,
         console.print('[white on red]reduce:<-[/white on red]', shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
-# TODO: add a compact mode, instead of binary reduction, we can use a
-#      more compact representation of the multiple results as long as the
-#      maximum length is not exceeded.
 def pad_many_results_for_reduce(results: List[str], question: str) -> str:
-    raise NotImplementedError
+    template = 'Extract any information that is relevant to question '
+    template += f'{repr(question)} from the following contents and aggregate them. '
+    template += 'Note, if there is no relevant information, just briefly say nothing.'
+    template += '\n\n\n'
+    for r in results:
+        template += '```\n' + r + '\n```\n\n'
+    return template
 
 def reduce_many_chunks(results: List[str],
                 question: str,
                 frtnd: frontend.AbstractFrontend,
                 verbose: bool = False) -> str:
-    raise NotImplementedError
+    padded_input = pad_many_results_for_reduce(results, question)
+    if verbose:
+        console.print('[white on blue]reduce:->[/white on blue]', shorten(padded_input, _VERBOSE_WRAP_LENGTH))
+    answer = frtnd.oneshot(padded_input)
+    if verbose:
+        console.print('[white on red]reduce:<-[/white on red]', shorten(answer, _VERBOSE_WRAP_LENGTH))
+    return answer
+
+
+def group_strings_by_length(strings, max_length):
+    '''
+    group as many as possible strings together while maximum length is not exceeded.
+    '''
+    assert max_length > 0
+    grouped_strings = []
+    current_group = []
+    current_length = 0
+
+    for string in strings:
+        string_length = len(string.encode("utf-8"))
+
+        # Check if adding the current string exceeds the max_length
+        if current_length + string_length > max_length:
+            # If it does, save the current group and start a new one
+            grouped_strings.append(current_group)
+            current_group = [string]
+            current_length = string_length
+        else:
+            # Otherwise, add the string to the current group
+            current_group.append(string)
+            current_length += string_length
+
+    # Don't forget to add the last group if it has any strings
+    if current_group:
+        grouped_strings.append(current_group)
+
+    return grouped_strings
+
 
 
 def reduce_serial(results: List[str],
@@ -194,7 +234,8 @@ def reduce_serial(results: List[str],
                   frtnd: frontend.AbstractFrontend,
                   verbose: bool = False) -> str:
     '''
-    recursive reduction of multiple results, until only one result is left
+    recursive reduction of multiple results, until only one result is left.
+    We do this binary reduction in serial mode.
     '''
     while len(results) > 1:
         console.print(
@@ -209,6 +250,28 @@ def reduce_serial(results: List[str],
             new_results.append(results[-1])
         results = new_results
     return results[0]
+
+
+def reduce_serial_compact(results: List[str],
+                    question: str,
+                    frtnd: frontend.AbstractFrontend,
+                    verbose: bool = False,
+                    max_chunk_size: int = -1) -> str:
+    '''
+    recursive reduction of multiple results, until only one result is left.
+    We do this compact (non-binary) reduction in serial mode.
+    '''
+    while len(results) > 1:
+        console.print(
+            f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
+        )
+        new_results = []
+        groups = group_strings_by_length(results, max_chunk_size)
+        for pack in track(groups, total=len(groups), description='Mapreduce:'):
+            new_results.append(reduce_many_chunks(pack, question, frtnd, verbose))
+        results = new_results
+    return results[0]
+
 
 def reduce_parallel(results: List[str],
                     question: str,
@@ -234,6 +297,33 @@ def reduce_parallel(results: List[str],
                     transient=True))
         if len(results) % 2 == 1:
             new_results.append(results[-1])
+        results = new_results
+    return results[0]
+
+
+def reduce_parallel_compact(results: List[str],
+                        question: str,
+                        frtnd: frontend.AbstractFrontend,
+                        verbose: bool = False,
+                        parallelism: int = 2,
+                        max_chunk_size: int = -1) -> str:
+    '''
+    recursive reduction of multiple results, until only one result is left
+    '''
+    worker = ft.partial(reduce_many_chunks,
+                        question=question,
+                        frtnd=frtnd,
+                        verbose=verbose)
+    while len(results) > 1:
+        console.print(
+            f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
+        )
+        groups = group_strings_by_length(results, max_chunk_size)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism) as ex:
+            new_results = list(track(ex.map(worker, groups),
+                    total=len(groups),
+                    description=f'Mapreduce[{parallelism}]:',
+                    transient=True))
         results = new_results
     return results[0]
 
@@ -311,10 +401,19 @@ def mapreduce_super_long_context(
                                           verbose=verbose)
 
     # reduce phase
-    if parallelism > 1:
+    if parallelism > 1 and compact_reduce_mode:
+        aggregated_result = reduce_parallel_compact(intermediate_results,
+                                                    user_question, frtnd, verbose=verbose,
+                                                    parallelism=parallelism,
+                                                    max_chunk_size=max_chunk_size)
+    elif parallelism > 1:
         aggregated_result = reduce_parallel(intermediate_results,
                                             user_question, frtnd, verbose=verbose,
                                             parallelism=parallelism)
+    elif compact_reduce_mode:
+        aggregated_result = reduce_serial_compact(intermediate_results,
+                                                  user_question, frtnd, verbose=verbose,
+                                                  max_chunk_size=max_chunk_size)
     else:
         aggregated_result = reduce_serial(intermediate_results,
                                           user_question, frtnd, verbose=verbose)

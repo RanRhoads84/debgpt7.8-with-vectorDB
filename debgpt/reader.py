@@ -260,7 +260,10 @@ def read_url__pycurl(url: str) -> str:
     c.perform()
     status = c.getinfo(c.RESPONSE_CODE)
     c.close()
-    if status != 200:
+    if status in (403, 404):
+        # silently giveup and proceed
+        return ''
+    elif status != 200:
         console.log(f'Failed to read {url}: HTTP {status}')
         return ''
     try:
@@ -288,7 +291,7 @@ def read_url__pycurl(url: str) -> str:
                 text += page.extract_text()
             return text
         else:
-            console.log(f'Failed to read {repr(url)} as utf-8. Giving up.')
+            console.print(f'Failed to read {repr(url)} as utf-8. Giving up.')
             return ''
 
 
@@ -419,7 +422,7 @@ def google_search(query: str) -> List[str]:
     return results
 
 
-def read_google(spec: str, *, verbose: bool = True) -> str:
+def read_google(spec: str, *, verbose: bool = False) -> str:
     urls = google_search(spec)
     if verbose:
         console.log(f'Google Search Results for {repr(spec)}:', urls)
@@ -591,7 +594,7 @@ def read(spec: str,
         parsed_spec = spec[7:] if spec[7:] else user_question
         if not parsed_spec:
             raise ValueError('Please provide a search query.')
-        for url, content in read_google(parsed_spec):
+        for url, content in read_google(parsed_spec, verbose=False):
             wrapfun = create_wrapper('Here is the contents from URL `{}`:',
                                      url)
             wrapfun_chunk = create_chunk_wrapper(

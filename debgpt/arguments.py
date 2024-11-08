@@ -425,6 +425,13 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
                     help='number of parallel processes in mapreduce')
     config_template = __add_arg_to_config(config_template, _g,
                                           'mapreduce_parallelism')
+
+    _g.add_argument('--mapreduce_reduce_mode',
+                    type=str,
+                    default='compact',
+                    choices=('compact', 'binary'),
+                    help='reduction mode for mapreduce')
+
     # -- 999. The Question Template at the End of Prompt
     _g.add_argument('--ask',
                     '-A',

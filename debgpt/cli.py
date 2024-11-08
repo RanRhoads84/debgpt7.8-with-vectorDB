@@ -218,7 +218,7 @@ def gather_information_ordered(msg: Optional[str], ag,
                                                       ag.ask,
                                                       ag.debgpt_home,
                                                       ag.verbose,
-                                                      False,
+                                                      ag.mapreduce_reduce_mode == 'compact',
                                                       ag.mapreduce_parallelism)
             msg = _append_info(msg, aggregated)
         elif key == 'retrieve':
