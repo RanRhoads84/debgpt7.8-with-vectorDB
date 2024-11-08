@@ -27,9 +27,11 @@ from debgpt import frontend
 def conf() -> object:
     return defaults.Config()
 
+
 def test_echo_frontend_oneshot(conf):
     f = frontend.EchoFrontend()
     assert f.oneshot('hello world') == 'hello world'
+
 
 def test_echo_frontend_call(conf):
     f = frontend.EchoFrontend()
@@ -37,6 +39,7 @@ def test_echo_frontend_call(conf):
     q = {'role': 'user', 'content': 'hello world'}
     assert f(q) == 'hello world'
     assert f([q]) == 'hello world'
+
 
 def test_echo_frontend_query(conf):
     f = frontend.EchoFrontend()

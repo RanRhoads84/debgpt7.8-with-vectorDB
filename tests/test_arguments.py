@@ -18,6 +18,7 @@ import pytest
 import shlex
 from debgpt import arguments
 
+
 @pytest.mark.parametrize('cmd', (
     '-F dryrun --version',
     '-F dryrun -f Makefile',
@@ -46,7 +47,10 @@ def test_parse_order():
     for x in order:
         assert x == 'file'
     # case 2
-    cmd = ['-F', 'dryrun', '-f', 'file1', '-x', 'map1', '-f', 'file2', '-f', 'file3']
+    cmd = [
+        '-F', 'dryrun', '-f', 'file1', '-x', 'map1', '-f', 'file2', '-f',
+        'file3'
+    ]
     order = arguments.parse_args_order(cmd)
     print(order)
     assert len(order) == 4

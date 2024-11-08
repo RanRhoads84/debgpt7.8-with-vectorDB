@@ -22,6 +22,7 @@ except:
     import pip._vendor.tomli as tomllib  # for python < 3.10
 from rich.console import Console
 from rich.traceback import install
+
 install()
 
 # before we print anything, even before initializing class instances,

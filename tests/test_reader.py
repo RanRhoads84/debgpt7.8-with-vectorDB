@@ -427,4 +427,3 @@ def test_chunk_lines():
     assert len(chunks) == 6
     chunks_nr = reader.chunk_lines_nonrecursive(lines, 1)
     assert len(chunks_nr) == 6
-

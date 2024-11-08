@@ -213,7 +213,9 @@ class VectorDB:
             documents.append(doc)
         return documents
 
-    def ls(self, id: Optional[int] = None) -> List[List[Union[int, str, np.ndarray]]]:
+    def ls(self,
+           id: Optional[int] = None
+           ) -> List[List[Union[int, str, np.ndarray]]]:
         '''
         List all vectors in the database.
 
@@ -221,7 +223,8 @@ class VectorDB:
             List[List[Union[int, str, np.ndarray]]]: All vectors and their metadata.
         '''
         if id is not None:
-            vectors: List[List[Union[int, str, np.ndarray]]] = [self.get_byid(id)]
+            vectors: List[List[Union[int, str,
+                                     np.ndarray]]] = [self.get_byid(id)]
         else:
             vectors: List[List[Union[int, str, np.ndarray]]] = self.get_all()
         for v in vectors:
@@ -268,7 +271,10 @@ def main(argv: List[str]) -> None:
     subparsers = parser.add_subparsers(dest='action')
     _ = subparsers.add_parser('demo')
     parser_ls = subparsers.add_parser('ls')
-    parser_ls.add_argument('id', type=int, default=None, nargs='?',
+    parser_ls.add_argument('id',
+                           type=int,
+                           default=None,
+                           nargs='?',
                            help='ID of the vector to list')
     parser_show = subparsers.add_parser('show')
     parser_show.add_argument('id', type=int, help='ID of the vector to show')

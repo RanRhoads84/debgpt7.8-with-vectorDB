@@ -318,8 +318,7 @@ def read_google(spec: str, *, verbose: bool = True) -> str:
     if verbose:
         console.log(f'Google Search Results for {repr(spec)}:', urls)
     else:
-        console.log(
-            f'Got {len(urls)} Google Search Results for {repr(spec)}.')
+        console.log(f'Got {len(urls)} Google Search Results for {repr(spec)}.')
     with concurrent.futures.ThreadPoolExecutor() as executor:
         results = list(track(executor.map(read_url, urls), total=len(urls)))
     return [(x, y) for x, y in zip(urls, results)]
@@ -350,7 +349,8 @@ def read_buildd(spec: str, ):
     return '\n'.join([x.rstrip() for x in text])
 
 
-def read(spec: str, *,
+def read(spec: str,
+         *,
          user_question: Optional[str] = None,
          debgpt_home: str = '.') -> List[Entry]:
     '''
@@ -408,7 +408,8 @@ def read(spec: str, *,
         parsed_spec = spec
         contents = read_directory(spec)
         for (fpath, fcontent) in contents:
-            wrapfun = create_wrapper('Here is the contents of file `{}`:', fpath)
+            wrapfun = create_wrapper('Here is the contents of file `{}`:',
+                                     fpath)
             wrapfun_chunk = create_chunk_wrapper(
                 'Here is the contents of file {} (lines {}-{}):', fpath)
             entry = Entry(fpath, fcontent, wrapfun, wrapfun_chunk)
@@ -485,7 +486,8 @@ def read(spec: str, *,
         if not parsed_spec:
             raise ValueError('Please provide a search query.')
         for url, content in read_google(parsed_spec):
-            wrapfun = create_wrapper('Here is the contents from URL `{}`:', url)
+            wrapfun = create_wrapper('Here is the contents from URL `{}`:',
+                                     url)
             wrapfun_chunk = create_chunk_wrapper(
                 'Here is the contents from URL `{}` (lines {}-{}):', url)
             results.append((url, content, wrapfun, wrapfun_chunk))
@@ -591,11 +593,11 @@ def chunk_lines(
 
 
 def chunk_lines_nonrecursive(
-        lines: List[str],
-        max_chunk_size: int,
-        start: int = -1,
-        end: int = -1,
-        ) -> Dict[Tuple[int, int], List[str]]:
+    lines: List[str],
+    max_chunk_size: int,
+    start: int = -1,
+    end: int = -1,
+) -> Dict[Tuple[int, int], List[str]]:
     '''
     Chunk the lines into pieces with the specified size.
 
@@ -616,20 +618,22 @@ def chunk_lines_nonrecursive(
     stack = [(start, end)]
     while stack:
         current_start, current_end = stack.pop()
-        chunk_size_in_bytes = len('\n'.join(lines[current_start:current_end]).encode('utf8'))
+        chunk_size_in_bytes = len('\n'.join(
+            lines[current_start:current_end]).encode('utf8'))
 
         if chunk_size_in_bytes <= max_chunk_size:
             # if the chunk is within the size limit, we add it to the result
-            result[(current_start, current_end)] = lines[current_start:current_end]
+            result[(current_start,
+                    current_end)] = lines[current_start:current_end]
         elif current_end - current_start == 1:
             # if the chunk is too large but cannot be split, we add it to the result
-            result[(current_start, current_end)] = lines[current_start:current_end]
+            result[(current_start,
+                    current_end)] = lines[current_start:current_end]
         else:
             middle = (current_start + current_end) // 2
             stack.append((current_start, middle))
             stack.append((middle, current_end))
     return result
-
 
 
 def chunk_entry(entry: Entry, max_chunk_size: int) -> List[Entry]:

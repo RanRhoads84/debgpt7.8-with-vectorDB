@@ -447,7 +447,6 @@ class XAIFrontend(OpenAIFrontend):
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
 
-
 class LlamafileFrontend(OpenAIFrontend):
     '''
     https://github.com/Mozilla-Ocho/llamafile
@@ -628,7 +627,9 @@ def interact_with(f: AbstractFrontend) -> None:
 
     # if multiline is enabled, print additional help message
     if f.multiline:
-        console.print('In multiline mode, please press [Meta+Enter], or [Esc] followed by [Enter] to send the message.')
+        console.print(
+            'In multiline mode, please press [Meta+Enter], or [Esc] followed by [Enter] to send the message.'
+        )
 
     # loop
     try:

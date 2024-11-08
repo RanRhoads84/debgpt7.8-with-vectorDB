@@ -19,15 +19,24 @@ import pytest
 import json
 from debgpt import replay
 
-demo_session = [
-  { "role": "system", "content": "system prompt" },
-  { "role": "user", "content": "hi" },
-  { "role": "assistant", "content": "Hello! How can I assist you today?" }
-]
+demo_session = [{
+    "role": "system",
+    "content": "system prompt"
+}, {
+    "role": "user",
+    "content": "hi"
+}, {
+    "role": "assistant",
+    "content": "Hello! How can I assist you today?"
+}]
 
 illegal_session = [
-  { "role": "nobody", "content": "hi" },
+    {
+        "role": "nobody",
+        "content": "hi"
+    },
 ]
+
 
 def test_replay(tmpdir):
     with open(tmpdir.join('test_replay.json'), 'w') as f:
@@ -37,6 +46,7 @@ def test_replay(tmpdir):
     replay.main([sample_json_path])
     replay.main([sample_json_path, '--render'])
     replay.main([sample_json_path, '--no-render'])
+
 
 @pytest.mark.parametrize('render', (True, False))
 def test_process_entry(render: bool):

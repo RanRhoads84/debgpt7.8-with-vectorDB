@@ -35,11 +35,12 @@ def _abort_on_None(value: Optional[str]) -> None:
 
 
 class ListBoxVimKeys(urwid.ListBox):
+
     def keypress(self, size, key) -> None:
         key_map = {
-                'k': 'up',
-                'j': 'down',
-                }
+            'k': 'up',
+            'j': 'down',
+        }
         if key in ('esc', 'q', 'Q'):
             sys.exit(1)
         super().keypress(size, key_map.get(key, key))
@@ -59,8 +60,14 @@ class SingleChoice(object):
         SingleChoice._choice = choice
         raise urwid.ExitMainLoop(choice)
 
-    def __init__(self, title: str, question: str, choices: Iterable[str],
-                 helpmsg: str, statusmsg: str, *, focus: int = 0):
+    def __init__(self,
+                 title: str,
+                 question: str,
+                 choices: Iterable[str],
+                 helpmsg: str,
+                 statusmsg: str,
+                 *,
+                 focus: int = 0):
         # header
         header = urwid.AttrMap(urwid.Text(title, align='center'), 'reversed')
         footer = urwid.Text(statusmsg)
@@ -108,11 +115,10 @@ class SingleEdit(object):
 
     @staticmethod
     def exit_on_esc(key: str) -> None:
-        if key in ('esc',):
+        if key in ('esc', ):
             sys.exit(1)
-        elif key in ('enter',):
+        elif key in ('enter', ):
             raise urwid.ExitMainLoop()
-
 
     def edit_update(self, edit: urwid.Edit, new_edit_text: str) -> None:
         self._choice = new_edit_text
@@ -185,11 +191,12 @@ def _request_frontend_specific_config(frontend: str,
         _abort_on_None(value)
         conf['openai_model'] = value
     if frontend == 'openai' and is_embedding and 'openai_embedding_model' not in current_config:
-        value = SingleEdit("DebGPT Configurator",
-                           "Enter the OpenAI API embedding model name:",
-                           default['openai_embedding_model'],
-                           'If not sure, just keep the default.',
-                           'Press Enter to confirm. Press Esc to abort.').run()
+        value = SingleEdit(
+            "DebGPT Configurator",
+            "Enter the OpenAI API embedding model name:",
+            default['openai_embedding_model'],
+            'If not sure, just keep the default.',
+            'Press Enter to confirm. Press Esc to abort.').run()
         _abort_on_None(value)
         conf['openai_embedding_model'] = value
 
@@ -229,11 +236,11 @@ def _request_frontend_specific_config(frontend: str,
         _abort_on_None(value)
         conf['google_model'] = value
     if frontend == 'google' and is_embedding and 'google_embedding_model' not in current_config:
-        value = SingleEdit("DebGPT Configurator",
-                           "Enter the Google embedding model name:",
-                           default['google_embedding_model'],
-                           "If not sure, just keep the default.",
-                           "Press Enter to confirm. Press Esc to abort.").run()
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the Google embedding model name:",
+            default['google_embedding_model'],
+            "If not sure, just keep the default.",
+            "Press Enter to confirm. Press Esc to abort.").run()
         _abort_on_None(value)
         conf['google_embedding_model'] = value
 
@@ -285,25 +292,27 @@ def _request_frontend_specific_config(frontend: str,
 
     # vllm part
     if frontend == 'vllm' and 'vllm_base_url' not in current_config:
-        value = SingleEdit("DebGPT Configurator",
-                           "Enter the vLLM service url:",
-                           default['vllm_base_url'],
-                           "Reference: https://docs.vllm.ai/en/stable/",
-                           "Press Enter to confirm. Press Esc to abort.").run()
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the vLLM service url:",
+            default['vllm_base_url'],
+            "Reference: https://docs.vllm.ai/en/stable/",
+            "Press Enter to confirm. Press Esc to abort.").run()
         _abort_on_None(value)
         conf['vllm_base_url'] = value
     if frontend == 'vllm' and 'vllm_api_key' not in current_config:
-        value = SingleEdit("DebGPT Configurator", "Enter the vLLM API key:",
-                           default['vllm_api_key'],
-                           "Reference: https://docs.vllm.ai/en/stable/",
-                           "Press Enter to confirm. Press Esc to abort.").run()
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the vLLM API key:",
+            default['vllm_api_key'],
+            "Reference: https://docs.vllm.ai/en/stable/",
+            "Press Enter to confirm. Press Esc to abort.").run()
         _abort_on_None(value)
         conf['vllm_api_key'] = value
     if frontend == 'vllm' and 'vllm_model' not in current_config:
-        value = SingleEdit("DebGPT Configurator", "Enter the vLLM model name:",
-                           default['vllm_model'],
-                           "Reference: https://docs.vllm.ai/en/stable/",
-                           "Press Enter to confirm. Press Esc to abort.").run()
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the vLLM model name:",
+            default['vllm_model'],
+            "Reference: https://docs.vllm.ai/en/stable/",
+            "Press Enter to confirm. Press Esc to abort.").run()
         _abort_on_None(value)
         conf['vllm_model'] = value
 
@@ -331,12 +340,13 @@ def _request_common_cli_behavior_config() -> dict:
     conf = dict()
     # 1. whether to render LLM response markdown
     focus = {True: 0, False: 1}[default['render_markdown']]
-    value = SingleChoice(
-        "DebGPT Configurator", "Render LLM response (Markdown) in terminal?",
-        ['yes', 'no'], "Default is 'yes' (recommended). This option \
+    value = SingleChoice("DebGPT Configurator",
+                         "Render LLM response (Markdown) in terminal?",
+                         ['yes', 'no'],
+                         "Default is 'yes' (recommended). This option \
 produces fancy terminal printing with markdown stream.",
-        "Press Enter to confirm. Press Esc to abort.",
-        focus=focus).run()
+                         "Press Enter to confirm. Press Esc to abort.",
+                         focus=focus).run()
     _abort_on_None(value)
     conf['render_markdown'] = value == 'yes'
     return conf
@@ -356,9 +366,7 @@ simply refresh the configuration file with the updates from this wizard. Press E
     return value == 'yes'
 
 
-def _edit_config_template(config_template: str,
-                          key: str,
-                          value: str) -> str:
+def _edit_config_template(config_template: str, key: str, value: str) -> str:
     '''
     Edit the configuration template (toml file). Updating the value of
     the specified key.
@@ -406,20 +414,21 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
         'Dryrun    (N/A)    | debug,       DebGPT built-in',
     ]
     frontends_focus = {
-            'openai': 0,
-            'anthropic': 1,
-            'google': 2,
-            'xai': 3,
-            'ollama': 4,
-            'llamafile': 5,
-            'vllm': 6,
-            'zmq': 7,
-            'dryrun': 8,
+        'openai': 0,
+        'anthropic': 1,
+        'google': 2,
+        'xai': 3,
+        'ollama': 4,
+        'llamafile': 5,
+        'vllm': 6,
+        'zmq': 7,
+        'dryrun': 8,
     }[default['frontend']]
 
-    frontend = SingleChoice(
-        "DebGPT Configurator", "Select a frontend that DebGPT will use:",
-        frontends, "A frontend is a client that communicates with \
+    frontend = SingleChoice("DebGPT Configurator",
+                            "Select a frontend that DebGPT will use:",
+                            frontends,
+                            "A frontend is a client that communicates with \
 its corresponding backend that serves large language model (LLM). \
 To use a commercial \
 service, you may need to sign up and pay for an API key. Besides, \
@@ -431,8 +440,9 @@ For advanced usages and more options, you may generate a configuration \
 template with the following command for manual editing:\n\n\
   $ debgpt genconfig > ~/.debgpt/config.yaml\n\n\
 This could be useful if you wish to switch among multiple frontends \
-using the `--frontend|-F` argument.", "Press Enter to confirm. Press Esc to abort.",
-        focus=frontends_focus).run()
+using the `--frontend|-F` argument.",
+                            "Press Enter to confirm. Press Esc to abort.",
+                            focus=frontends_focus).run()
     _abort_on_None(frontend)
     frontend = frontend.split(' ')[0].lower()
     conf['frontend'] = frontend
@@ -448,10 +458,10 @@ using the `--frontend|-F` argument.", "Press Enter to confirm. Press Esc to abor
         'Random    | debug,       DebGPT built-in',
     ]
     embedding_frontends_focus = {
-            'openai': 0,
-            'google': 1,
-            'random': 2,
-            }[default['embedding_frontend']]
+        'openai': 0,
+        'google': 1,
+        'random': 2,
+    }[default['embedding_frontend']]
     embedding_frontend = SingleChoice(
         "DebGPT Configurator",
         "Select an embedding frontend that DebGPT will use:",
@@ -484,7 +494,8 @@ retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'."
             v = 'true' if v else 'false'
             config_template = _edit_config_template(config_template, k, v)
         elif isinstance(v, str):
-            config_template = _edit_config_template(config_template, k, repr(v))
+            config_template = _edit_config_template(config_template, k,
+                                                    repr(v))
         else:
             raise ValueError('Unexpected type:', type(v))
     config_template += '\n'  # new line at the end

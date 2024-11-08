@@ -79,6 +79,7 @@ def subcmd_replay(ag) -> None:
     replay.replay(json_path)
     exit(0)
 
+
 def subcmd_config(ag) -> None:
     '''
     re-run the configurator.fresh_install_guide() to reconfigure.
@@ -220,7 +221,7 @@ def gather_information_ordered(msg: Optional[str], ag,
             raise NotImplementedError(key)
         elif key == 'embed':
             raise NotImplementedError(key)
-        elif key in ('file',):
+        elif key in ('file', ):
             spec = getattr(ag, key).pop(0)
             func = ft.partial(reader.read_and_wrap, debgpt_home=ag.debgpt_home)
             msg = _append_info(msg, func(spec))
@@ -270,7 +271,8 @@ def _dispatch_subcommand(ag):
         else:
             subcmd_git(ag)
     elif ag.subparser_name is not None:
-        raise NotImplementedError(f'Subcommand {ag.subparser_name} seems unimplemented.')
+        raise NotImplementedError(
+            f'Subcommand {ag.subparser_name} seems unimplemented.')
     else:
         # If no subparser specified, we go to the chatting mode.
         pass

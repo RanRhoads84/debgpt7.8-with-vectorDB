@@ -25,7 +25,6 @@ from . import defaults
 console = defaults.console
 
 
-
 def parse_args(argv: List[str]) -> argparse.Namespace:
     '''
     argparse with subparsers. Generate a config.toml template as byproduct.
@@ -289,13 +288,12 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     default=conf['xai_api_key'],
                     help='xAI API key')
     config_template = __add_arg_to_config(config_template, _g, 'xai_api_key')
-    
+
     _g.add_argument('--xai_model',
                     type=str,
                     default=conf['xai_model'],
                     help='the xAI model, e.g., grok-beta')
     config_template = __add_arg_to_config(config_template, _g, 'xai_model')
-
 
     # Specific to Llamafile Frontend
     config_template += '''\n
@@ -399,14 +397,16 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     # -- 1. Debian BTS
     _g = ag.add_argument_group('Prompt reader')
     # -- 4. Arbitrary Plain Text File(s)
-    _g.add_argument('--file',
-                    '-f',
-                    type=str,
-                    default=[],
-                    action='append',
-                    help='load specified files (plain text and pdfs), directories, \
+    _g.add_argument(
+        '--file',
+        '-f',
+        type=str,
+        default=[],
+        action='append',
+        help='load specified files (plain text and pdfs), directories, \
 or URLs in prompt. Many special specifiers are supported, \
-including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cmd>, tldr:<tldr>')
+including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cmd>, tldr:<tldr>'
+    )
     # -- 998. The special query buider for mapreduce chunks
     _g.add_argument('--mapreduce',
                     '-x',
@@ -434,8 +434,7 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
                     help="User question to append at the end of the prompt. ")
 
     # Task Specific Subparsers
-    subps = ag.add_subparsers(dest='subparser_name',
-                              help='debgpt subcommands')
+    subps = ag.add_subparsers(dest='subparser_name', help='debgpt subcommands')
 
     # Specific to ZMQ Backend (self-hosted LLM Inference)
     ps_backend = subps.add_parser(
@@ -457,7 +456,8 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
 
     # Task: git
     ps_git = subps.add_parser('git', help='git command wrapper')
-    git_subps = ps_git.add_subparsers(dest='git_subparser_name', help='git commands')
+    git_subps = ps_git.add_subparsers(dest='git_subparser_name',
+                                      help='git commands')
     # Task: git commit
     ps_git_commit = git_subps.add_parser(
         'commit',
@@ -478,7 +478,11 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
     # subsubcommand: vdb ls
     ps_vdb_ls = vdb_subps.add_parser('ls',
                                      help='list all vectors in the database')
-    ps_vdb_ls.add_argument('id', type=str, default=None, nargs='?', help='vector ID')
+    ps_vdb_ls.add_argument('id',
+                           type=str,
+                           default=None,
+                           nargs='?',
+                           help='vector ID')
 
     # Task: replay
     ps_replay = subps.add_parser('replay',
@@ -501,12 +505,11 @@ This option will automatically mandate --no-render_markdown, -Q and -H.')
 
     # Task: genconfig
     _ = subps.add_parser('genconfig',
-                                    aliases=['config.toml'],
-                                    help='generate config.toml file template')
+                         aliases=['config.toml'],
+                         help='generate config.toml file template')
 
     # Task: config or reconfigure
-    _ = subps.add_parser('config',
-                                 help='reconfigure debgpt with a wizard')
+    _ = subps.add_parser('config', help='reconfigure debgpt with a wizard')
 
     # -- parse and sanitize
     ag = ag.parse_args(argv)
@@ -581,7 +584,6 @@ def main(argv: List[str] = sys.argv[1:]):
     args, order = parse(argv)
     console.print('args:', args)
     console.print('order:', order)
-
 
 
 if __name__ == '__main__':  # pragma: no cover

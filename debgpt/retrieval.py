@@ -141,7 +141,7 @@ def main(argv):
                         '-E',
                         type=str,
                         default='openai',
-                        choices=['openai', 'google', 'random'], 
+                        choices=['openai', 'google', 'random'],
                         help='embedding frontend')
     subparsers = parser.add_subparsers(dest='subcommand')
 
