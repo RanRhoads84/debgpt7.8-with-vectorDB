@@ -29,6 +29,7 @@ import shlex
 import mimetypes
 import tenacity
 import concurrent.futures
+from rich.rule import Rule
 from urllib.parse import urlparse
 from urllib.request import urlopen
 import urllib.parse
@@ -37,6 +38,7 @@ from . import reader
 from .reader import Entry
 from .defaults import console
 from collections import namedtuple
+from . import frontend
 
 
 def entry2dict(entry: Entry,
@@ -71,41 +73,6 @@ def entries2dict(entries: List[Entry],
     return ft.reduce(dict.__or__, [entry2dict(e, max_chunk_size) for e in entries])
 
 
-
-
-def mapreduce_load_any_astext(
-    path: Union[str | List[str]],
-    chunk_size: int = 8192,
-    *,
-    user_question: str = '',
-    args: Optional[object] = None,
-) -> List[str]:
-    '''
-    load file or directory and return the contents as a list of lines
-    '''
-    # if list, reduce and concur recursively
-    if isinstance(path, list):
-        texts = [
-            mapreduce_load_any_astext(p,
-                                      chunk_size=chunk_size,
-                                      user_question=user_question,
-                                      args=args) for p in path
-        ]
-        texts = ft.reduce(list.__add__, texts)
-        return texts
-    # if str, deal with the concrete loading
-    chunkdict = mapreduce_load_any(path,
-                                   chunk_size=chunk_size,
-                                   user_question=user_question,
-                                   args=args)
-    texts = []
-    for (path, start, end), lines in chunkdict.items():
-        txt = f'File: {path} (lines {start}-{end})\n'
-        txt += '```\n'
-        txt += '\n'.join(lines)
-        txt += '\n```\n'
-        texts.append(txt)
-    return texts
 
 
 def mapreduce_super_long_context(ag) -> str:
@@ -255,3 +222,27 @@ def mapreduce_super_long_context(ag) -> str:
             results = new_results
         aggregated_result = results[0]
     return aggregated_result + '\n\n'
+
+
+def main(argv: List[str] = sys.argv[1:]):
+    '''
+    do mapreduce from command line
+    '''
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--file', '-f', default=[], action='append', help='input file', required=True)
+    parser.add_argument('--chunk-size', '-c', default=8192, type=int, help='chunk size')
+    parser.add_argument('--ask', '-a', default='', type=str, help='user question')
+    args = parser.parse_args(argv)
+
+    f = frontend.EchoFrontend()
+    entries = []
+    print('file:', args.file)
+    for file in args.file:
+        entries.extend(reader.read_and_chunk(file, max_chunk_size=args.chunk_size))
+    for entry in entries:
+        console.print(Rule(entry.path))
+        print(entry.wrapfun_chunk(entry.content))
+
+
+if __name__ == '__main__':  # pragma: no cover
+    main()
