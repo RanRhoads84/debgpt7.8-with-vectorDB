@@ -36,7 +36,9 @@ from urllib.request import urlopen
 import urllib.parse
 from . import policy as debian_policy
 from .defaults import console
+from .defaults import HOME
 from collections import namedtuple
+from .cache import Cache
 
 try:
     import pycurl
@@ -59,6 +61,19 @@ HEADERS = {
     'Accept':
     'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
 }
+
+
+cache = Cache(os.path.join(HOME, 'cache.sqlite'))
+
+
+def enable_cache(func: callable) -> callable:
+    def wrapper(*args, **kwargs):
+        if args[0] in cache:
+            return cache[args[0]]
+        result = func(*args, **kwargs)
+        cache[args[0]] = result
+        return result
+    return wrapper
 
 
 def latest_file(files: List[str]) -> str:
@@ -196,11 +211,17 @@ def read_directory(path: str) -> List[Tuple[str, str]]:
 def read_url(url: str) -> str:
     '''
     Dispatcher based on the availability of the pycurl library.
+
+    We will cache the URL content to avoid repeated requests.
     '''
+    if url in cache:
+        return cache[url]
     if __use_pycurl:
-        return read_url__pycurl(url)
+        value = read_url__pycurl(url)
     else:
-        return read_url__requests(url)
+        value = read_url__requests(url)
+    cache[url] = value
+    return value
 
 
 @tenacity.retry(stop=tenacity.stop_after_attempt(3),
