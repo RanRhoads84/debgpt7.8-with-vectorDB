@@ -67,6 +67,14 @@ cache = Cache(os.path.join(HOME, 'cache.sqlite'))
 
 
 def enable_cache(func: callable) -> callable:
+    '''
+    Enable caching for the function based on the first arg.
+
+    Args:
+        func (callable): the function to enable caching
+    Returns:
+        callable: the wrapper function
+    '''
     def wrapper(*args, **kwargs):
         if args[0] in cache:
             return cache[args[0]]
@@ -208,20 +216,15 @@ def read_directory(path: str) -> List[Tuple[str, str]]:
     return contents
 
 
+@enable_cache
 def read_url(url: str) -> str:
     '''
     Dispatcher based on the availability of the pycurl library.
-
-    We will cache the URL content to avoid repeated requests.
     '''
-    if url in cache:
-        return cache[url]
     if __use_pycurl:
-        value = read_url__pycurl(url)
+        return read_url__pycurl(url)
     else:
-        value = read_url__requests(url)
-    cache[url] = value
-    return value
+        return read_url__requests(url)
 
 
 @tenacity.retry(stop=tenacity.stop_after_attempt(3),
@@ -379,6 +382,7 @@ def read_cmd(cmd: Union[str, List]) -> str:
     return '\n'.join(lines)
 
 
+@enable_cache
 def read_bts(spec: str) -> str:
     '''
     Read the bug report from the Debian BTS
@@ -457,6 +461,7 @@ def read_google(spec: str, *, verbose: bool = False) -> str:
     return [(x, y) for x, y in zip(urls, results)]
 
 
+@enable_cache
 def read_archwiki(spec: str) -> str:
     '''
     Archwiki. e.g.,
@@ -473,7 +478,7 @@ def read_archwiki(spec: str) -> str:
     text = soup.get_text().split('\n')
     return '\n'.join([x.rstrip() for x in text])
 
-
+@enable_cache
 def read_buildd(spec: str, ):
     url = f'https://buildd.debian.org/status/package.php?p={spec}'
     r = requests.get(url, headers=HEADERS)

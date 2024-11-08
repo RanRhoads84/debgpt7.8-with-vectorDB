@@ -30,6 +30,7 @@ class Cache(dict):
     A class that works like dictionary, but with a SQLite backend.
     The only data format supported in the cache is key (str) -> value (str),
     but we will automatically compress the value strings using lz4.
+    We set 24 hours to expire for every cache entry.
 
     ChatGPT and Copilot really knows how to write this.
     '''
@@ -38,12 +39,18 @@ class Cache(dict):
         self.connection: sqlite3.Connection = sqlite3.connect(db_name)
         self.cursor: sqlite3.Cursor = self.connection.cursor()
         self._create_table()
+        self._cleanup_expired()
+
+    def _cleanup_expired(self) -> None:
+        self.cursor.execute('DELETE FROM cache WHERE stamp < DATETIME("now", "-1 day")')
+        self.connection.commit()
 
     def _create_table(self) -> None:
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS cache (
                 key TEXT NOT NULL PRIMARY KEY,
-                value BLOB NOT NULL
+                value BLOB NOT NULL,
+                stamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         self.connection.commit()

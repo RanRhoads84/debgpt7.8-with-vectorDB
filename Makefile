@@ -21,7 +21,7 @@ yapf:
 	find tests -type f -name '*.py' -exec yapf -i '{}' \;
 
 pytest:
-	PYTHONPATH=. pytest --cov=debgpt --cov-report=html -v -n 8 $(ARGS)
+	PYTHONPATH=. pytest --durations=10 --cov=debgpt --cov-report=html -v -n 8 $(ARGS)
 	-open -a safari htmlcov/index.html
 
 lint:
