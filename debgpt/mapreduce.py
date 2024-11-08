@@ -45,41 +45,6 @@ from . import frontend
 _VERBOSE_WRAP_LENGTH = 512
 
 
-# TODO: move this to a retrieval module
-def entry2dict(
-        entry: Entry,
-        max_chunk_size: int = 8192) -> Dict[Tuple[str, int, int], List[str]]:
-    '''
-    convert an Entry object to a chunked dictionary
-    '''
-    try:
-        d = reader.chunk_lines(entry.content.split('\n'), max_chunk_size)
-    except RecursionError:
-        d = reader.chunk_lines_nonrecursive(entry.content.split('\n'),
-                                            max_chunk_size)
-    result = {}
-    for (start, end), lines in d.items():
-        result[(entry.path, start, end)] = lines
-    return result
-
-
-# TODO: move this to a retrieval module
-def entries2dict(
-        entries: List[Entry],
-        max_chunk_size: int = 8192) -> Dict[Tuple[str, int, int], List[str]]:
-    '''
-    convert a list of Entry objects to a chunked dictionary
-
-    Args:
-        entries: a list of Entry objects
-        max_chunk_size: the maximum chunk size in bytes
-    Returns:
-        a dictionary of chunked contents
-    '''
-    return ft.reduce(dict.__or__,
-                     [entry2dict(e, max_chunk_size) for e in entries])
-
-
 def shorten(s: str, maxlen: int = 100) -> str:
     '''
     Shorten the string to a maximum length. Different from default textwrap
