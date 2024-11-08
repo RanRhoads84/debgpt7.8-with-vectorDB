@@ -210,6 +210,33 @@ def reduce_serial(results: List[str],
         results = new_results
     return results[0]
 
+def reduce_parallel(results: List[str],
+                    question: str,
+                    frtnd: frontend.AbstractFrontend,
+                    verbose: bool = False,
+                    parallelism: int = 2) -> str:
+    '''
+    recursive reduction of multiple results, until only one result is left
+    '''
+    worker = ft.partial(reduce_two_chunks,
+                        question=question,
+                        frtnd=frtnd,
+                        verbose=verbose)
+    while len(results) > 1:
+        console.print(
+            f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
+        )
+        pairs = list(zip(results[::2], results[1::2]))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism) as ex:
+            new_results = list(track(ex.map(lambda x: worker(*x), pairs),
+                    total=len(pairs),
+                    description=f'Mapreduce[{parallelism}]:',
+                    transient=True))
+        if len(results) % 2 == 1:
+            new_results.append(results[-1])
+        results = new_results
+    return results[0]
+
 
 def mapreduce_super_long_context(
     spec: str,
@@ -233,6 +260,10 @@ def mapreduce_super_long_context(
       2. map each piece to LLM and get the result
       3. reduce (aggregate) the results using LLM
       4. return the aggregated LLM output
+
+    Note, with parallel processing, we may easily exceed the Token Per Minute
+    (TPM) limit set by the service provider. We will automatically retry until
+    success.
 
     Args:
         spec: the input specification
@@ -280,39 +311,14 @@ def mapreduce_super_long_context(
 
     # reduce phase
     if parallelism > 1:
-        raise NotImplementedError()
-        '''
-        Parallel processing. Note, we may easily exceed the TPM limit set
-        by the service provider. We will automatically retry until success.
-        '''
-        # map phase
-        results = map_parallel(chunks,
-                               user_question,
-                               frtnd,
-                               verbose=verbose,
-                               parallelism=parallelism)
-        while len(results) > 1:
-            console.print(
-                f'[bold]MapReduce[/bold]: reduced to {len(results)} intermediate results'
-            )
-            pairs = list(zip(results[::2], results[1::2]))
-            with concurrent.futures.ThreadPoolExecutor(
-                    max_workers=ag.mapreduce_parallelism) as executor:
-                new_results = list(
-                    track(
-                        executor.map(
-                            lambda x: _process_two_results(*x, user_question),
-                            pairs),
-                        total=len(pairs),
-                        description=f'Mapreduce[{ag.mapreduce_parallelism}]:',
-                        transient=True))
-            if len(results) % 2 == 1:
-                new_results.append(results[-1])
-            results = new_results
-        aggregated_result = results[0]
+        aggregated_result = reduce_parallel(intermediate_results,
+                                            user_question, frtnd, verbose=verbose,
+                                            parallelism=parallelism)
     else:
         aggregated_result = reduce_serial(intermediate_results,
                                           user_question, frtnd, verbose=verbose)
+
+    # pad the final result and return
     return aggregated_result + '\n\n'
 
 
