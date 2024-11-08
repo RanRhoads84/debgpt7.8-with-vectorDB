@@ -474,6 +474,10 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
                                action='store_true',
                                help='amend the last commit')
 
+    # subcommand: delete-cache
+    _ = subps.add_parser('delete-cache',
+                                       help='delete cache sqlite database')
+
     # subcommand: vdb (VectorDB)
     ps_vdb = subps.add_parser('vdb', help='VectorDB command')
     ps_vdb.add_argument('--db',

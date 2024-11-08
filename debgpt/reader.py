@@ -36,7 +36,7 @@ from urllib.request import urlopen
 import urllib.parse
 from . import policy as debian_policy
 from .defaults import console
-from .defaults import HOME
+from .defaults import CACHE
 from collections import namedtuple
 from .cache import Cache
 
@@ -73,7 +73,7 @@ def enable_cache(func: callable) -> callable:
         callable: the wrapper function
     '''
     def wrapper(*args, **kwargs):
-        cache = Cache(os.path.join(HOME, 'cache.sqlite'))
+        cache = Cache(CACHE)
         if args[0] in cache:
             return cache[args[0]]
         result = func(*args, **kwargs)

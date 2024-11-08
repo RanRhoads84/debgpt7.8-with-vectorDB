@@ -42,6 +42,7 @@ console = Console(stderr=True)
 
 HOME = os.path.expanduser('~/.debgpt')
 CONFIG = os.path.join(HOME, 'config.toml')
+CACHE = os.path.join(HOME, 'cache.sqlite')
 
 
 class Config(object):

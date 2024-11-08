@@ -91,6 +91,15 @@ def subcmd_config(ag) -> None:
     exit(0)
 
 
+def subcmd_delete_cache(ag) -> None:
+    '''
+    special task: delete cache
+    '''
+    os.remove(defaults.CACHE)
+    console.log(f'Cache {defaults.CACHE} deleted.')
+    exit(0)
+
+
 def subcmd_genconfig(ag) -> None:
     '''
     special task: generate config template, print and quit
@@ -264,6 +273,8 @@ def _dispatch_subcommand(ag):
             subcmd_vdb(ag)
     elif ag.subparser_name == 'replay':
         subcmd_replay(ag)
+    elif ag.subparser_name == 'delete-cache':
+        subcmd_delete_cache(ag)
     elif ag.subparser_name == 'config':
         subcmd_config(ag)
     elif ag.subparser_name in ('genconfig', 'config.toml'):
