@@ -53,6 +53,7 @@ from . import reader
 from . import defaults
 from . import vectordb
 from . import replay
+from . import mapreduce
 
 warnings.filterwarnings("ignore")
 
@@ -202,8 +203,6 @@ def gather_information_ordered(msg: Optional[str], ag,
     the specified information into the first prompt. If none specified,
     return None.
     '''
-    __has_done_mapreduce = False
-
     def _append_info(msg: str, info: str) -> str:
         msg = '' if msg is None else msg
         return msg + '\n' + info
@@ -212,11 +211,16 @@ def gather_information_ordered(msg: Optional[str], ag,
     # different function signatures
     for key in ag_order:
         if key == 'mapreduce':
-            # but we only do once for mapreduce
-            if __has_done_mapreduce:
-                continue
-            msg = _append_info(msg, mapreduce_super_long_context(ag))
-            __has_done_mapreduce = True
+            spec = ag.mapreduce.pop(0)
+            aggregated = mapreduce.mapreduce_super_long_context(spec,
+                                                      ag.mapreduce_chunksize,
+                                                      ag.frontend_instance,
+                                                      ag.ask,
+                                                      ag.debgpt_home,
+                                                      ag.verbose,
+                                                      False,
+                                                      ag.mapreduce_parallelism)
+            msg = _append_info(msg, aggregated)
         elif key == 'retrieve':
             raise NotImplementedError(key)
         elif key == 'embed':
@@ -303,7 +307,8 @@ def main(argv=sys.argv[1:]):
 
     # initialize the frontend
     f = frontend.create_frontend(ag)
-    #ag.frontend_instance = f
+    # some information collector require a frontend instance, such as mapreduce
+    ag.frontend_instance = f
 
     # create task-specific prompts. note, some special tasks will exit()
     # in their subparser default function when then finished, such as backend,
