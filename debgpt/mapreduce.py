@@ -73,13 +73,37 @@ def entries2dict(entries: List[Entry],
     return ft.reduce(dict.__or__, [entry2dict(e, max_chunk_size) for e in entries])
 
 
-
-
-def mapreduce_super_long_context(ag) -> str:
+def shorten(s: str, maxlen: int = 100) -> str:
     '''
-    We can add a mechanism to chunk super long context , let LLM read chunk
-    by chunk, providing chunk-wise analysis. Then we aggregate the chunk-wise
-    analysis together using LLM again.
+    Shorten the string to a maximum length. Different from default textwrap
+    behavior, we will shorten from the other side of the string.
+    '''
+    return textwrap.shorten(s[::-1], width=maxlen,
+                            placeholder='......')[::-1]
+
+
+def pad_chunk_before_map(chunk: str, question: str) -> str:
+    '''
+    process a chunk of text with a question
+    '''
+    template = 'Extract any information that is relevant to question '
+    template += f'{repr(question)} from the following file part. '
+    template += 'Note, if there is no relevant information, just briefly say nothing.'
+    template += '\n\n\n'
+    template += chunk
+    return template
+
+
+def mapreduce_super_long_context(spec: str, max_chunk_size: int,
+                                 user_question: Optional[str] = None,
+                                 debgpt_home: str = '.',
+                                 verbose: bool = False) -> str:
+    '''
+    Divide and conquer any-length-context.
+
+    This is a mechanism to chunk super long context , let LLM read chunk
+    by chunk, providing chunk-wise response. Then we aggregate the chunk-wise
+    response together using LLM again.
 
     Procedure:
       1. chunk a long input into pieces
@@ -87,38 +111,20 @@ def mapreduce_super_long_context(ag) -> str:
       3. reduce (aggregate) the results using LLM
       4. return the aggregated LLM output
     '''
-    # TODO: parse special questions like does in gather_information_ordered()
-    if ag.ask:
-        user_question = ag.ask
-    else:
-        user_question = 'summarize the above contents.'
-
-    chunks = reader.mapreduce_load_any_astext(ag.mapreduce,
-                                              ag.mapreduce_chunksize,
-                                              user_question=user_question,
-                                              args=ag)
+    assert max_chunk_size > 0
+    # detect user question. If asked nothing, let LLM summarize by default.
+    user_question = user_question if user_question else 'summarize the provided contents.'
+    # read the specified texts
+    chunks: List[Entry] = reader.read_and_chunk(spec, max_chunk_size=max_chunk_size, debgpt_home=debgpt_home)
     console.print(
-        f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {ag.mapreduce}'
+        f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {repr(spec)}'
     )
-    if ag.verbose:
+    if verbose:
         for i, chunk in enumerate(chunks):
-            firstline = chunk.split('\n')[:1]
+            firstline = chunk.wrapfun_chunk('').split('\n')[0].rstrip(':')
             console.print(f'  [bold]Chunk {i}[/bold]: {firstline}...')
+    exit(0)
 
-    def _shorten(s: str, maxlen: int = 100) -> str:
-        return textwrap.shorten(s[::-1], width=maxlen,
-                                placeholder='......')[::-1]
-
-    def _pad_chunk(chunk: str, question: str) -> str:
-        '''
-        process a chunk of text with a question
-        '''
-        template = 'Extract any information that is relevant to question '
-        template += f'{repr(question)} from the following file part. '
-        template += 'Note, if there is no relevant information, just briefly say nothing.'
-        template += '\n\n\n'
-        template += chunk
-        return template
 
     # skip mapreduce if there is only one chunk
     if len(chunks) == 1:
@@ -231,17 +237,24 @@ def main(argv: List[str] = sys.argv[1:]):
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', '-f', default=[], action='append', help='input file', required=True)
     parser.add_argument('--chunk-size', '-c', default=8192, type=int, help='chunk size')
-    parser.add_argument('--ask', '-a', default='', type=str, help='user question')
+    parser.add_argument('--ask', '-a', default='summarize the provided contents.', type=str, help='user question')
+    parser.add_argument('--verbose', '-v', default=False, action='store_true', help='verbose mode')
     args = parser.parse_args(argv)
 
+    # read the requested files
+    if False:
+        entries = []
+        for file in args.file:
+            entries.extend(reader.read_and_chunk(file, max_chunk_size=args.chunk_size))
+        for entry in entries:
+            console.print(Rule(entry.path))
+            print(entry.wrapfun_chunk(entry.content))
+
+    # do the mapreduce
     f = frontend.EchoFrontend()
-    entries = []
-    print('file:', args.file)
+    reduced = []
     for file in args.file:
-        entries.extend(reader.read_and_chunk(file, max_chunk_size=args.chunk_size))
-    for entry in entries:
-        console.print(Rule(entry.path))
-        print(entry.wrapfun_chunk(entry.content))
+        result = mapreduce_super_long_context(file, args.chunk_size, args.ask, verbose=args.verbose)
 
 
 if __name__ == '__main__':  # pragma: no cover
