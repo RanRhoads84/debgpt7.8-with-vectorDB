@@ -63,9 +63,6 @@ HEADERS = {
 }
 
 
-cache = Cache(os.path.join(HOME, 'cache.sqlite'))
-
-
 def enable_cache(func: callable) -> callable:
     '''
     Enable caching for the function based on the first arg.
@@ -76,6 +73,7 @@ def enable_cache(func: callable) -> callable:
         callable: the wrapper function
     '''
     def wrapper(*args, **kwargs):
+        cache = Cache(os.path.join(HOME, 'cache.sqlite'))
         if args[0] in cache:
             return cache[args[0]]
         result = func(*args, **kwargs)

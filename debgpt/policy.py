@@ -20,7 +20,6 @@ import requests
 from .defaults import console
 from .defaults import HOME
 from .cache import Cache
-cache = Cache(os.path.join(HOME, 'cache.sqlite'))
 
 
 class DebianPolicy:
@@ -34,6 +33,7 @@ class DebianPolicy:
     SEP_SUBSUBSECTION: str = '---'
 
     def __init__(self) -> None:
+        cache = Cache(os.path.join(HOME, 'cache.sqlite'))
         # Check if the cache exists and read lines
         if self.URL not in cache:
             r = requests.get(self.URL)
