@@ -403,15 +403,16 @@ def read(spec: str, *,
         wrapfun = create_wrapper('Here is the contents of file `{}`:', spec)
         wrapfun_chunk = create_chunk_wrapper(
             'Here is the contents of file {} (lines {}-{}):', spec)
-        results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+        results.append(Entry(parsed_spec, content, wrapfun, wrapfun_chunk))
     elif os.path.exists(spec) and os.path.isdir(spec):
-        wrapfun = create_wrapper('Here is the contents of file `{}`:', spec)
-        wrapfun_chunk = create_chunk_wrapper(
-            'Here is the contents of file {} (lines {}-{}):', spec)
         parsed_spec = spec
         contents = read_directory(spec)
-        contents = [(x, y, wrapfun, wrapfun_chunk) for x, y in contents]
-        results.extend(contents)
+        for (fpath, fcontent) in contents:
+            wrapfun = create_wrapper('Here is the contents of file `{}`:', fpath)
+            wrapfun_chunk = create_chunk_wrapper(
+                'Here is the contents of file {} (lines {}-{}):', fpath)
+            entry = Entry(fpath, fcontent, wrapfun, wrapfun_chunk)
+            results.append(entry)
     elif any(spec.startswith(x) for x in ('file://', 'http://', 'https://')):
         parsed_spec = spec
         content = read_url(spec)
