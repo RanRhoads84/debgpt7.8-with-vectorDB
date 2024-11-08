@@ -260,12 +260,15 @@ def read_url__pycurl(url: str) -> str:
     c.perform()
     status = c.getinfo(c.RESPONSE_CODE)
     c.close()
-    if status in (403, 404):
-        # silently giveup and proceed
-        return ''
-    elif status != 200:
-        console.log(f'Failed to read {url}: HTTP {status}')
-        return ''
+    if url.startswith('file://'):
+        pass
+    else:
+        if status in (403, 404):
+            # silently giveup and proceed
+            return ''
+        elif status != 200:
+            console.log(f'Failed to read {url}: HTTP {status}')
+            return ''
     try:
         content = buffer.getvalue().decode('utf-8')
         #console.log(f'Content-Type: {headers}')

@@ -14,7 +14,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-from typing import List
+from typing import List, Dict, Tuple
 import sys
 import argparse
 import numpy as np
@@ -22,12 +22,13 @@ from rich.status import Status
 from . import defaults
 from . import vectordb
 from . import embeddings
+from . import reader
 
 console = defaults.console
 
 # TODO: move this to a retrieval module
 def entry2dict(
-        entry: Entry,
+        entry: reader.Entry,
         max_chunk_size: int = 8192) -> Dict[Tuple[str, int, int], List[str]]:
     '''
     convert an Entry object to a chunked dictionary
@@ -45,7 +46,7 @@ def entry2dict(
 
 # TODO: move this to a retrieval module
 def entries2dict(
-        entries: List[Entry],
+        entries: List[reader.Entry],
         max_chunk_size: int = 8192) -> Dict[Tuple[str, int, int], List[str]]:
     '''
     convert a list of Entry objects to a chunked dictionary
