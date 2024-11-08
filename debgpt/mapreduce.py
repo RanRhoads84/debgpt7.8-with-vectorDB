@@ -171,6 +171,18 @@ def reduce_two(a: str,
         console.log('mapreduce:recv:', shorten(answer, 80))
     return answer
 
+# TODO: add a compact mode, instead of binary reduction, we can use a
+#      more compact representation of the multiple results as long as the
+#      maximum length is not exceeded.
+def pad_many_results_for_reduce(results: List[str], question: str) -> str:
+    raise NotImplementedError
+
+def reduce_many(results: List[str],
+                question: str,
+                frtnd: frontend.AbstractFrontend,
+                verbose: bool = False) -> str:
+    raise NotImplementedError
+
 
 def mapreduce_super_long_context(
     spec: str,
@@ -179,6 +191,7 @@ def mapreduce_super_long_context(
     user_question: Optional[str] = None,
     debgpt_home: str = '.',
     verbose: bool = False,
+    compact_reduce_mode: bool = True,
     parallelism: int = 1,
 ) -> str:
     '''
@@ -193,6 +206,18 @@ def mapreduce_super_long_context(
       2. map each piece to LLM and get the result
       3. reduce (aggregate) the results using LLM
       4. return the aggregated LLM output
+
+    Args:
+        spec: the input specification
+        max_chunk_size: the maximum chunk size in bytes
+        frtnd: the frontend object
+        user_question: the user question
+        debgpt_home: the home directory of debgpt
+        verbose: verbose mode
+        compact_reduce_mode: use compact reduce mode, instead of binary reduction
+        parallelism: the parallelism
+    Returns:
+        the aggregated result from LLM after mapreduce, as a string
     '''
     assert max_chunk_size > 0
 
