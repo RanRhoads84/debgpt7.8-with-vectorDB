@@ -1,6 +1,60 @@
 Changelog
 =========
 
+v0.7 -- 2024-11-08
+------------------
+
+Significant overhaul of the codebase. Major changes include:
+* Re-licensed project from MIT/Expat to LGPL-3.0-or-later.
+* Re-organize almost all python code and make it more modular and maintainable.
+* Unified all context reader to `--file|-f` argument, including pdf, etc. See
+  README for examples on usage and special grammar.
+* Overhaul mapreduce code. Now it is much more efficient and faster, and
+  robust.
+* Implemented the vector DB, embeddding and retrieval system. Now you can store
+  and retrieve the context and the generated response. But that part for CLI is
+  still under development. That will be in the next release.
+  * Supported Embedding frontends: OpenAI and Google.
+* 233381d frontend: add support to xAI (Grok)
+* 600ae4a cli: add a pipe mode which supports line-based inplace editing in vim
+  (This might be broken now due to code refactor. Will be fixed in the next
+  release)
+
+Normal changes:
+* f362d8d cli+cache: add delete-cache subcommand
+* 287df1e cache: implement SQLite-backed cache with LZ4 compression and tests
+* fa364e4 policy: move txt cache into sqlite cache
+* various improvements to the configurator
+* e078eb2 rename gemini frontend to google frontend
+* 913bdb3 configurator: inherit all config options and auto edit the template (Closes: #26)
+* 3f7499c frontend: add `/quit` command to interactive mode
+* b82442d configurator(wizard): configure the embedding model as well
+* b643c7f cli: add vdb subcommand: debgpt vdb [--db] ls
+* e12d0de pyproject: add lz4 to dependencies
+* add numpy to dependencies.
+* 113ca09 debgpt: add a basic implementation of embedding model (client)
+* 7633b17 vectordb: compress text field using lz4 for efficient storage
+* 6fad04e cli: add --no-render_markdown option
+* 2cf3687 cli: add -q to --quit|-Q
+* 71a4878 debgpt: unify rich.console usage
+
+Minor changes:
+* yapf code styling (mainly Google style)
+* overhaul readme and tutorial
+* use AI to improve type annotation, quality, documentation, bugfix, and write
+  functions.
+* add tests and improve test coverage to 100% for most frequently used
+  functions. AI (e.g. Copilot) can write simple test case very quickly.
+  Really reduced my workload for developing tests. In most cases, I just need
+  to type tab to accept the suggestion. Manual editing happens but not frequent.
+* no longer support python 3.9
+* 5680463 reader: enable caching and set cache expiration.
+* 6492539 reader: use cache for read_url
+* bf2ff19 reader: use pycurl if installed. Closes: #27
+* misc improvements and bugfixes
+* 7872534 cli: delete the genconf alias for genconfig
+* b64dd86 defaults: unify console.log usage
+
 v0.6 -- 2024-10-31
 ------------------
 
@@ -342,4 +396,3 @@ v0.1 -- 2024-01-02
 -------------------
 
 This is the Initial release.
-
