@@ -23,6 +23,16 @@ import numpy as np
 import sys
 import io
 
+def test_entry2chunk():
+    entry = reader.Entry('void', '\n'.join(['a', 'b', 'c', 'd', 'e']),
+                         lambda x: x, lambda x: x)
+    print('entry:', entry)
+    cdict = reader.entry2dict(entry, 2)
+    assert len(cdict) == 5
+    print('cdict:', cdict)
+    cdict = reader.entries2dict([entry], 2)
+    assert len(cdict) == 5
+
 
 def test_latest_file(tmpdir):
     for i in range(3):

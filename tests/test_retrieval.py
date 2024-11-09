@@ -24,16 +24,6 @@ from debgpt import retrieval
 from debgpt import reader
 
 
-def test_mapreduce_entry2chunk():
-    entry = reader.Entry('void', '\n'.join(['a', 'b', 'c', 'd', 'e']),
-                         lambda x: x, lambda x: x)
-    print('entry:', entry)
-    cdict = retrieval.entry2dict(entry, 2)
-    assert len(cdict) == 5
-    print('cdict:', cdict)
-
-
-
 def test_vectorretriever_add(tmpdir):
     conf = defaults.Config()
     conf.db = os.path.join(tmpdir, 'test.db')

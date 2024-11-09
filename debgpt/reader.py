@@ -82,6 +82,39 @@ def enable_cache(func: callable) -> callable:
     return wrapper
 
 
+def entry2dict(
+        entry: Entry,
+        max_chunk_size: int = 8192) -> Dict[Tuple[str, int, int], List[str]]:
+    '''
+    convert an Entry object to a chunked dictionary
+    '''
+    try:
+        d = chunk_lines(entry.content.split('\n'), max_chunk_size)
+    except RecursionError:
+        d = chunk_lines_nonrecursive(entry.content.split('\n'),
+                                            max_chunk_size)
+    result = {}
+    for (start, end), lines in d.items():
+        result[(entry.path, start, end)] = lines
+    return result
+
+
+def entries2dict(
+        entries: List[Entry],
+        max_chunk_size: int = 8192) -> Dict[Tuple[str, int, int], List[str]]:
+    '''
+    convert a list of Entry objects to a chunked dictionary
+
+    Args:
+        entries: a list of Entry objects
+        max_chunk_size: the maximum chunk size in bytes
+    Returns:
+        a dictionary of chunked contents
+    '''
+    return ft.reduce(dict.__or__,
+                     [entry2dict(e, max_chunk_size) for e in entries])
+
+
 def latest_file(files: List[str]) -> str:
     '''
     return the latest file among the list of files
