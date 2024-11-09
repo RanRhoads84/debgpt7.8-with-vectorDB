@@ -241,6 +241,8 @@ debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencie
 ```
 
 The commit resulted by the above example can be seen at [this link](https://salsa.debian.org/deeplearning-team/debgpt/-/commit/968d7ab31cb3541f6733eb34bdf6cf13b6552b7d).
+Recent LLMs are strong enough to easily and correctly add type annotations
+and doc strings in DebGPT's python codebase, see example [here](https://salsa.debian.org/deeplearning-team/debgpt/-/commit/4735b38141eafd6aa9b0863fc73296aa41562aed).
 
 
 #### 4. Vector Retriever for Most Relevant Information
