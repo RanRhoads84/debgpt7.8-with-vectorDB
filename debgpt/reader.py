@@ -704,7 +704,8 @@ def read(spec: str,
         parsed_spec = spec[4:] if spec.startswith('ldo:') else spec[18:]
         pairs = read_ldo_threads(parsed_spec)
         for url, content in pairs:
-            wrapfun = create_wrapper('Here is the contents from URL `{}`:', url)
+            wrapfun = create_wrapper('Here is the contents from URL `{}`:',
+                                     url)
             wrapfun_chunk = create_chunk_wrapper(
                 'Here is the contents from URL `{}` (lines {}-{}):', url)
             results.append(Entry(url, content, wrapfun, wrapfun_chunk))

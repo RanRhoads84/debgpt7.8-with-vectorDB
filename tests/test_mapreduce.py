@@ -186,13 +186,11 @@ def test_reduce_parallel_compact(frtnd):
     assert len(result) > 0
 
 
-@pytest.mark.parametrize('parallel,compact_map,compact_reduce,repeat,max_chunk_size',
-                         it.product([1, 2, 4], [True, False], [True, False],
-                                    [1, 100],
-                                    [20, 100]))
-def test_mapreduce_super_long_context(tmpdir, frtnd, parallel,
-                                      compact_map, compact_reduce,
-                                      repeat, max_chunk_size):
+@pytest.mark.parametrize(
+    'parallel,compact_map,compact_reduce,repeat,max_chunk_size',
+    it.product([1, 2, 4], [True, False], [True, False], [1, 100], [20, 100]))
+def test_mapreduce_super_long_context(tmpdir, frtnd, parallel, compact_map,
+                                      compact_reduce, repeat, max_chunk_size):
     text = ['a b c d e f g h i j k l m n o p q r s t u v w x y z'] * repeat
     text = '\n'.join(text)
     with open(tmpdir / 'test.txt', 'wt') as f:

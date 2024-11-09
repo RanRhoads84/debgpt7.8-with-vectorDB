@@ -154,9 +154,8 @@ def map_chunks(chunks: List[Entry],
             shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
-        console.print(
-            f'[white on red]map:<-({len(answer)})[/white on red]',
-            shorten(answer, _VERBOSE_WRAP_LENGTH))
+        console.print(f'[white on red]map:<-({len(answer)})[/white on red]',
+                      shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
 
@@ -518,11 +517,12 @@ def mapreduce_super_long_context(
                                             verbose=verbose,
                                             parallelism=parallelism)
     elif compact_map_mode:
-        intermediate_results = map_serial_compact(chunks,
-                                                  user_question,
-                                                  frtnd,
-                                                  verbose=verbose,
-                                                  max_chunk_size=max_chunk_size)
+        intermediate_results = map_serial_compact(
+            chunks,
+            user_question,
+            frtnd,
+            verbose=verbose,
+            max_chunk_size=max_chunk_size)
     else:
         intermediate_results = map_serial(chunks,
                                           user_question,
