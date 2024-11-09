@@ -448,7 +448,7 @@ def google_search(query: str) -> List[str]:
     return results
 
 
-def read_google(spec: str, *, verbose: bool = False) -> str:
+def read_google(spec: str, *, verbose: bool = False) -> List[Tuple[str, str]]:
     urls = google_search(spec)
     if verbose:
         console.log(f'Google Search Results for {repr(spec)}:', urls)
@@ -460,7 +460,7 @@ def read_google(spec: str, *, verbose: bool = False) -> str:
 
 
 @enable_cache
-def read_archwiki(spec: str) -> str:
+def read_archwiki(spec: str) -> str:  # pragma: no cover
     '''
     Archwiki. e.g.,
     https://wiki.archlinux.org/title/Archiving_and_compression
@@ -477,7 +477,7 @@ def read_archwiki(spec: str) -> str:
     return '\n'.join([x.rstrip() for x in text])
 
 @enable_cache
-def read_buildd(spec: str, ):
+def read_buildd(spec: str):  # pragma: no cover
     url = f'https://buildd.debian.org/status/package.php?p={spec}'
     r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text, features='html.parser')
@@ -756,7 +756,7 @@ def chunk_lines_nonrecursive(
         is the chunked lines.
     '''
     if end < 0 and start < 0:
-        return chunk_lines(lines, max_chunk_size, 0, len(lines))
+        return chunk_lines_nonrecursive(lines, max_chunk_size, 0, len(lines))
     # real work
     result: Dict[Tuple[int, int], List[str]] = {}
     stack = [(start, end)]

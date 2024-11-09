@@ -313,6 +313,14 @@ def test_google_search(keyword='python programming'):
     for r in results:
         assert r.startswith('http')
 
+@pytest.mark.parametrize('keyword', ('python programming', 'debian'))
+def test_read_google(keyword: str):
+    results: List[Tuple[str, str]] = reader.read_google(keyword)
+    assert len(results) > 0
+    for url, content in results:
+        assert url.startswith('http')
+        assert isinstance(content, str)
+        assert len(content) >= 0
 
 @pytest.mark.parametrize('keyword', ('Archiving_and_compression', ))
 def test_read_archwiki(keyword):
@@ -344,7 +352,7 @@ def test_read_buildd(package):
         assert content[1] in content[3](content[1], 1, -1)
 
 
-@pytest.mark.parametrize('section', ('', '1', '4.6', '4.6.1'))
+@pytest.mark.parametrize('section', ('all', '', '1', '4.6', '4.6.1'))
 def test_policy(section, tmpdir):
     contents = reader.read(f'policy:{section}', debgpt_home=str(tmpdir))
     assert len(contents) >= 1
@@ -361,7 +369,7 @@ def test_policy(section, tmpdir):
         assert content[1] in wrapped
 
 
-@pytest.mark.parametrize('section', ('', '5.5', '1'))
+@pytest.mark.parametrize('section', ('all', '', '5.5', '1'))
 def test_devref(section, tmpdir):
     contents = reader.read(f'devref:{section}', debgpt_home=str(tmpdir))
     assert len(contents) >= 1

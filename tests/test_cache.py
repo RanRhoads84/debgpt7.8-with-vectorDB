@@ -24,6 +24,7 @@ from debgpt.cache import Cache
 def test_cache_init(tmpdir):
     db_path = str(tmpdir.join('test.db'))
     cache = Cache(db_path)
+    cache.close()
 
 def test_cache_setitem(tmpdir):
     db_path = str(tmpdir.join('test.db'))
@@ -46,7 +47,7 @@ def test_cache_delitem(tmpdir):
     del cache['test key']
 
     with pytest.raises(KeyError):
-        _ = cache['test key']
+        del cache['test key']
 
 
 def test_cache_contains(tmpdir):

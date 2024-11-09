@@ -35,7 +35,7 @@ class DebianPolicy:
     def __init__(self) -> None:
         cache = Cache(CACHE)
         # Check if the cache exists and read lines
-        if self.URL not in cache:
+        if self.URL not in cache:  # pragma: no cover
             r = requests.get(self.URL)
             cache[self.URL] = r.text
             lines = r.text.split('\n')
