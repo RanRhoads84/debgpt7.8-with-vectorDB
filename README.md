@@ -215,13 +215,14 @@ debgpt -Hf pytorch/debian/rules -f policy:4.9.1 -A "Implement the support for th
 
 #### 3. Inplace Editing of a File
 
+The argument **[--inplace|-i]** is for in-place editing of a file. It is a
+read-write reader that does the same as `--file|-f` (read-only) does, but
+the inplace one will write the LLM response back to the file. We expect the
+user to use this feature for editing a file.
 
-**[--inplace|-i]**
-
-We have a kind of special reader `--inplace|-i` (read-write) that reads
-the contents of a file like `--file|-f` (read-only), but it will also write
-the LLM response (I assume it is the file editing result) back to the file.
-It will also print the diff of the changes to the screen.
+If specified, the edits (in UNIX diff format) will be printed to the screen.
+The `--inplace|-i` will mandate the `--quit|-Q` behavior, and will turn
+off markdown rendering.
 
 The following example will ask LLM to edit the `pyproject.toml` file, adding
 `pygments` to its dependencies. This really works correctly.
@@ -230,16 +231,19 @@ The following example will ask LLM to edit the `pyproject.toml` file, adding
 debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencies.'
 ```
 
-The `--inplace|-i` will mandate the `--quit|-Q` behavior, and will turn
-off markdown rendering.
-
-If working in a Git repository, we can make things more absurd:
+If working in a Git repository, we can make things more automated:
+You may further append `--inplace-git-add-commit` to automatically add and
+commit the changes to the Git repository. If you want to review before commit,
+specify `--inplace-git-p-add-commit|-I` argument instead.
 
 ```
 debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencies.' --inplace-git-add-commit
 ```
 
 The commit resulted by the above example can be seen at [this link](https://salsa.debian.org/deeplearning-team/debgpt/-/commit/968d7ab31cb3541f6733eb34bdf6cf13b6552b7d).
+
+
+
 
 
 
