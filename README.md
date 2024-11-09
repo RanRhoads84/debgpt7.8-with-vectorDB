@@ -41,29 +41,25 @@ pip3 install debgpt
 pip3 install git+https://salsa.debian.org/deeplearning-team/debgpt.git
 ```
 
-Before use, start the TUI-based wizard to (re-)configure the tool:
+The bare minimum "configuration" required to make `debgpt` work is
+`export OPENAI_API_KEY="your-api-key"`. If anything else is needed,
+use the TUI-based wizard to (re-)configure:
 
 ```
 debgpt config
 ```
 
-Or generate a configuration template and place it at
-`$HOME/.debgpt/config.toml`:
+Or use `debgpt genconfig` to generate a configuration template and place it at
+`$HOME/.debgpt/config.toml`.  Both `config` and `genconfig` will inherit any
+existing configurations.
 
-```
-debgpt genconfig
-```
-
-Both `config` and `genconfig` will inherit any existing configurations.
 Upon completion, you can start an interactive chat with the LLM:
 
 ```
 debgpt
 ```
 
-The bare minimum "configuration" required to make `debgpt` work is
-`export OPENAI_API_KEY="your-api-key"`.
-
+Enjoy the chat!
 
 FRONTENDS
 =========
