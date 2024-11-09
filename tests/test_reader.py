@@ -325,6 +325,7 @@ def test_google_search(keyword='python programming'):
         assert r.startswith('http')
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 @pytest.mark.parametrize('keyword', ('python programming', 'debian'))
 def test_read_google(keyword: str):
     results: List[Tuple[str, str]] = reader.read_google(keyword)
