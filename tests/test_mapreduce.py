@@ -24,7 +24,6 @@ import numpy as np
 import sys
 import io
 
-
 #def test_mapreduce_load_file(tmp_path):
 #    policypath = os.path.join(tmp_path, 'policy.txt')
 #    # just download the policy text file

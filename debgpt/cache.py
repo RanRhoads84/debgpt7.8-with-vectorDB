@@ -42,7 +42,8 @@ class Cache(dict):
         self._cleanup_expired()
 
     def _cleanup_expired(self) -> None:
-        self.cursor.execute('DELETE FROM cache WHERE stamp < DATETIME("now", "-1 day")')
+        self.cursor.execute(
+            'DELETE FROM cache WHERE stamp < DATETIME("now", "-1 day")')
         self.connection.commit()
 
     def _create_table(self) -> None:
@@ -57,8 +58,9 @@ class Cache(dict):
 
     def __setitem__(self, key: str, value: str) -> None:
         value_compressed: bytes = lz4.frame.compress(value.encode())
-        self.cursor.execute('INSERT OR REPLACE INTO cache (key, value) VALUES (?, ?)',
-                            (key, value_compressed))
+        self.cursor.execute(
+            'INSERT OR REPLACE INTO cache (key, value) VALUES (?, ?)',
+            (key, value_compressed))
         self.connection.commit()
 
     def __getitem__(self, key: str) -> str:
@@ -95,11 +97,15 @@ class Cache(dict):
 
     def values(self) -> List[str]:
         self.cursor.execute('SELECT value FROM cache')
-        return [lz4.frame.decompress(row[0]).decode() for row in self.cursor.fetchall()]
+        return [
+            lz4.frame.decompress(row[0]).decode()
+            for row in self.cursor.fetchall()
+        ]
 
     def items(self) -> List[Tuple[str, str]]:
         self.cursor.execute('SELECT key, value FROM cache')
-        return [(row[0], lz4.frame.decompress(row[1]).decode()) for row in self.cursor.fetchall()]
+        return [(row[0], lz4.frame.decompress(row[1]).decode())
+                for row in self.cursor.fetchall()]
 
     def close(self) -> None:
         self.connection.close()

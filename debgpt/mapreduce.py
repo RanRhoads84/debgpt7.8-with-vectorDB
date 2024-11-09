@@ -78,7 +78,8 @@ def map_chunk(chunk: str,
                       shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
-        console.print('[white on red]map:<-[/white on red]', shorten(answer, _VERBOSE_WRAP_LENGTH))
+        console.print('[white on red]map:<-[/white on red]',
+                      shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
 
@@ -129,17 +130,20 @@ def pad_two_results_for_reduce(a: str, b: str, question: str) -> str:
 
 
 def reduce_two_chunks(a: str,
-               b: str,
-               question: str,
-               frtnd: frontend.AbstractFrontend,
-               verbose: bool = False) -> str:
+                      b: str,
+                      question: str,
+                      frtnd: frontend.AbstractFrontend,
+                      verbose: bool = False) -> str:
     padded_input = pad_two_results_for_reduce(a, b, question)
     if verbose:
-        console.print('[white on blue]reduce:->[/white on blue]', shorten(padded_input, _VERBOSE_WRAP_LENGTH))
+        console.print('[white on blue]reduce:->[/white on blue]',
+                      shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
-        console.print('[white on red]reduce:<-[/white on red]', shorten(answer, _VERBOSE_WRAP_LENGTH))
+        console.print('[white on red]reduce:<-[/white on red]',
+                      shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
+
 
 def pad_many_results_for_reduce(results: List[str], question: str) -> str:
     template = 'Extract any information that is relevant to question '
@@ -150,16 +154,19 @@ def pad_many_results_for_reduce(results: List[str], question: str) -> str:
         template += '```\n' + r + '\n```\n\n'
     return template
 
+
 def reduce_many_chunks(results: List[str],
-                question: str,
-                frtnd: frontend.AbstractFrontend,
-                verbose: bool = False) -> str:
+                       question: str,
+                       frtnd: frontend.AbstractFrontend,
+                       verbose: bool = False) -> str:
     padded_input = pad_many_results_for_reduce(results, question)
     if verbose:
-        console.print('[white on blue]reduce:->[/white on blue]', shorten(padded_input, _VERBOSE_WRAP_LENGTH))
+        console.print('[white on blue]reduce:->[/white on blue]',
+                      shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
-        console.print('[white on red]reduce:<-[/white on red]', shorten(answer, _VERBOSE_WRAP_LENGTH))
+        console.print('[white on red]reduce:<-[/white on red]',
+                      shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
 
@@ -193,7 +200,6 @@ def group_strings_by_length(strings, max_length):
     return grouped_strings
 
 
-
 def reduce_serial(results: List[str],
                   question: str,
                   frtnd: frontend.AbstractFrontend,
@@ -210,7 +216,8 @@ def reduce_serial(results: List[str],
         for (a, b) in track(zip(results[::2], results[1::2]),
                             total=len(results) // 2,
                             description='Mapreduce:'):
-            new_results.append(reduce_two_chunks(a, b, question, frtnd, verbose))
+            new_results.append(
+                reduce_two_chunks(a, b, question, frtnd, verbose))
         if len(results) % 2 == 1:
             new_results.append(results[-1])
         results = new_results
@@ -218,10 +225,10 @@ def reduce_serial(results: List[str],
 
 
 def reduce_serial_compact(results: List[str],
-                    question: str,
-                    frtnd: frontend.AbstractFrontend,
-                    verbose: bool = False,
-                    max_chunk_size: int = -1) -> str:
+                          question: str,
+                          frtnd: frontend.AbstractFrontend,
+                          verbose: bool = False,
+                          max_chunk_size: int = -1) -> str:
     '''
     recursive reduction of multiple results, until only one result is left.
     We do this compact (non-binary) reduction in serial mode.
@@ -233,7 +240,8 @@ def reduce_serial_compact(results: List[str],
         new_results = []
         groups = group_strings_by_length(results, max_chunk_size)
         for pack in track(groups, total=len(groups), description='Mapreduce:'):
-            new_results.append(reduce_many_chunks(pack, question, frtnd, verbose))
+            new_results.append(
+                reduce_many_chunks(pack, question, frtnd, verbose))
         results = new_results
     return results[0]
 
@@ -255,11 +263,13 @@ def reduce_parallel(results: List[str],
             f'[bold]MapReduce[/bold]: reducing {len(results)} intermediate results'
         )
         pairs = list(zip(results[::2], results[1::2]))
-        with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism) as ex:
-            new_results = list(track(ex.map(lambda x: worker(*x), pairs),
-                    total=len(pairs),
-                    description=f'Mapreduce[{parallelism}]:',
-                    transient=True))
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=parallelism) as ex:
+            new_results = list(
+                track(ex.map(lambda x: worker(*x), pairs),
+                      total=len(pairs),
+                      description=f'Mapreduce[{parallelism}]:',
+                      transient=True))
         if len(results) % 2 == 1:
             new_results.append(results[-1])
         results = new_results
@@ -267,11 +277,11 @@ def reduce_parallel(results: List[str],
 
 
 def reduce_parallel_compact(results: List[str],
-                        question: str,
-                        frtnd: frontend.AbstractFrontend,
-                        verbose: bool = False,
-                        parallelism: int = 2,
-                        max_chunk_size: int = -1) -> str:
+                            question: str,
+                            frtnd: frontend.AbstractFrontend,
+                            verbose: bool = False,
+                            parallelism: int = 2,
+                            max_chunk_size: int = -1) -> str:
     '''
     recursive reduction of multiple results, until only one result is left
     '''
@@ -284,11 +294,13 @@ def reduce_parallel_compact(results: List[str],
             f'[bold]MapReduce[/bold]: reducing {len(results)} intermediate results'
         )
         groups = group_strings_by_length(results, max_chunk_size)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism) as ex:
-            new_results = list(track(ex.map(worker, groups),
-                    total=len(groups),
-                    description=f'Mapreduce[{parallelism}]:',
-                    transient=True))
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=parallelism) as ex:
+            new_results = list(
+                track(ex.map(worker, groups),
+                      total=len(groups),
+                      description=f'Mapreduce[{parallelism}]:',
+                      transient=True))
         results = new_results
     return results[0]
 
@@ -362,26 +374,38 @@ def mapreduce_super_long_context(
                                             verbose=verbose,
                                             parallelism=parallelism)
     else:
-        intermediate_results = map_serial(chunks, user_question, frtnd,
+        intermediate_results = map_serial(chunks,
+                                          user_question,
+                                          frtnd,
                                           verbose=verbose)
 
     # reduce phase
     if parallelism > 1 and compact_reduce_mode:
-        aggregated_result = reduce_parallel_compact(intermediate_results,
-                                                    user_question, frtnd, verbose=verbose,
-                                                    parallelism=parallelism,
-                                                    max_chunk_size=max_chunk_size)
+        aggregated_result = reduce_parallel_compact(
+            intermediate_results,
+            user_question,
+            frtnd,
+            verbose=verbose,
+            parallelism=parallelism,
+            max_chunk_size=max_chunk_size)
     elif parallelism > 1:
         aggregated_result = reduce_parallel(intermediate_results,
-                                            user_question, frtnd, verbose=verbose,
+                                            user_question,
+                                            frtnd,
+                                            verbose=verbose,
                                             parallelism=parallelism)
     elif compact_reduce_mode:
-        aggregated_result = reduce_serial_compact(intermediate_results,
-                                                  user_question, frtnd, verbose=verbose,
-                                                  max_chunk_size=max_chunk_size)
+        aggregated_result = reduce_serial_compact(
+            intermediate_results,
+            user_question,
+            frtnd,
+            verbose=verbose,
+            max_chunk_size=max_chunk_size)
     else:
         aggregated_result = reduce_serial(intermediate_results,
-                                          user_question, frtnd, verbose=verbose)
+                                          user_question,
+                                          frtnd,
+                                          verbose=verbose)
 
     # pad the final result and return
     return aggregated_result + '\n\n'
@@ -413,8 +437,11 @@ def main(argv: List[str] = sys.argv[1:]):
                         default=False,
                         action='store_true',
                         help='verbose mode')
-    parser.add_argument('--parallelism', '-j',
-                        default=1, type=int, help='parallelism')
+    parser.add_argument('--parallelism',
+                        '-j',
+                        default=1,
+                        type=int,
+                        help='parallelism')
     args = parser.parse_args(argv)
 
     # read the requested files

@@ -72,6 +72,7 @@ def enable_cache(func: callable) -> callable:
     Returns:
         callable: the wrapper function
     '''
+
     def wrapper(*args, **kwargs):
         cache = Cache(CACHE)
         if args[0] in cache:
@@ -79,6 +80,7 @@ def enable_cache(func: callable) -> callable:
         result = func(*args, **kwargs)
         cache[args[0]] = result
         return result
+
     return wrapper
 
 
@@ -91,8 +93,7 @@ def entry2dict(
     try:
         d = chunk_lines(entry.content.split('\n'), max_chunk_size)
     except RecursionError:
-        d = chunk_lines_nonrecursive(entry.content.split('\n'),
-                                            max_chunk_size)
+        d = chunk_lines_nonrecursive(entry.content.split('\n'), max_chunk_size)
     result = {}
     for (start, end), lines in d.items():
         result[(entry.path, start, end)] = lines
@@ -270,6 +271,7 @@ def read_url__pycurl(url: str) -> str:
         str: the content from the URL
     '''
     headers = {}
+
     # copied from pycurl: http://pycurl.io/docs/latest/quickstart.html
     def header_function(header_line):
         # HTTP standard specifies that headers are encoded in iso-8859-1.
@@ -351,7 +353,6 @@ def read_url__pycurl(url: str) -> str:
         else:
             console.print(f'Failed to read {repr(url)} as utf-8. Giving up.')
             return ''
-
 
 
 @tenacity.retry(stop=tenacity.stop_after_attempt(3),
@@ -509,6 +510,7 @@ def read_archwiki(spec: str) -> str:  # pragma: no cover
     text = soup.get_text().split('\n')
     return '\n'.join([x.rstrip() for x in text])
 
+
 @enable_cache
 def read_buildd(spec: str):  # pragma: no cover
     url = f'https://buildd.debian.org/status/package.php?p={spec}'
@@ -630,8 +632,12 @@ def read(spec: str,
         content = debian_policy.DebianDevref()
         if parsed_spec == 'all':
             source = 'Debian Developer Reference document'
-            wrapfun = create_wrapper('Here is the Debian Developer Reference document, {}:', 'full contents')
-            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Developer Reference document, {} (lines {}-{}):', 'full contents')
+            wrapfun = create_wrapper(
+                'Here is the Debian Developer Reference document, {}:',
+                'full contents')
+            wrapfun_chunk = create_chunk_wrapper(
+                'Here is the Debian Developer Reference document, {} (lines {}-{}):',
+                'full contents')
             results.append((source, str(content), wrapfun, wrapfun_chunk))
         elif parsed_spec:
             source = f'Debian Developer Reference document [{parsed_spec}]'
@@ -677,8 +683,11 @@ def read(spec: str,
         content = debian_policy.DebianPolicy()
         if parsed_spec == 'all':
             source = 'Debian Policy document'
-            wrapfun = create_wrapper('Here is the Debian Policy document, {}:', 'full contents')
-            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Policy document, {} (lines {}-{}):', 'full contents')
+            wrapfun = create_wrapper('Here is the Debian Policy document, {}:',
+                                     'full contents')
+            wrapfun_chunk = create_chunk_wrapper(
+                'Here is the Debian Policy document, {} (lines {}-{}):',
+                'full contents')
             results.append((source, str(content), wrapfun, wrapfun_chunk))
         elif parsed_spec:
             source = f'Debian Policy section [{parsed_spec}]'

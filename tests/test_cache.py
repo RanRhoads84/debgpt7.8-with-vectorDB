@@ -26,10 +26,12 @@ def test_cache_init(tmpdir):
     cache = Cache(db_path)
     cache.close()
 
+
 def test_cache_setitem(tmpdir):
     db_path = str(tmpdir.join('test.db'))
     cache = Cache(db_path)
-    cache['test key'] = 'test value' 
+    cache['test key'] = 'test value'
+
 
 def test_cache_getitem(tmpdir):
     db_path = str(tmpdir.join('test.db'))
@@ -39,6 +41,7 @@ def test_cache_getitem(tmpdir):
 
     with pytest.raises(KeyError):
         _ = cache['non-exist key']
+
 
 def test_cache_delitem(tmpdir):
     db_path = str(tmpdir.join('test.db'))
@@ -57,6 +60,7 @@ def test_cache_contains(tmpdir):
     assert 'test key' in cache
     assert 'non-exist key' not in cache
 
+
 def test_cache_len(tmpdir):
     db_path = str(tmpdir.join('test.db'))
     cache = Cache(db_path)
@@ -69,12 +73,14 @@ def test_cache_len(tmpdir):
     del cache['test key']
     assert len(cache) == 1
 
+
 def test_cache_iter(tmpdir):
     db_path = str(tmpdir.join('test.db'))
     cache = Cache(db_path)
     cache['test key'] = 'test value'
     cache['test key 2'] = 'test value 2'
     assert set(cache) == {'test key', 'test key 2'}
+
 
 def test_cache_keys(tmpdir):
     db_path = str(tmpdir.join('test.db'))
@@ -83,6 +89,7 @@ def test_cache_keys(tmpdir):
     cache['test key 2'] = 'test value 2'
     assert set(cache.keys()) == {'test key', 'test key 2'}
 
+
 def test_cache_values(tmpdir):
     db_path = str(tmpdir.join('test.db'))
     cache = Cache(db_path)
@@ -90,12 +97,15 @@ def test_cache_values(tmpdir):
     cache['test key 2'] = 'test value 2'
     assert set(cache.values()) == {'test value', 'test value 2'}
 
+
 def test_cache_items(tmpdir):
     db_path = str(tmpdir.join('test.db'))
     cache = Cache(db_path)
     cache['test key'] = 'test value'
     cache['test key 2'] = 'test value 2'
-    assert set(cache.items()) == {('test key', 'test value'), ('test key 2', 'test value 2')}
+    assert set(cache.items()) == {('test key', 'test value'),
+                                  ('test key 2', 'test value 2')}
+
 
 def test_cache_clear(tmpdir):
     db_path = str(tmpdir.join('test.db'))
@@ -104,6 +114,7 @@ def test_cache_clear(tmpdir):
     cache['test key 2'] = 'test value 2'
     cache.clear()
     assert len(cache) == 0
+
 
 def test_cache_del(tmpdir):
     db_path = str(tmpdir.join('test.db'))
@@ -133,6 +144,7 @@ def test_cache_pop(tmpdir):
 
     assert cache.pop('non-exist key', 'default') == 'default'
 
+
 def test_cache_popitem(tmpdir):
     db_path = str(tmpdir.join('test.db'))
     cache = Cache(db_path)
@@ -142,6 +154,7 @@ def test_cache_popitem(tmpdir):
 
     with pytest.raises(KeyError):
         cache.popitem()
+
 
 def test_cache_update(tmpdir):
     db_path = str(tmpdir.join('test.db'))
@@ -156,6 +169,7 @@ def test_cache_update(tmpdir):
     assert cache['test key'] != 'test value'
     assert cache['test key'] == 'test value 3'
 
+
 def test_cache_setdefault(tmpdir):
     db_path = str(tmpdir.join('test.db'))
     cache = Cache(db_path)
@@ -164,6 +178,7 @@ def test_cache_setdefault(tmpdir):
 
     cache.setdefault('test key', 'test value 2')
     assert cache['test key'] == 'test value'
+
 
 def test_cache_copy(tmpdir):
     db_path = str(tmpdir.join('test.db'))

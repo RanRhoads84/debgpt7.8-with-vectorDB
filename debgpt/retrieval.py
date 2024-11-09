@@ -26,6 +26,7 @@ from . import reader
 
 console = defaults.console
 
+
 class AbstrastRetriever(object):  # pragma: no cover
     '''
     Abstract class for retrievers.

@@ -23,6 +23,7 @@ import numpy as np
 import sys
 import io
 
+
 def test_entry2chunk():
     entry = reader.Entry('void', '\n'.join(['a', 'b', 'c', 'd', 'e']),
                          lambda x: x, lambda x: x)
@@ -323,6 +324,7 @@ def test_google_search(keyword='python programming'):
     for r in results:
         assert r.startswith('http')
 
+
 @pytest.mark.parametrize('keyword', ('python programming', 'debian'))
 def test_read_google(keyword: str):
     results: List[Tuple[str, str]] = reader.read_google(keyword)
@@ -331,6 +333,7 @@ def test_read_google(keyword: str):
         assert url.startswith('http')
         assert isinstance(content, str)
         assert len(content) >= 0
+
 
 @pytest.mark.parametrize('keyword', ('Archiving_and_compression', ))
 def test_read_archwiki(keyword):
