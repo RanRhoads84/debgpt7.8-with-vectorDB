@@ -14,46 +14,30 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-# suppress all warnings.
-import textwrap
-import rich
-import shlex
-import sys
-import os
-import re
-import difflib
-import argparse
-import concurrent.futures
-from prompt_toolkit.completion import Completer, Completion
-from prompt_toolkit import PromptSession
+from debgpt import version
+from pygments import highlight
+from pygments.formatters import TerminalFormatter
+from pygments.lexers import DiffLexer
+from rich.markup import escape
 from rich.panel import Panel
 from rich.rule import Rule
-from rich.markup import escape
-from rich.progress import track
-from prompt_toolkit.styles import Style
-from pygments import highlight
-from pygments.lexers import DiffLexer
-from pygments.formatters import TerminalFormatter
-from typing import List, Optional
-import warnings
+from typing import Optional
+import difflib
 import functools as ft
-from . import defaults
-from . import reader
-from . import frontend
-from . import configurator
-from . import arguments
-from debgpt import version
 import os
 import sys
-from rich.panel import Panel
 import tempfile
 import textwrap
-from . import frontend
-from . import reader
+import warnings
+
+from . import arguments
+from . import configurator
 from . import defaults
-from . import vectordb
-from . import replay
+from . import frontend
 from . import mapreduce
+from . import reader
+from . import replay
+from . import vectordb
 
 warnings.filterwarnings("ignore")
 

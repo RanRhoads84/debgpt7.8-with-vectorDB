@@ -26,13 +26,11 @@ import functools as ft
 import sys
 import glob
 import shlex
-import mimetypes
 import tenacity
 from rich.rule import Rule
 from rich.progress import track
 import concurrent.futures
 from urllib.parse import urlparse
-from urllib.request import urlopen
 import urllib.parse
 from . import policy as debian_policy
 from .defaults import console

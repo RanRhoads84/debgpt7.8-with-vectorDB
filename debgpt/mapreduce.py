@@ -14,32 +14,17 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-from typing import List, Union, Dict, Tuple, Optional
-import re
-import requests
-from bs4 import BeautifulSoup
+from typing import List, Optional
 import argparse
-import io
-import os
-import subprocess
 import functools as ft
 import sys
-import glob
-import shlex
-import mimetypes
-import tenacity
 import concurrent.futures
 import textwrap
 from rich.progress import track
 from rich.rule import Rule
-from urllib.parse import urlparse
-from urllib.request import urlopen
-import urllib.parse
-from . import policy as debian_policy
 from . import reader
 from .reader import Entry
 from .defaults import console
-from collections import namedtuple
 from . import frontend
 
 _VERBOSE_WRAP_LENGTH = 512

@@ -14,7 +14,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-from typing import List, Dict, Tuple
+from typing import List
 import sys
 import argparse
 import numpy as np
@@ -22,7 +22,6 @@ from rich.status import Status
 from . import defaults
 from . import vectordb
 from . import embeddings
-from . import reader
 
 console = defaults.console
 

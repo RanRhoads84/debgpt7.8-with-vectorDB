@@ -15,9 +15,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
 from typing import Union, List
-import os
 import requests
-from .defaults import console
 from .defaults import CACHE
 from .cache import Cache
 
