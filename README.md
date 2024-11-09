@@ -243,93 +243,41 @@ debgpt -Hi pyproject.toml -a 'edit this file, adding pygments to its dependencie
 The commit resulted by the above example can be seen at [this link](https://salsa.debian.org/deeplearning-team/debgpt/-/commit/968d7ab31cb3541f6733eb34bdf6cf13b6552b7d).
 
 
-
-
-
-
-
-
-#### 3. Mapreduce to Divide-and-Conquer Any Length Context
-
-```
-debgpt -Hx debgpt/cli.py -a 'explain this file'     # Use --mapreduce|-x if file too large
-```
-
-The key difference between the Language Retriever and Vector Retriever is that
-language retriever will really make the language model read all information
-you passed to it, while vector retriever will only make language model read
-the most relevant several pieces of information stored in the database.
-
-In the
-previous section we have seens the special prompt reader `MapReduce`, which
-works differently from the standard prompt readers that will be introduced
-here. 
-
 #### 4. Vector Retriever for Most Relevant Information
 
 > This is WIP. Leveraging the embeddings to retrieve.  Basically RAG.
 
 
-#### 5. Subcommands and Piping through Everywhere
+#### 5. MapReduce for Any Length Context
 
-Being able to pipe the inputs and outputs among different programs is one of
-the reasons why I love the UNIX philosophy.
-
-
-The pipe mode is useful when you want to use `debgpt` in a shell script Try the
-follows on the Makefile in debgpt repo. Later we will introduce a in-place
-editing functionality which is more convenient than this one.
-
-```
-cat Makefile | debgpt -a 'delete the deprecated targets' pipe | tee tmp ; mv tmp Makefile; git diff
-```
-
-The pipe mode can be used for editing something in vim in-place.
-
-```
-# In vim debgpt/task.py, use 'V' mode to select the task_backend function, then 
-:'<,'>!debgpt -a 'add type annotations and comments to this function' pipe
-```
-
-This looks interesting, right? `debgpt` has a git wrapper that automatically
-generates the git commit message for the staged contents and commit the message.
-Just try `debgpt git commit --amend` to see how it works. This will also be
-mentioned in the subcommands section.
-
-
-#### 6. Prompt Engineering
-
-As you may have seen, the biggest variation in LLM usage happens in the context
-including how you provide the context readers, and how you ask the question
-through `--ask|-A|-a`. By adjusting the way you provide those information
-and ask the question, you can get significantly different results. To properly
-make LLM work for you, you may need to go through some basic prompt engineering
-methods.
-
-The following are some references on this topic:
-
-
-
-Advanced usage of LLM such as chain of thoughts will not be covered in this
-tutorial. Please refer external resources for more information.
-
-
-#### 2. Special MapReduce Prompt reader for Any Length Context
-
-> This `MapReduce` is a key feature of DebGPT.
+The "MapReduce" feature is the choice if you want the LLM to read bulk documentations.
 
 Generally, LLMs have a limited context length. If you want to ask a question
 regarding a very long context, you can split the context into multiple parts,
 and extract the relevant information from each part. Then, you can ask the
 LLM to answer the question based on the extracted information.
 
-We have implemented it as a special feature in the `debgpt` tool. You can use
-this functionality through the `--mapreduce|-x` argument.  We need the
-`--ask|-A|-a` argument to tell LLM what kind of question we want to ask so it can
-extract the right information. If `--ask|-A|-a` is not provided, the tool will
-simply assume that you want to summarize the provided information.
+The implementation of this is fairly simple: split the gathered information
+texts until the pre-defined maximum chunk size is satisfied, ask the LLM to
+extract relevant information from each chunk, and then repeatedly merge the
+extracted information through LLM summarization, untill there is only one chunk
+left.  As a result, this functionality can be very quota-consuming if you are
+going to deal with long texts. Please keep an eye on your bill when you try
+this on a paied API service.
 
-Some usage examples are as follows:
+
+This functionality is implemented as the `--mapreduce|-x` argument. The user
+has to specify the `--ask|-A|-a` argument to tell LLM what kind of question we
+want to ask so it can extract the right information. It will summarize if the
+`--ask|-A|-a` argument is missing.
+
+The key difference between the MapReduce and Vector Retriever is that
+MapReduce will really make the language model read all information
+you passed to it, while vector retriever will only make language model read
+the most relevant several pieces of information stored in the database.
+
+
+Some usage examples of MapReduce are as follows:
 
 * Load a **file** and ask a question
 ```
@@ -386,17 +334,37 @@ development purpose.  To further tweak the mapreduce behavior, you may want to
 check the `--mapreduce_chunksize <int>` and `--mapreduce_parallelism <int>`
 arguments.
 
-The idea behind this is fairly simple: binary split the gathered information
-texts until the chunk size is smaller than a pre-defined size, and then pairwise
-reduce those results using LLM until there is only one chunk left.  As a
-result, this functionality can be very quota-consuming if you are going to deal
-with long texts. Please keep an eye on your bill when you try this on a paied
-API service.
-
-#### 3. Standard Prompt readers for Texts that Fit in Context Window
 
 
-#### 4. External Command Wrapper and Subcommands
+#### 6. Piping through Everywhere
+
+Being able to pipe the inputs and outputs among different programs is one of
+the reasons why I love the UNIX philosophy.
+
+The pipe mode is useful when you want to use `debgpt` in a shell script Try the
+follows on the Makefile in debgpt repo. Later we will introduce a in-place
+editing functionality which is more convenient than this one.
+
+```
+cat Makefile | debgpt -a 'delete the deprecated targets' pipe | tee tmp ; mv tmp Makefile; git diff
+```
+
+The pipe mode can be used for editing something in vim in-place.
+
+```
+# In vim debgpt/task.py, use 'V' mode to select the task_backend function, then 
+:'<,'>!debgpt -a 'add type annotations and comments to this function' pipe
+```
+
+This looks interesting, right? `debgpt` has a git wrapper that automatically
+generates the git commit message for the staged contents and commit the message.
+Just try `debgpt git commit --amend` to see how it works. This will also be
+mentioned in the subcommands section.
+
+
+#### 7. DebGPT Subcommands
+
+**Git subcommand.**
 
 Let LLM automatically generate the git commit message, and call git to commit it:
 
@@ -408,31 +376,36 @@ If you don't even want to `git commit --amend` the commited message, just
 remove `--amend` from it.
 
 
-#### 5. Prompt Engineering
+#### 8. Prompt Engineering
 
-An important aspect of using LLMs is prompt engineering. The way you ask a
-question significantly impacts the quality of the results you will get.
-Make sure to provide as much information as possible. The following are some
-references on this topic:
+As you may have seen, the biggest variation in LLM usage happens in the context
+including how you provide the context readers, and how you ask the question
+through `--ask|-A|-a`. By adjusting the way you provide those information
+and ask the question, you can get significantly different results. To properly
+make LLM work for you, you may need to go through some basic prompt engineering
+methods.
+
+The following are some references on this topic:
 
 1. OpenAI's Guide https://platform.openai.com/docs/guides/prompt-engineering
-2. Chain-of-Thought (CoT): https://arxiv.org/pdf/2205.11916.pdf
 
-
-#### 6. Frequently Seen Issues
-
-* Context overlength: If the result from query readers is too long, you
-  can switch to the `--mapreduce|-x` special reader, or switch to a model
-  or backend or service provider that supports longer context.
-
-
-#### 99. You Name It
+Advanced usage of LLM such as
+[Chain-of-Thought (CoT)](https://arxiv.org/pdf/2205.11916.pdf)
+will not be covered in this document.
+Please refer external resources for more information.
 
 The usage of LLM is limited by our imaginations. I am glad to hear from you if
 you have more good ideas on how we can make LLMs useful for Debian development:
 https://salsa.debian.org/deeplearning-team/debgpt/-/issues
 
 
+TROUBLESHOOTING
+===============
+
+* Context overlength: If the result from context readers (such as feeding
+  `--file` with a huge text file) is too long, you
+  can switch to the `--mapreduce|-x` special reader, or switch to a model
+  or service provider that supports longer context.
 
 
 BACKEND
