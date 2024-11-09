@@ -529,6 +529,9 @@ REFERENCES
 [7] Moonshot - A simple and modular tool to evaluate and red-team any LLM application.
 : https://github.com/aiverify-foundation/moonshot?tab=readme-ov-file
 
+[8] LLMxMapReduce (Concurrent work. Their method is more advanced than mine)
+: https://arxiv.org/abs/2410.09342
+
 LICENSE and ACKNOWLEDGEMENT
 ===========================
 
