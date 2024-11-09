@@ -378,13 +378,11 @@ def main(argv=sys.argv[1:]):
         msg += '\n```\n\n'
 
     # gather all specified information in the initial prompt,
-    # such as --file, --man, --policy, --ask
+    # including --mapreduce, --retrieval, --embed, --file, --inplace, --ask.
     msg = gather_information_ordered(msg, ag, ag_order)
 
     # in dryrun mode, we simply print the generated initial prompts
-    # then the user can copy the prompt, and paste them into web-based
-    # LLMs like the free web-based ChatGPT (OpenAI), claude.ai (Anthropic),
-    # Bard (google), Gemini (google), huggingchat (huggingface), etc.
+    # then the user can copy the prompt, and paste them into web-based LLMs.
     if ag.frontend == 'dryrun':
         console.print(msg, markup=False)
         exit(0)
