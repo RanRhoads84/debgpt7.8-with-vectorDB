@@ -51,7 +51,8 @@ class Cache(dict):
         """
         Clean up expired entries from the cache.
         """
-        self.cursor.execute('DELETE FROM cache WHERE stamp < DATETIME("now", "-1 day")')
+        self.cursor.execute(
+            'DELETE FROM cache WHERE stamp < DATETIME("now", "-1 day")')
         self.connection.commit()
 
     def _create_table(self) -> None:
@@ -97,7 +98,7 @@ class Cache(dict):
         Raises:
             KeyError: If the key does not exist in the cache.
         """
-        self.cursor.execute('SELECT value FROM cache WHERE key = ?', (key,))
+        self.cursor.execute('SELECT value FROM cache WHERE key = ?', (key, ))
         result: Tuple = self.cursor.fetchone()
         if result:
             value_compressed: bytes = result[0]
@@ -115,7 +116,7 @@ class Cache(dict):
         Raises:
             KeyError: If the key does not exist in the cache.
         """
-        self.cursor.execute('DELETE FROM cache WHERE key = ?', (key,))
+        self.cursor.execute('DELETE FROM cache WHERE key = ?', (key, ))
         if self.cursor.rowcount == 0:
             raise KeyError(f'Key {key} not found in cache')
         self.connection.commit()
@@ -130,7 +131,7 @@ class Cache(dict):
         Returns:
             bool: True if the key is in the cache, False otherwise.
         """
-        self.cursor.execute('SELECT value FROM cache WHERE key = ?', (key,))
+        self.cursor.execute('SELECT value FROM cache WHERE key = ?', (key, ))
         return self.cursor.fetchone() is not None
 
     def __iter__(self):

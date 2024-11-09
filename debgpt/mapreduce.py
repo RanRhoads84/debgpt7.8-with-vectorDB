@@ -74,8 +74,9 @@ def map_chunk(chunk: Entry,
     '''
     padded_input = pad_chunk_before_map(chunk, question)
     if verbose:
-        console.print(f'[white on blue]map:({len(padded_input)})->[/white on blue]',
-                      shorten(padded_input, _VERBOSE_WRAP_LENGTH))
+        console.print(
+            f'[white on blue]map:({len(padded_input)})->[/white on blue]',
+            shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
         console.print('f[white on red]map:<-({len(answer)})[/white on red]',
@@ -136,12 +137,14 @@ def reduce_two_chunks(a: str,
                       verbose: bool = False) -> str:
     padded_input = pad_two_results_for_reduce(a, b, question)
     if verbose:
-        console.print(f'[white on blue]reduce:({len(padded_input)})->[/white on blue]',
-                      shorten(padded_input, _VERBOSE_WRAP_LENGTH))
+        console.print(
+            f'[white on blue]reduce:({len(padded_input)})->[/white on blue]',
+            shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
-        console.print(f'[white on red]reduce:<-({len(padded_input)})[/white on red]',
-                      shorten(answer, _VERBOSE_WRAP_LENGTH))
+        console.print(
+            f'[white on red]reduce:<-({len(padded_input)})[/white on red]',
+            shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
 
@@ -161,16 +164,19 @@ def reduce_many_chunks(results: List[str],
                        verbose: bool = False) -> str:
     padded_input = pad_many_results_for_reduce(results, question)
     if verbose:
-        console.print(f'[white on blue]reduce:({len(padded_input)})->[/white on blue]',
-                      shorten(padded_input, _VERBOSE_WRAP_LENGTH))
+        console.print(
+            f'[white on blue]reduce:({len(padded_input)})->[/white on blue]',
+            shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
-        console.print(f'[white on red]reduce:<-({len(padded_input)})[/white on red]',
-                      shorten(answer, _VERBOSE_WRAP_LENGTH))
+        console.print(
+            f'[white on red]reduce:<-({len(padded_input)})[/white on red]',
+            shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
 
-def group_strings_by_length(strings: List[str], max_length: int) -> List[List[str]]:
+def group_strings_by_length(strings: List[str],
+                            max_length: int) -> List[List[str]]:
     '''
     group as many as possible strings together while maximum length is not exceeded.
     To ensure convergence to one single string in the end, we will force reduce

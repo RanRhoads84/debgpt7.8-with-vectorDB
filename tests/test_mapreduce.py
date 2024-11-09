@@ -37,11 +37,12 @@ def frtnd():
 @pytest.fixture
 def chunk():
     return reader.Entry(
-            path='path',
-            content='content',
-            wrapfun=lambda x: '{spec}: {content}'.format(spec='spec', content=x),
-            wrapfun_chunk=lambda x: '{spec} (lines {start}-{end}): {content}'.format(spec='spec', content=x, start=0, end=-1),
-            )
+        path='path',
+        content='content',
+        wrapfun=lambda x: '{spec}: {content}'.format(spec='spec', content=x),
+        wrapfun_chunk=lambda x: '{spec} (lines {start}-{end}): {content}'.
+        format(spec='spec', content=x, start=0, end=-1),
+    )
 
 
 def test_shorten():
@@ -56,12 +57,14 @@ def test_pad_chunk_before_map(chunk):
     assert filled_template
     assert len(filled_template) > len(chunk)
 
+
 def test_map_chunk(chunk, frtnd):
     question = 'test question'
     result = mapreduce.map_chunk(chunk, question, frtnd, verbose=True)
     assert isinstance(result, str)
     assert result
     assert len(result) > 0
+
 
 def test_map_serial(chunk, frtnd):
     chunks = [chunk] * 10
@@ -73,6 +76,7 @@ def test_map_serial(chunk, frtnd):
         assert isinstance(result, str)
         assert result
         assert len(result) > 0
+
 
 def test_map_parallel(chunk, frtnd):
     chunks = [chunk] * 10
@@ -97,13 +101,17 @@ def test_pad_two_results_for_reduce():
 
 def test_reduce_two_chunks(frtnd):
     question = 'test question'
-    result = mapreduce.reduce_two_chunks('a', 'b', question, frtnd, verbose=True)
+    result = mapreduce.reduce_two_chunks('a',
+                                         'b',
+                                         question,
+                                         frtnd,
+                                         verbose=True)
     assert isinstance(result, str)
     assert result
     assert len(result) > 0
 
 
-@pytest.mark.parametrize('repeat', range(1,10))
+@pytest.mark.parametrize('repeat', range(1, 10))
 def test_pad_many_results_for_reduce(repeat, frtnd):
     results = ['a'] * repeat
     question = 'test question'
@@ -112,11 +120,15 @@ def test_pad_many_results_for_reduce(repeat, frtnd):
     assert filled_template
     assert len(filled_template) > 0
 
-@pytest.mark.parametrize('repeat', range(1,10))
+
+@pytest.mark.parametrize('repeat', range(1, 10))
 def test_reduce_many_chunks(repeat, frtnd):
     chunks = ['a'] * repeat
     question = 'test question'
-    result = mapreduce.reduce_many_chunks(chunks, question, frtnd, verbose=True)
+    result = mapreduce.reduce_many_chunks(chunks,
+                                          question,
+                                          frtnd,
+                                          verbose=True)
     assert isinstance(result, str)
     assert result
     assert len(result) > 0
@@ -128,6 +140,7 @@ def test_group_strings_by_length():
     assert len(groups) == 13
     for group in groups:
         assert len(group) == 2
+
 
 def test_reduce_serial(frtnd):
     chunks = ['abc'] * 100
@@ -141,11 +154,15 @@ def test_reduce_serial(frtnd):
 def test_reduce_serial_compact(frtnd):
     chunks = ['abc'] * 100
     question = 'test question'
-    result = mapreduce.reduce_serial_compact(chunks, question, frtnd, verbose=True,
+    result = mapreduce.reduce_serial_compact(chunks,
+                                             question,
+                                             frtnd,
+                                             verbose=True,
                                              max_chunk_size=20)
     assert isinstance(result, str)
     assert result
     assert len(result) > 0
+
 
 def test_reduce_parallel(frtnd):
     chunks = ['abc'] * 100
@@ -155,17 +172,24 @@ def test_reduce_parallel(frtnd):
     assert result
     assert len(result) > 0
 
+
 def test_reduce_parallel_compact(frtnd):
     chunks = ['abc'] * 100
     question = 'test question'
-    result = mapreduce.reduce_parallel_compact(chunks, question, frtnd, verbose=True,
+    result = mapreduce.reduce_parallel_compact(chunks,
+                                               question,
+                                               frtnd,
+                                               verbose=True,
                                                max_chunk_size=20)
     assert isinstance(result, str)
     assert result
     assert len(result) > 0
 
-@pytest.mark.parametrize('parallel,compact,repeat', it.product([1,2,4], [True, False], [1, 100]))
-def test_mapreduce_super_long_context(tmpdir, frtnd, parallel, compact, repeat):
+
+@pytest.mark.parametrize('parallel,compact,repeat',
+                         it.product([1, 2, 4], [True, False], [1, 100]))
+def test_mapreduce_super_long_context(tmpdir, frtnd, parallel, compact,
+                                      repeat):
     text = ['a b c d e f g h i j k l m n o p q r s t u v w x y z'] * repeat
     text = '\n'.join(text)
     with open(tmpdir / 'test.txt', 'wt') as f:
@@ -174,15 +198,15 @@ def test_mapreduce_super_long_context(tmpdir, frtnd, parallel, compact, repeat):
 
     # do mapreduce
     aggregated = mapreduce.mapreduce_super_long_context(
-            spec=spec,
-            max_chunk_size=20,
-            frtnd=frtnd,
-            user_question='test question',
-            debgpt_home=tmpdir.strpath,
-            verbose=True,
-            compact_reduce_mode=compact,
-            parallelism=parallel,
-            )
+        spec=spec,
+        max_chunk_size=20,
+        frtnd=frtnd,
+        user_question='test question',
+        debgpt_home=tmpdir.strpath,
+        verbose=True,
+        compact_reduce_mode=compact,
+        parallelism=parallel,
+    )
     assert isinstance(aggregated, str)
     assert aggregated
     assert len(aggregated) > 0

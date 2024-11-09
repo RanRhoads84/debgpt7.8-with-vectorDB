@@ -258,7 +258,8 @@ class GoogleEmbedding(AbstractEmbeddingModel):
         return matrix
 
 
-def get_embedding_model(args: object) -> AbstractEmbeddingModel:  # pragma: no cover
+def get_embedding_model(
+        args: object) -> AbstractEmbeddingModel:  # pragma: no cover
     '''
     Get the embedding model based on the provided arguments.
 
