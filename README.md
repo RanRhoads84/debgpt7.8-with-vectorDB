@@ -319,7 +319,7 @@ debgpt -H -x policy:all -x devref:all -a 'which document (and which section) tal
 * Summarize the mailing list discussions within a month (MapReduce is more suitable than the retrieval (RAG) for this purpose):
 
 ```
-debgpt -Hx ldo:debian-devel/2024/10 -a 'write a news report based on the provided information. Cover as many topics as possible. You may expand a little bit on important matter. include links to the report.' --no-render
+debgpt -Hx ldo:debian-project/2024/10 -a 'write a news report based on the provided information. Cover as many topics as possible. You may expand a little bit on important matter. You must include links for every topic to the report.' --no-render
 ```
 
 * Load the latest sbuild log file and ask a question
