@@ -448,6 +448,36 @@ def read_bts(spec: str) -> str:
     return '\n'.join(text)
 
 
+def fetch_ldo_threads(spec: str) -> List[str]:
+    '''
+    read the mail threads (including the links) from the lists.debian.org.
+    Return a list of URLs to the emails.
+
+    Example URL:
+    https://lists.debian.org/debian-ai/2024/11/threads.html
+                             ^^^^^^^^^^^^^^^^^
+                             spec (Specifier)
+    '''
+    url = f'https://lists.debian.org/{spec}/threads.html'
+    response = requests.get(url)
+    if response.status_code != 200:
+        console.log(f'Failed to read {url}: HTTP {response.status_code}')
+        return list()
+    soup = BeautifulSoup(response.text, features='html.parser')
+    links = soup.find_all('a', href=re.compile(r'^msg.*'))
+    links = [x.get('href') for x in links]
+    urls = [f'https://lists.debian.org/{spec}/{x}' for x in links]
+    console.log(f'Got {len(urls)} threads from {url}.')
+    return urls
+
+
+def read_ldo_threads(spec: str) -> List[Tuple[str, str]]:
+    urls = fetch_ldo_threads(spec)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        results = list(track(executor.map(read_url, urls), total=len(urls)))
+    return [(x, y) for x, y in zip(urls, results)]
+
+
 def read_stdin() -> str:
     lines = [x.rstrip() for x in sys.stdin.readlines()]
     return '\n'.join(lines)
@@ -670,6 +700,14 @@ def read(spec: str,
             wrapfun_chunk = create_chunk_wrapper(
                 'Here is the contents from URL `{}` (lines {}-{}):', url)
             results.append((url, content, wrapfun, wrapfun_chunk))
+    elif spec.startswith('ldo:') or spec.startswith('lists.debian.org:'):
+        parsed_spec = spec[4:] if spec.startswith('ldo:') else spec[18:]
+        pairs = read_ldo_threads(parsed_spec)
+        for url, content in pairs:
+            wrapfun = create_wrapper('Here is the contents from URL `{}`:', url)
+            wrapfun_chunk = create_chunk_wrapper(
+                'Here is the contents from URL `{}` (lines {}-{}):', url)
+            results.append(Entry(url, content, wrapfun, wrapfun_chunk))
     elif spec.startswith('man:'):
         parsed_spec = spec[4:]
         content = read_cmd(f'man {parsed_spec}')
