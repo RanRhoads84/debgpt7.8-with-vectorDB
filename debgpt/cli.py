@@ -240,7 +240,7 @@ def gather_information_ordered(msg: Optional[str], ag,
             # This is a special case. It reads the file as does by
             # `--file` (read-only), but `--inplace` (read-write) will write
             # the result back to the file. This serves code editing purpose.
-            msg = _append_info(msg, reader.file(ag.inplace))
+            msg = _append_info(msg, reader.read_file(ag.inplace))
         else:
             raise NotImplementedError(key)
 
@@ -356,10 +356,12 @@ def main(argv=sys.argv[1:]):
         # read original contents (for diff)
         with open(ag.inplace, 'rt') as fp:
             contents_orig = fp.read().splitlines(keepends=True)
+            contents_orig[-1] = contents_orig[-1].rstrip('\n')
         # read the edited contents (for diff)
         contents_edit = f.session[-1]['content'].splitlines(keepends=True)
+        contents_edit[-1] = contents_edit[-1].rstrip('\n')
         # write the edited contents back to the file
-        lastnewline = '' if contents_edit[-1].endswith('\n') else '\n'
+        lastnewline = '' if f.session[-1]['content'].endswith('\n') else '\n'
         with open(ag.inplace, 'wt') as fp:
             fp.write(f.session[-1]['content'] + lastnewline)
         # Highlight the diff using Pygments for terminal output
