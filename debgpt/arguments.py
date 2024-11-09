@@ -426,6 +426,11 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
     config_template = __add_arg_to_config(config_template, _g,
                                           'mapreduce_parallelism')
 
+    _g.add_argument('--mapreduce_map_mode',
+                    type=str,
+                    default='compact',
+                    choices=('compact', 'binary'),
+                    help='mapping mode for mapreduce')
     _g.add_argument('--mapreduce_reduce_mode',
                     type=str,
                     default='compact',
