@@ -281,6 +281,7 @@ the most relevant several pieces of information stored in the database.
 
 Some usage examples of MapReduce are as follows:
 
+
 * Load a **file** and ask a question
 ```
 debgpt -Hx resume.pdf -A 'Does this person know AI? To what extent?'
@@ -314,6 +315,20 @@ debgpt -Hx devref:all -a 'how does general resolution work?'
 ```
 debgpt -H -x policy:all -x devref:all -a 'which document (and which section) talk about Multi-Arch: ?'
 ```
+
+* Summarize the mailing list discussions within a month:
+
+```
+debgpt -Hx ldo:debian-devel/2024/10 -a 'gather interesting and important information from there and write a news report. You may expand on important matter. Important matters include but are not limited to technical discussions, incidents, critical bugs, and heated discussions.'
+
+debgpt -Hx ldo:debian-ai/2024/10 -qa 'gather interesting and important information from there and write a news report. You can expand a little bit on important matters.'
+```
+
+The results from the above examples can be found
+[here(debian-devel)](https://lists.debian.org/debian-devel/2024/11/msg00086.html)
+and
+[here(debian-ai)](https://lists.debian.org/debian-ai/2024/11/msg00045.html).
+MapReduce is more suitable than the retrieval (RAG) for this purpose.
 
 * Load the latest sbuild log file and ask a question
 ```
