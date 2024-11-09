@@ -291,6 +291,20 @@ def _dispatch_subcommand(ag):
         pass
 
 
+def sideeffect_output(ag: object, f: frontend.AbstractFrontend) -> None:
+    '''
+    handles the output specified by --output argument
+    '''
+    if ag.output is not None:
+        if os.path.exists(ag.output):
+            console.print(
+                f'[red]! destination {ag.output} exists. Will not overwrite this file.[/red]'
+            )
+        else:
+            with open(ag.output, 'wt') as fp:
+                fp.write(f.session[-1]['content'])
+
+
 def main(argv=sys.argv[1:]):
     # parse args, argument order, and prepare debgpt_home
     ag = arguments.parse_args(argv)
@@ -383,16 +397,10 @@ def main(argv=sys.argv[1:]):
             ag.amend = False  # no git commit --amend.
             subcmd_git_commit(ag)
 
-    # dump session to json
+    # let frontend dump session to json under debgpt_home
     f.dump()
-    if ag.output is not None:
-        if os.path.exists(ag.output):
-            console.print(
-                f'[red]! destination {ag.output} exists. Will not overwrite this file.[/red]'
-            )
-        else:
-            with open(ag.output, 'wt') as fp:
-                fp.write(f.session[-1]['content'])
+    # handle the --output argument
+    sideeffect_output(ag, f)
 
 
 if __name__ == '__main__':
