@@ -249,7 +249,7 @@ The commit resulted by the above example can be seen at [this link](https://sals
 
 
 
-#### 3. Mapreducer for Divide-and-Conquer Any Length Context
+#### 3. Mapreduce to Divide-and-Conquer Any Length Context
 
 ```
 debgpt -Hx debgpt/cli.py -a 'explain this file'     # Use --mapreduce|-x if file too large

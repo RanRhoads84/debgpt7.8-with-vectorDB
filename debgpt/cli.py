@@ -305,6 +305,42 @@ def sideeffect_output(ag: object, f: frontend.AbstractFrontend) -> None:
                 fp.write(f.session[-1]['content'])
 
 
+def sideeffect_inplace(ag: object, f: frontend.AbstractFrontend) -> None:
+    '''
+    handles the inplace mode specified by --inplace argument
+    '''
+    if ag.inplace:
+        # read original contents (for diff)
+        with open(ag.inplace, 'rt') as fp:
+            contents_orig = fp.read().splitlines(keepends=True)
+            contents_orig[-1] = contents_orig[-1].rstrip('\n')
+        # read the edited contents (for diff)
+        contents_edit = f.session[-1]['content'].splitlines(keepends=True)
+        contents_edit[-1] = contents_edit[-1].rstrip('\n')
+        # write the edited contents back to the file
+        lastnewline = '' if f.session[-1]['content'].endswith('\n') else '\n'
+        with open(ag.inplace, 'wt') as fp:
+            fp.write(f.session[-1]['content'] + lastnewline)
+        # Highlight the diff using Pygments for terminal output
+        diff = difflib.unified_diff(contents_orig, contents_edit, 'Original',
+                                    'Edited')
+        diff_str = ''.join(diff)
+        highlighted_diff = highlight(diff_str, DiffLexer(),
+                                     TerminalFormatter())
+        console.print(Rule('DIFFERENCE'))
+        print(highlighted_diff)  # rich will render within code [] and break it
+
+        # further more, deal with git add and commit
+        if ag.inplace_git_add_commit or ag.inplace_git_add_p_commit:
+            # let the user review the changes
+            if ag.inplace_git_add_p_commit:
+                os.system(f'git add -p {ag.inplace}')
+            else:
+                os.system(f'git add {ag.inplace}')
+            ag.amend = False  # no git commit --amend.
+            subcmd_git_commit(ag)
+
+
 def main(argv=sys.argv[1:]):
     # parse args, argument order, and prepare debgpt_home
     ag = arguments.parse_args(argv)
@@ -366,36 +402,7 @@ def main(argv=sys.argv[1:]):
         frontend.interact_with(f)
 
     # inplace mode: write the LLM response back to the file
-    if ag.inplace:
-        # read original contents (for diff)
-        with open(ag.inplace, 'rt') as fp:
-            contents_orig = fp.read().splitlines(keepends=True)
-            contents_orig[-1] = contents_orig[-1].rstrip('\n')
-        # read the edited contents (for diff)
-        contents_edit = f.session[-1]['content'].splitlines(keepends=True)
-        contents_edit[-1] = contents_edit[-1].rstrip('\n')
-        # write the edited contents back to the file
-        lastnewline = '' if f.session[-1]['content'].endswith('\n') else '\n'
-        with open(ag.inplace, 'wt') as fp:
-            fp.write(f.session[-1]['content'] + lastnewline)
-        # Highlight the diff using Pygments for terminal output
-        diff = difflib.unified_diff(contents_orig, contents_edit, 'Original',
-                                    'Edited')
-        diff_str = ''.join(diff)
-        highlighted_diff = highlight(diff_str, DiffLexer(),
-                                     TerminalFormatter())
-        console.print(Rule('DIFFERENCE'))
-        print(highlighted_diff)  # rich will render within code [] and break it
-
-        # further more, deal with git add and commit
-        if ag.inplace_git_add_commit or ag.inplace_git_add_p_commit:
-            # let the user review the changes
-            if ag.inplace_git_add_p_commit:
-                os.system(f'git add -p {ag.inplace}')
-            else:
-                os.system(f'git add {ag.inplace}')
-            ag.amend = False  # no git commit --amend.
-            subcmd_git_commit(ag)
+    sideeffect_inplace(ag, f)
 
     # let frontend dump session to json under debgpt_home
     f.dump()
