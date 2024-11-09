@@ -24,6 +24,7 @@ import time
 import numpy as np
 import sys
 import io
+import itertools as it
 
 
 @pytest.fixture
@@ -162,3 +163,26 @@ def test_reduce_parallel_compact(frtnd):
     assert isinstance(result, str)
     assert result
     assert len(result) > 0
+
+@pytest.mark.parametrize('parallel,compact,repeat', it.product([1,2,4], [True, False], [1, 100]))
+def test_mapreduce_super_long_context(tmpdir, frtnd, parallel, compact, repeat):
+    text = ['a b c d e f g h i j k l m n o p q r s t u v w x y z'] * repeat
+    text = '\n'.join(text)
+    with open(tmpdir / 'test.txt', 'wt') as f:
+        f.write(text)
+    spec = tmpdir.join('test.txt').strpath
+
+    # do mapreduce
+    aggregated = mapreduce.mapreduce_super_long_context(
+            spec=spec,
+            max_chunk_size=20,
+            frtnd=frtnd,
+            user_question='test question',
+            debgpt_home=tmpdir.strpath,
+            verbose=True,
+            compact_reduce_mode=compact,
+            parallelism=parallel,
+            )
+    assert isinstance(aggregated, str)
+    assert aggregated
+    assert len(aggregated) > 0

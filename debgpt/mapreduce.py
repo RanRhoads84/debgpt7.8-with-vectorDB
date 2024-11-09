@@ -423,7 +423,7 @@ def mapreduce_super_long_context(
     return aggregated_result + '\n\n'
 
 
-def main(argv: List[str] = sys.argv[1:]):
+def main(argv: List[str] = sys.argv[1:]):  # pragma: no cover
     '''
     do mapreduce from command line
     '''
