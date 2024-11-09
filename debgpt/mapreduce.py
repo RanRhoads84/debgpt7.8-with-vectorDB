@@ -53,7 +53,7 @@ def shorten(s: str, maxlen: int = 100) -> str:
     return textwrap.shorten(s, width=maxlen)
 
 
-def pad_chunk_before_map(chunk: str, question: str) -> str:
+def pad_chunk_before_map(chunk: Entry, question: str) -> str:
     '''
     process a chunk of text with a question
     '''
@@ -65,7 +65,7 @@ def pad_chunk_before_map(chunk: str, question: str) -> str:
     return template
 
 
-def map_chunk(chunk: str,
+def map_chunk(chunk: Entry,
               question: str,
               frtnd: frontend.AbstractFrontend,
               verbose: bool = False) -> str:
@@ -74,11 +74,11 @@ def map_chunk(chunk: str,
     '''
     padded_input = pad_chunk_before_map(chunk, question)
     if verbose:
-        console.print('[white on blue]map:->[/white on blue]',
+        console.print(f'[white on blue]map:({len(padded_input)})->[/white on blue]',
                       shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
-        console.print('[white on red]map:<-[/white on red]',
+        console.print('f[white on red]map:<-({len(answer)})[/white on red]',
                       shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
@@ -136,11 +136,11 @@ def reduce_two_chunks(a: str,
                       verbose: bool = False) -> str:
     padded_input = pad_two_results_for_reduce(a, b, question)
     if verbose:
-        console.print('[white on blue]reduce:->[/white on blue]',
+        console.print(f'[white on blue]reduce:({len(padded_input)})->[/white on blue]',
                       shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
-        console.print('[white on red]reduce:<-[/white on red]',
+        console.print(f'[white on red]reduce:<-({len(padded_input)})[/white on red]',
                       shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
@@ -161,29 +161,41 @@ def reduce_many_chunks(results: List[str],
                        verbose: bool = False) -> str:
     padded_input = pad_many_results_for_reduce(results, question)
     if verbose:
-        console.print('[white on blue]reduce:->[/white on blue]',
+        console.print(f'[white on blue]reduce:({len(padded_input)})->[/white on blue]',
                       shorten(padded_input, _VERBOSE_WRAP_LENGTH))
     answer = frtnd.oneshot(padded_input)
     if verbose:
-        console.print('[white on red]reduce:<-[/white on red]',
+        console.print(f'[white on red]reduce:<-({len(padded_input)})[/white on red]',
                       shorten(answer, _VERBOSE_WRAP_LENGTH))
     return answer
 
 
-def group_strings_by_length(strings, max_length):
+def group_strings_by_length(strings: List[str], max_length: int) -> List[List[str]]:
     '''
     group as many as possible strings together while maximum length is not exceeded.
+    To ensure convergence to one single string in the end, we will force reduce
+    at least two strings in each group.
+
+    Args:
+        strings: a list of strings
+        max_length: the maximum length of each group, in bytes
+    Returns:
+        a list of groups of strings, each group is a list of strings
     '''
     assert max_length > 0
     grouped_strings = []
     current_group = []
     current_length = 0
+    orig_num_groups = len(strings)
 
     for string in strings:
         string_length = len(string.encode("utf-8"))
+        _will_overlength = current_length + string_length > max_length
+        _will_overrule = len(current_group) >= 2
 
-        # Check if adding the current string exceeds the max_length
-        if current_length + string_length > max_length:
+        # Check if adding the current string exceeds the max_length, and
+        # if the current group has less than two strings
+        if _will_overlength and _will_overrule:
             # If it does, save the current group and start a new one
             grouped_strings.append(current_group)
             current_group = [string]

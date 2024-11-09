@@ -160,6 +160,7 @@ class EchoFrontend(AbstractFrontend):
     '''
     NAME = 'EchoFrontend'
     lossy_mode: bool = False
+    lossy_rate: int = 2
 
     def __init__(self, args: Optional[object] = None):
         # do not call super().__init__(args) here.
@@ -171,7 +172,7 @@ class EchoFrontend(AbstractFrontend):
 
     def oneshot(self, message: str) -> str:
         if self.lossy_mode:
-            return message[::2]
+            return message[::self.lossy_rate]
         else:
             return message
 
@@ -179,7 +180,7 @@ class EchoFrontend(AbstractFrontend):
         self.update_session(messages)
         new_input = self.session[-1]['content']
         if self.lossy_mode:
-            response = new_input[::2]
+            response = new_input[::self.lossy_rate]
         else:
             response = new_input
         console_stdout.print(response)
