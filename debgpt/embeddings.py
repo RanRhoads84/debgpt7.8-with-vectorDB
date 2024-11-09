@@ -49,7 +49,7 @@ def retry_ratelimit(func: Callable,
             try:
                 result = func(*args, **kwargs)
                 break
-            except exception:
+            except exception:  # pragma: no cover
                 console.log(
                     f'Rate limit reached. Will retry after {retry_interval} seconds.'
                 )
@@ -70,10 +70,10 @@ class AbstractEmbeddingModel(object):
     # the embedding dimension (after reduction)
     dim: int = 0
 
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # pragma: no cover
         pass
 
-    def embed(self, text: str) -> np.ndarray:
+    def embed(self, text: str) -> np.ndarray:  # pragma: no cover
         '''
         Embed a single text string.
 
@@ -85,7 +85,7 @@ class AbstractEmbeddingModel(object):
         '''
         raise NotImplementedError('This is an abstract method.')
 
-    def batch_embed(self, texts: List[str]) -> np.ndarray:
+    def batch_embed(self, texts: List[str]) -> np.ndarray:  # pragma: no cover
         '''
         Embed a batch of text strings.
 
@@ -111,7 +111,7 @@ class AbstractEmbeddingModel(object):
             return self.embed(text)
         elif isinstance(text, list):
             return self.batch_embed(text)
-        else:
+        else:  # pragma: no cover
             raise ValueError('Invalid input type.')
 
 
@@ -258,7 +258,7 @@ class GoogleEmbedding(AbstractEmbeddingModel):
         return matrix
 
 
-def get_embedding_model(args: object) -> AbstractEmbeddingModel:
+def get_embedding_model(args: object) -> AbstractEmbeddingModel:  # pragma: no cover
     '''
     Get the embedding model based on the provided arguments.
 
@@ -274,7 +274,7 @@ def get_embedding_model(args: object) -> AbstractEmbeddingModel:
         return GoogleEmbedding(args)
     elif args.embedding_frontend == 'random':
         return RandomEmbedding(args)
-    else:
+    else:  # pragma: no cover
         raise ValueError('Invalid embedding frontend.')
 
 

@@ -106,5 +106,13 @@ def test_google_embedding_batch_embed(conf):
     assert np.isclose(np.linalg.norm(matrix, axis=1), 1.0).all()
 
 
+def test_get_embedding_model(conf):
+    model = embeddings.get_embedding_model(conf)
+    assert model is not None
+    vector = model.embed('hello world')
+    assert vector.ndim == 1
+    assert np.isclose(np.linalg.norm(vector), 1.0)
+
+
 def test_embedding_main():
     embeddings.main(['hello world'])
