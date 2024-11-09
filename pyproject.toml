@@ -13,7 +13,7 @@ exclude = ["doc*", "tests*"]
 dynamic = ["version"]
 name = 'debgpt'
 description = "DebGPT -- General Purpose Terminal LLM Tool with Some Debian-Specific Design"
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 dependencies = [
     'rich',
     'prompt_toolkit',

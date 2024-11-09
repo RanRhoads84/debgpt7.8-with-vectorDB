@@ -16,10 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
 import sys
 import os
-try:
-    import tomllib  # requires python >= 3.10
-except:
-    import pip._vendor.tomli as tomllib  # for python < 3.10
+import tomllib  # requires python >= 3.10
 from rich.console import Console
 from rich.traceback import install
 
