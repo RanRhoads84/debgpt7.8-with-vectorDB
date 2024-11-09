@@ -19,6 +19,9 @@ Build-Depends: debhelper-compat (= 13),
  python3-tenacity,
  python3-pygments,
  pandoc,
+ python3-pytest <!nocheck>,
+ python3-pytest-cov <!nocheck>,
+ python3-pytest-xdist <!nocheck>,
 
 Package: debgpt
 Architecture: all

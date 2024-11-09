@@ -1,3 +1,22 @@
+debgpt (0.7) unstable; urgency=medium
+
+  * Release v0.7 (DebGPT has gone through major refactoring)
+    + AI is heavily used to help the development through DebGPT itself
+      (including code generation, documentaiton generation, type annotations)
+  * Major changes (including big changes to CLI usage):
+    + relicense from MIT to LGPL-3.0+
+    + reorganize codebase to make it more readable and maintainable
+    * unified all readers into a unified read() function.
+    * overhaul mapreduce code to make it faster, more efficient and robust
+    + implemented the VectorDB, the EmbeddingModel, and the VectorRetriever.
+      With those components, DebGPT will be able to do retrieval-augmented
+      generation (RAG). But that feature is not yet implemented in CLI.
+      + Supported embedding frontends: OpenAI, Google
+    + add xAI frontend support.
+  * For all changes please see CHANGELOG.md
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 09 Nov 2024 02:47:22 -0500
+
 debgpt (0.6) UNRELEASED; urgency=medium
 
   * This release is not uploaded to Debian.
