@@ -65,6 +65,60 @@ def pad_chunk_before_map(chunk: Entry, question: str) -> str:
     return template
 
 
+def group_chunks_by_length(chunks: List[Entry],
+                           max_length: int) -> List[List[Entry]]:
+    '''
+    group as many as possible chunks together while maximum length is not
+    exceeded. Note, this function differs from group_strings_by_length in that
+    it groups chunks instead of strings. And it does not mandate the merge
+    of at least two chunks in each group.
+
+    Args:
+        chunks: a list of chunks
+        max_length: the maximum length of each group, in bytes
+    Returns:
+        a list of groups of chunks, each group is a list of chunks
+    '''
+    assert max_length > 0
+    grouped_chunks = []
+    current_group = []
+    current_length = 0
+
+    for chunk in chunks:
+        chunk_length = len(chunk.content.encode("utf-8"))
+        _will_overlength = current_length + chunk_length > max_length
+
+        # check if adding the current chunk exceeds the max_length
+        if _will_overlength:
+            # if it does, save the current group and start a new one
+            grouped_chunks.append(current_group)
+            current_group = [chunk]
+            current_length = chunk_length
+        else:
+            # otherwise, add the chunk to the current group
+            current_group.append(chunk)
+            current_length += chunk_length
+
+    # don't forget to add the last group if it has any chunks
+    if current_group:
+        grouped_chunks.append(current_group)
+
+    return grouped_chunks
+
+
+def pad_chunks_before_map(chunks: List[Entry], question: str) -> str:
+    '''
+    process a list of chunks of text with a question
+    '''
+    template = 'Extract any information that is relevant to question '
+    template += f'{repr(question)} from the following file parts. '
+    template += 'Note, if there is no relevant information, just briefly say nothing.'
+    template += '\n\n\n'
+    for chunk in chunks:
+        template += chunk.wrapfun_chunk(chunk.content)
+    return template
+
+
 def map_chunk(chunk: Entry,
               question: str,
               frtnd: frontend.AbstractFrontend,
@@ -84,6 +138,28 @@ def map_chunk(chunk: Entry,
     return answer
 
 
+def map_chunks(chunks: List[Entry],
+               question: str,
+               frtnd: frontend.AbstractFrontend,
+               verbose: bool = False) -> str:
+    '''
+    process a list of chunks of text with a question
+    
+    This function is used for the compact map mode.
+    '''
+    padded_input = pad_chunks_before_map(chunks, question)
+    if verbose:
+        console.print(
+            f'[white on blue]map:({len(padded_input)})->[/white on blue]',
+            shorten(padded_input, _VERBOSE_WRAP_LENGTH))
+    answer = frtnd.oneshot(padded_input)
+    if verbose:
+        console.print(
+            f'[white on red]map:<-({len(answer)})[/white on red]',
+            shorten(answer, _VERBOSE_WRAP_LENGTH))
+    return answer
+
+
 def map_serial(chunks: List[Entry],
                user_question: str,
                frtnd: frontend.AbstractFrontend,
@@ -95,6 +171,24 @@ def map_serial(chunks: List[Entry],
     results = []
     for chunk in track(chunks, total=len(chunks), description='MapReduce:'):
         results.append(map_chunk(chunk, user_question, frtnd, verbose=verbose))
+    return results
+
+
+def map_serial_compact(chunks: List[Entry],
+                       user_question: str,
+                       frtnd: frontend.AbstractFrontend,
+                       verbose: bool = False,
+                       max_chunk_size: int = -1) -> List[str]:
+    '''
+    This is the first pass of mapreduce. We map each chunk to LLM and get the
+    result. This is a serial implementation.
+    '''
+    results = []
+    grouped_chunks = group_chunks_by_length(chunks, max_chunk_size)
+    for pack in track(grouped_chunks,
+                      total=len(grouped_chunks),
+                      description='MapReduce:'):
+        results.append(map_chunks(pack, user_question, frtnd, verbose=verbose))
     return results
 
 
@@ -115,6 +209,30 @@ def map_parallel(chunks: List[Entry],
         results = list(
             track(ex.map(worker, chunks),
                   total=len(chunks),
+                  description=f'MapReduce[{parallelism}]:',
+                  transient=True))
+    return results
+
+
+def map_parallel_compact(chunks: List[Entry],
+                         user_question: str,
+                         frtnd: frontend.AbstractFrontend,
+                         verbose: bool = False,
+                         parallelism: int = 2,
+                         max_chunk_size: int = -1) -> List[str]:
+    '''
+    This is the first pass of mapreduce. We map each chunk to LLM and get the
+    result. This is a parallel implementation, and we use compact mode.
+    '''
+    worker = ft.partial(map_chunks,
+                        question=user_question,
+                        frtnd=frtnd,
+                        verbose=verbose)
+    grouped_chunks = group_chunks_by_length(chunks, max_chunk_size)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism) as ex:
+        results = list(
+            track(ex.map(worker, grouped_chunks),
+                  total=len(grouped_chunks),
                   description=f'MapReduce[{parallelism}]:',
                   transient=True))
     return results
@@ -192,7 +310,6 @@ def group_strings_by_length(strings: List[str],
     grouped_strings = []
     current_group = []
     current_length = 0
-    orig_num_groups = len(strings)
 
     for string in strings:
         string_length = len(string.encode("utf-8"))
@@ -330,6 +447,7 @@ def mapreduce_super_long_context(
     user_question: Optional[str] = None,
     debgpt_home: str = '.',
     verbose: bool = False,
+    compact_map_mode: bool = True,
     compact_reduce_mode: bool = True,
     parallelism: int = 1,
 ) -> str:
@@ -385,12 +503,26 @@ def mapreduce_super_long_context(
     assert len(chunks) > 1  # at least two chunks
 
     # map phase
-    if parallelism > 1:
+    if parallelism > 1 and compact_map_mode:
+        intermediate_results = map_parallel_compact(
+            chunks,
+            user_question,
+            frtnd,
+            verbose=verbose,
+            parallelism=parallelism,
+            max_chunk_size=max_chunk_size)
+    elif parallelism > 1:
         intermediate_results = map_parallel(chunks,
                                             user_question,
                                             frtnd,
                                             verbose=verbose,
                                             parallelism=parallelism)
+    elif compact_map_mode:
+        intermediate_results = map_serial_compact(chunks,
+                                                  user_question,
+                                                  frtnd,
+                                                  verbose=verbose,
+                                                  max_chunk_size=max_chunk_size)
     else:
         intermediate_results = map_serial(chunks,
                                           user_question,

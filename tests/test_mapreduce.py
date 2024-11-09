@@ -186,10 +186,13 @@ def test_reduce_parallel_compact(frtnd):
     assert len(result) > 0
 
 
-@pytest.mark.parametrize('parallel,compact,repeat',
-                         it.product([1, 2, 4], [True, False], [1, 100]))
-def test_mapreduce_super_long_context(tmpdir, frtnd, parallel, compact,
-                                      repeat):
+@pytest.mark.parametrize('parallel,compact_map,compact_reduce,repeat,max_chunk_size',
+                         it.product([1, 2, 4], [True, False], [True, False],
+                                    [1, 100],
+                                    [20, 100]))
+def test_mapreduce_super_long_context(tmpdir, frtnd, parallel,
+                                      compact_map, compact_reduce,
+                                      repeat, max_chunk_size):
     text = ['a b c d e f g h i j k l m n o p q r s t u v w x y z'] * repeat
     text = '\n'.join(text)
     with open(tmpdir / 'test.txt', 'wt') as f:
@@ -199,12 +202,13 @@ def test_mapreduce_super_long_context(tmpdir, frtnd, parallel, compact,
     # do mapreduce
     aggregated = mapreduce.mapreduce_super_long_context(
         spec=spec,
-        max_chunk_size=20,
+        max_chunk_size=max_chunk_size,
         frtnd=frtnd,
         user_question='test question',
         debgpt_home=tmpdir.strpath,
         verbose=True,
-        compact_reduce_mode=compact,
+        compact_map_mode=compact_map,
+        compact_reduce_mode=compact_reduce,
         parallelism=parallel,
     )
     assert isinstance(aggregated, str)
