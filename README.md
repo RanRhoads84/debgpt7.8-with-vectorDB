@@ -296,21 +296,21 @@ debgpt -Hx ./debian -A 'how is this package built? how many binary packages will
 debgpt -Hx 'https://www.debian.org/doc/debian-policy/policy.txt' -A 'what is the purpose of the archive?'
 ```
 
-* Load **Debian Policy** (plain text) and ask a question
+* Load the whole **Debian Policy** document (plain text) and ask a question
 ```
-debgpt -Hx policy: -a "what is the latest changes in this policy?"
-debgpt -Hx policy: -A 'what package should enter contrib instead of main or non-free?'
+debgpt -Hx policy:all -a "what is the latest changes in this policy?"
+debgpt -Hx policy:all -A 'what package should enter contrib instead of main or non-free?'
 ```
 
-* Load Debian **Developer Reference** (plain text) and ask a question
+* Load the whole **Debian Developer Reference** document (plain text) and ask a question
 ```
-debgpt -Hx devref: -A 'How can I become a debian developer?'
-debgpt -Hx devref: -a 'how does general resolution work?'
+debgpt -Hx devref:all -A 'How can I become a debian developer?'
+debgpt -Hx devref:all -a 'how does general resolution work?'
 ```
 
 * If you don't really bother to read `policy:` and `devref:`, or forgot which one is talking about the question in you mind, for instance:
 ```
-debgpt -H -x policy: -x devref: -a 'which document (and which section) talk about Multi-Arch: ?'
+debgpt -H -x policy:all -x devref:all -a 'which document (and which section) talk about Multi-Arch: ?'
 ```
 
 * Load the latest sbuild log file and ask a question
