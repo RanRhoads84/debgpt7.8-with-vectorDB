@@ -595,7 +595,12 @@ def read(spec: str,
         # e.g., devref:1 loads section 1, devref: loads the whole devref
         parsed_spec = spec[7:]
         content = debian_policy.DebianDevref()
-        if parsed_spec:
+        if parsed_spec == 'all':
+            source = 'Debian Developer Reference document'
+            wrapfun = create_wrapper('Here is the Debian Developer Reference document, {}:', 'full contents')
+            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Developer Reference document, {} (lines {}-{}):', 'full contents')
+            results.append((source, str(content), wrapfun, wrapfun_chunk))
+        elif parsed_spec:
             source = f'Debian Developer Reference document [{parsed_spec}]'
             content = content[parsed_spec]
             wrapfun = create_wrapper(
@@ -637,7 +642,12 @@ def read(spec: str,
         # e.g., policy:1 loads section 1, policy: loads the whole policy
         parsed_spec = spec[7:]
         content = debian_policy.DebianPolicy()
-        if parsed_spec:
+        if parsed_spec == 'all':
+            source = 'Debian Policy document'
+            wrapfun = create_wrapper('Here is the Debian Policy document, {}:', 'full contents')
+            wrapfun_chunk = create_chunk_wrapper('Here is the Debian Policy document, {} (lines {}-{}):', 'full contents')
+            results.append((source, str(content), wrapfun, wrapfun_chunk))
+        elif parsed_spec:
             source = f'Debian Policy section [{parsed_spec}]'
             section = content[parsed_spec]
             wrapfun = create_wrapper(
