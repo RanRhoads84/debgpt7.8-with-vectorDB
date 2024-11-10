@@ -30,6 +30,32 @@ models. DebGPT supports a range of LLM service providers, both commercial and
 self-hosted, including OpenAI, Anthropic, Google Gemini, Ollama, LlamaFile,
 vLLM, and ZMQ (DebGPT's built-in backend for self-containment). 
 
+TABLE OF CONTENTS
+=================
+
+- [NAME](#name)
+- [SYNOPSIS](#synopsis)
+- [DESCRIPTION](#description)
+- [QUICK START](#quick-start)
+- [FRONTENDS](#frontends)
+- [TUTORIAL](#tutorial)
+      - [1. Basic Usage: Chatting with LLM and CLI Behavior](#1-basic-usage--chatting-with-llm-and-cli-behavior)
+      - [2. Context Readers for Additional Information](#2-context-readers-for-additional-information)
+      - [3. Inplace Editing of a File](#3-inplace-editing-of-a-file)
+      - [4. Vector Retriever for Most Relevant Information](#4-vector-retriever-for-most-relevant-information)
+      - [5. MapReduce for Any Length Context](#5-mapreduce-for-any-length-context)
+      - [6. Piping through Everywhere](#6-piping-through-everywhere)
+      - [7. DebGPT Subcommands](#7-debgpt-subcommands)
+      - [8. Prompt Engineering](#8-prompt-engineering)
+- [TROUBLESHOOTING](#troubleshooting)
+- [BACKEND](#backend)
+  * [Available Backend Implementations](#available-backend-implementations)
+  * [LLM Selections](#llm-selections)
+  * [Hardware Requirements](#hardware-requirements)
+  * [Usage of the ZMQ Backend](#usage-of-the-zmq-backend)
+- [REFERENCES](#references)
+- [LICENSE and ACKNOWLEDGEMENT](#license-and-acknowledgement)
+
 
 QUICK START
 ===========
