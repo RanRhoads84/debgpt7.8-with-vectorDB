@@ -472,7 +472,10 @@ def fetch_ldo_threads(spec: str) -> List[str]:
 def read_ldo_threads(spec: str) -> List[Tuple[str, str]]:
     urls = fetch_ldo_threads(spec)
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        results = list(track(executor.map(read_url, urls), total=len(urls)))
+        results = list(track(executor.map(read_url, urls),
+                             total=len(urls),
+                             transient=True,
+                             description='Reading l.d.o threads'))
     return [(x, y) for x, y in zip(urls, results)]
 
 
