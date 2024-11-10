@@ -368,7 +368,7 @@ def test_read_buildd(package):
 
 @pytest.mark.parametrize('section', ('all', '', '1', '4.6', '4.6.1'))
 def test_policy(section, tmpdir):
-    contents = reader.read(f'policy:{section}', debgpt_home=str(tmpdir))
+    contents = reader.read(f'policy:{section}')
     assert len(contents) >= 1
     for content in contents:
         assert isinstance(content[0], str)
@@ -385,7 +385,7 @@ def test_policy(section, tmpdir):
 
 @pytest.mark.parametrize('section', ('all', '', '5.5', '1'))
 def test_devref(section, tmpdir):
-    contents = reader.read(f'devref:{section}', debgpt_home=str(tmpdir))
+    contents = reader.read(f'devref:{section}')
     assert len(contents) >= 1
     for content in contents:
         assert isinstance(content[0], str)
@@ -412,19 +412,18 @@ def test_devref(section, tmpdir):
     'cmd:man creat',
 ))
 def test_read_main(spec: str, tmpdir: object):
-    args = ['--debgpt_home', str(tmpdir)]
     if spec == 'test.txt':
         with open(tmpdir.join('test.txt'), 'wt') as f:
             f.write('test test test\n')
-        reader.main([*args, '-f', 'file://' + str(tmpdir.join('test.txt'))])
-        reader.main([*args, '-f', str(tmpdir)])
-        reader.main([*args, '-f', str(tmpdir.join('test.txt'))])
-        reader.main([*args, '-w', '-f', str(tmpdir.join('test.txt'))])
+        reader.main(['-f', 'file://' + str(tmpdir.join('test.txt'))])
+        reader.main(['-f', str(tmpdir)])
+        reader.main(['-f', str(tmpdir.join('test.txt'))])
+        reader.main(['-w', '-f', str(tmpdir.join('test.txt'))])
     else:
-        reader.main([*args, '-f', spec])
-        reader.main([*args, '-w', '-f', spec])
-        reader.main([*args, '-c', '1024', '-f', spec])
-        reader.main([*args, '-w', '-c', '1024', '-f', spec])
+        reader.main(['-f', spec])
+        reader.main(['-w', '-f', spec])
+        reader.main(['-c', '1024', '-f', spec])
+        reader.main(['-w', '-c', '1024', '-f', spec])
 
 
 def test_chunk_lines():
