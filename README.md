@@ -61,6 +61,9 @@ debgpt
 
 Enjoy the chat!
 
+Hint: A collection of samples generated using DebGPT can be found at
+[this repository](https://salsa.debian.org/lumin/ai-noises).
+
 FRONTENDS
 =========
 
