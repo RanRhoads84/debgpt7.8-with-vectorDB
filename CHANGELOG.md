@@ -1,6 +1,24 @@
 Changelog
 =========
 
+v0.7.1 -- 2024-11-09
+--------------------
+
+Bugfixes:
+
+* 25e5a33 bugfix: wrong arguments. impacts mapreduce parallelism
+
+Features:
+
+* 79d5a6b mapreduce: implement compact map mode and enable by default
+* 13ec97c reader: implement debian mailing list reader.
+
+Minor changes:
+
+* various minor improvements, such as improve help/printed message clarity
+* 2e37c7f readme: add link to the ai-noises repo for debgpt generated samples
+* ddbc520 readme: add example for mailing list summary (Closes: #14, #25)
+
 v0.7 -- 2024-11-08
 ------------------
 
