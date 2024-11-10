@@ -169,6 +169,9 @@ def map_serial_compact(chunks: List[Entry],
     '''
     results = []
     grouped_chunks = group_chunks_by_length(chunks, max_chunk_size)
+    console.print(
+        f'[bold]MapReduce[/bold]: mapping {len(results)} chunks ({len(grouped_chunks)} groups)'
+    )
     for pack in track(grouped_chunks,
                       total=len(grouped_chunks),
                       description='MapReduce:'):
@@ -213,6 +216,9 @@ def map_parallel_compact(chunks: List[Entry],
                         frtnd=frtnd,
                         verbose=verbose)
     grouped_chunks = group_chunks_by_length(chunks, max_chunk_size)
+    console.print(
+        f'[bold]MapReduce[/bold]: mapping {len(results)} chunks ({len(grouped_chunks)} groups)'
+    )
     with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism) as ex:
         results = list(
             track(ex.map(worker, grouped_chunks),
@@ -475,7 +481,7 @@ def mapreduce_super_long_context(
                                                 user_question=user_question,
                                                 debgpt_home=debgpt_home)
     console.print(
-        f'[bold]MapReduce[/bold]: Got {len(chunks)} chunks from {repr(spec)}')
+        f'[bold]MapReduce[/bold]: Initialized with {len(chunks)} chunks from {repr(spec)}')
     if verbose:
         for i, chunk in enumerate(chunks):
             firstline = chunk.wrapfun_chunk('').split('\n')[0].rstrip(':')
