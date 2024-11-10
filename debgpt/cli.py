@@ -38,6 +38,7 @@ from . import mapreduce
 from . import reader
 from . import replay
 from . import vectordb
+from . import cache
 
 warnings.filterwarnings("ignore")
 
@@ -279,6 +280,18 @@ def _dispatch_subcommand(ag):
         pass
 
 
+def sideeffect_cache_refresh() -> None:
+    '''
+    handles the cache refresh, automatically delete the expired cache
+    entries. We need to do this because the cache expire seems not
+    thread safe and would cause trouble if we don't do it before
+    entering anything with concurrent.futures.ThreadPoolExecutor.
+    '''
+    # triggers automatic cache expire
+    c = cache.Cache(defaults.CACHE)
+    c.close()
+
+
 def sideeffect_output(ag: object, f: frontend.AbstractFrontend) -> None:
     '''
     handles the output specified by --output argument
@@ -347,6 +360,9 @@ def main(argv=sys.argv[1:]):
         configurator.fresh_install_guide(
             os.path.expanduser('~/.debgpt/config.toml'))
         exit(0)
+
+    # refresh debgpt cache
+    sideeffect_cache_refresh()
 
     # process subcommands. Note, the subcommands will exit() when finished.
     # some subcommands will require a frontend instance, such as git commit.
