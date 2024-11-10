@@ -47,7 +47,7 @@ class Cache(dict):
         Clean up expired entries from the cache.
         """
         self.cursor.execute(
-            'DELETE FROM cache WHERE stamp < DATETIME("now", "-1 day")')
+            'DELETE FROM cache WHERE stamp < DATETIME("now", "-1 month")')
         self.connection.commit()
 
     def _create_table(self) -> None:
