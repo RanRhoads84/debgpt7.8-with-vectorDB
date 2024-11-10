@@ -554,15 +554,15 @@ def read_buildd(spec: str):  # pragma: no cover
 def read(spec: str,
          *,
          user_question: Optional[str] = None,
-         ) -> List[Entry]:
+         debgpt_home: str = '.') -> List[Entry]:
     '''
     Unified reader for reading text contents from various sources
     specified by the user. We will detect the type of the resource specified,
     and dispatch to the corresponding reader.
 
     Args:
-        spec (str): the path or URL to the file
-        user_question (str): the user question
+        spec: the path or URL to the file
+        debgpt_home: the home directory of debgpt
     Returns:
         List[Entry]: a list of tuples, each tuple contains the parsed spec and
         the content, and two wrapper functions to wrap the content with.
@@ -887,7 +887,7 @@ def read_and_chunk(spec: str,
                    *,
                    max_chunk_size: int = -1,
                    user_question: Optional[str] = None,
-                   ) -> List[Entry]:
+                   debgpt_home: str = '.') -> List[Entry]:
     '''
     Read contents from the specified resource and chunk the content into pieces.
 
@@ -895,10 +895,11 @@ def read_and_chunk(spec: str,
         spec (str): the path or URL to the file
         max_chunk_size (int): the maximum chunk size of the content. If the
             number is less than 0, we shall not chunk the contents.
+        debgpt_home (str): the home directory of debgpt
     Returns:
         List[Entry]: a list of entries, each entry contains a chunk of the content
     '''
-    entries = read(spec, user_question=user_question)
+    entries = read(spec, user_question=user_question, debgpt_home=debgpt_home)
     if max_chunk_size > 0:
         entries = ft.reduce(list.__add__,
                             [chunk_entry(x, max_chunk_size) for x in entries])
@@ -909,7 +910,7 @@ def read_and_wrap(spec: str,
                   *,
                   max_chunk_size: int = -1,
                   user_question: Optional[str] = None,
-                  ) -> str:
+                  debgpt_home: str = '.') -> str:
     '''
     Read contents from the specified resource and wrap the content to make it
     suitable for prompting LLM.
@@ -918,10 +919,11 @@ def read_and_wrap(spec: str,
         spec (str): the path or URL to the file
         max_chunk_size (int): the maximum chunk size of the content. If the
             number is less than 0, we shall not chunk the contents.
+        debgpt_home (str): the home directory of debgpt
     Returns:
         str: the wrapped content
     '''
-    entries = read(spec, user_question=user_question)
+    entries = read(spec, user_question=user_question, debgpt_home=debgpt_home)
     if max_chunk_size > 0:
         entries = ft.reduce(list.__add__,
                             [chunk_entry(x, max_chunk_size) for x in entries])
@@ -953,12 +955,18 @@ def main(argv: List[str] = sys.argv[1:]):
                         type=int,
                         default=-1,
                         help='chunk the content into pieces')
+    parser.add_argument('--debgpt_home',
+                        type=str,
+                        default='.',
+                        help='the home directory of debgpt')
     args = parser.parse_args(argv)
 
     tally = 0
     if args.wrap:
         for file in args.file:
-            string = read_and_wrap(file, max_chunk_size=args.chunk)
+            string = read_and_wrap(file,
+                                   max_chunk_size=args.chunk,
+                                   debgpt_home=args.debgpt_home)
             console.print(Rule())
             console.log('Specifier:', file)
             console.print(string)
@@ -966,7 +974,7 @@ def main(argv: List[str] = sys.argv[1:]):
         console.print('Total number of texts:', tally)
     else:
         for file in args.file:
-            entries = read(file)
+            entries = read(file, debgpt_home=args.debgpt_home)
             if args.chunk > 0:
                 entries = ft.reduce(
                     list.__add__,

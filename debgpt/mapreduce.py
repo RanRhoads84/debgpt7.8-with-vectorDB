@@ -435,6 +435,7 @@ def mapreduce_super_long_context(
     max_chunk_size: int,
     frtnd: frontend.AbstractFrontend,
     user_question: Optional[str] = None,
+    debgpt_home: str = '.',
     verbose: bool = False,
     compact_map_mode: bool = True,
     compact_reduce_mode: bool = True,
@@ -462,6 +463,7 @@ def mapreduce_super_long_context(
         max_chunk_size: the maximum chunk size in bytes
         frtnd: the frontend object
         user_question: the user question
+        debgpt_home: the home directory of debgpt
         verbose: verbose mode
         compact_reduce_mode: use compact reduce mode, instead of binary reduction
         parallelism: the parallelism
@@ -476,7 +478,8 @@ def mapreduce_super_long_context(
     # read the specified texts
     chunks: List[Entry] = reader.read_and_chunk(spec,
                                                 max_chunk_size=max_chunk_size,
-                                                user_question=user_question)
+                                                user_question=user_question,
+                                                debgpt_home=debgpt_home)
     console.print(
         f'[bold]MapReduce[/bold]: Initialized with {len(chunks)} chunks from {repr(spec)}')
     if verbose:
@@ -602,6 +605,7 @@ def main(argv: List[str] = sys.argv[1:]):  # pragma: no cover
                                               f,
                                               args.ask,
                                               verbose=args.verbose,
+                                              debgpt_home='.',
                                               compact_reduce_mode=True,
                                               parallelism=args.parallelism)
         reduced.append(result)
