@@ -39,7 +39,7 @@ TABLE OF CONTENTS
 - [QUICK START](#quick-start)
 - [FRONTENDS](#frontends)
 - [TUTORIAL](#tutorial)
-  - [1. Basic Usage: Chatting with LLM and CLI Behavior](#1-basic-usage--chatting-with-llm-and-cli-behavior)
+  - [1. Chatting with LLM and CLI Behavior](#1-chatting-with-llm-and-cli-behavior)
   - [2. Context Readers for Additional Information](#2-context-readers-for-additional-information)
   - [3. Inplace Editing of a File](#3-inplace-editing-of-a-file)
   - [4. Vector Retriever for Most Relevant Information](#4-vector-retriever-for-most-relevant-information)
@@ -118,7 +118,7 @@ TUTORIAL
 The following examples are carefully ordered. You can start from the first
 example and gradually move to the next one.
 
-#### 1. Basic Usage: Chatting with LLM and CLI Behavior
+#### 1. Chatting with LLM and CLI Behavior
 
 When no arguments are given, `debgpt` leads you into a general terminal
 chatting client with LLM backends. Use `debgpt -h` to see detailed options.
