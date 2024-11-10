@@ -378,10 +378,10 @@ def reduce_parallel(results: List[str],
                         frtnd=frtnd,
                         verbose=verbose)
     while len(results) > 1:
-        console.print(
-            f'[bold]MapReduce[/bold]: reducing {len(results)} intermediate results'
-        )
         pairs = list(zip(results[::2], results[1::2]))
+        console.print(
+            f'[bold]MapReduce[/bold]: reducing {len(results)} intermediate results ({len(pairs)} pairs)'
+        )
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=parallelism) as ex:
             new_results = list(
@@ -409,10 +409,10 @@ def reduce_parallel_compact(results: List[str],
                         frtnd=frtnd,
                         verbose=verbose)
     while len(results) > 1:
-        console.print(
-            f'[bold]MapReduce[/bold]: reducing {len(results)} intermediate results'
-        )
         groups = group_strings_by_length(results, max_chunk_size)
+        console.print(
+            f'[bold]MapReduce[/bold]: reducing {len(results)} intermediate results ({len(groups)} groups)'
+        )
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=parallelism) as ex:
             new_results = list(
