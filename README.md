@@ -446,10 +446,35 @@ TROUBLESHOOTING
   or service provider that supports longer context.
 
 
-BACKEND
-=======
+BACKENDS
+========
 
-## Available Backend Implementations
+The backend is the server side that runs the LLM inference and communicates
+with the client frontend. It can be self-hosted or provided by a third party.
+Here we only discuss the self-hosted backends, i.e., Ollama, llamaFile,
+vLLM, and the DebGPT built-in ZMQ.
+
+## Ollama
+
+Please refer to [their official documentation](https://ollama.com/) for setting
+up. Note, you may need to adjust the `num_ctx` parameter in a `Modelfile`:
+
+```
+FROM qwen2.5
+PARAMETER num_ctx 65536
+```
+
+Use `ollama create <modelname> -f Modelfile` to create a model with the new
+parameters. See upstream
+[API documentation](https://github.com/ollama/ollama/blob/main/docs/api.md)
+and [Modelfile documentation](https://github.com/ollama/ollama/blob/main/docs/modelfile.md)
+for more details.
+
+## llamaFile
+
+TODO: write this part of doc.
+
+## ZMQ (DebGPT Built-in)
 
 This tool provides one backend implementation: `zmq`.
 
@@ -460,7 +485,7 @@ If you plan to use the `openai` or `dryrun` frontends, there is no specific
 hardware requirement. If you would like to self-host the LLM inference backend
 (ZMQ backend), powerful hardware is required.
 
-## LLM Selections
+**LLM Selections**
 
 The concrete hardware requirement depends on the
 LLM you would like to use. A variety of open-access LLMs can be found here
@@ -489,7 +514,7 @@ poses even higher hardware requirements. It takes roughly 60~100GB disk space
 Different LLMs will pose different hardware requirements. Please see the
 "Hardware Requirements" subsection below.
 
-## Hardware Requirements
+**Hardware Requirements**
 
 By default, we recommend doing LLM inference in `fp16` precision. If the VRAM
 (such as CUDA memory) is limited, you may also switch to even lower preicisions
@@ -514,7 +539,7 @@ Hardware requirement for the `Mixtral8x7B` LLM:
 
 See https://huggingface.co/blog/mixtral for more.
 
-## Usage of the ZMQ Backend
+**Usage of the ZMQ Backend**
 
 If you want to run the default LLM with different precisions:
 
