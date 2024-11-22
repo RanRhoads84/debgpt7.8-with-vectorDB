@@ -210,9 +210,13 @@ class OpenAIFrontend(AbstractFrontend):
             exit(1)
         self.client = OpenAI(api_key=args.openai_api_key,
                              base_url=args.openai_base_url)
-        self.session.append({"role": "system", "content": self.system_message})
         self.model = args.openai_model
-        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+        # XXX: some models do not support system messages yet. nor temperature.
+        if self.model not in ('o1-mini', 'o1-preview'):
+            self.session.append({"role": "system", "content": self.system_message})
+            self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+        else:
+            self.kwargs = {}
         if args.verbose:
             console.log(f'{self.NAME}> model={repr(self.model)}, ' +
                         f'temperature={args.temperature}, top_p={args.top_p}.')
