@@ -223,7 +223,7 @@ def gather_information_ordered(msg: Optional[str], ag,
             raise NotImplementedError(key)
         elif key in ('file', ):
             spec = getattr(ag, key).pop(0)
-            func = ft.partial(reader.read_and_wrap, debgpt_home=ag.debgpt_home)
+            func = ft.partial(reader.read_and_wrap)
             msg = _append_info(msg, func(spec))
         elif key == 'inplace':
             # This is a special case. It reads the file as does by
