@@ -144,7 +144,13 @@ class AbstractFrontend():
         _check(self.session)
 
     def __call__(self, *args, **kwargs):
-        return self.query(*args, **kwargs)
+        try:
+            res = self.query(*args, **kwargs)
+            return res
+        except Exception as e:
+            # this will only appear in dumped session files
+            self.update_session({'role': 'system', 'content': str(e)})
+            raise e
 
     def dump(self):
         fpath = os.path.join(self.debgpt_home, str(self.uuid) + '.json')
@@ -558,6 +564,29 @@ class ZMQFrontend(AbstractFrontend):
         return self.session[-1]['content']
 
 
+def get_username():
+    try:
+        import getpass
+        return getpass.getuser()
+    except:
+        pass
+    try:
+        import pwd
+        return pwd.getpwuid(os.getuid())[0]
+    except:
+        pass
+    try:
+        return os.getlogin()
+    except:
+        pass
+    # common shell env
+    for env in ('USER', 'USERNAME', 'LOGNAME'):
+        if u := os.environ.get(env):
+            return u
+    # final fallback
+    return 'user'
+
+
 def create_frontend(args):
     if args.frontend == 'zmq':
         frontend = ZMQFrontend(args)
@@ -643,9 +672,10 @@ def interact_with(f: AbstractFrontend) -> None:
         )
 
     # loop
+    user = get_username()
     try:
         while text := prompt_session.prompt(
-                f'{os.getlogin()}[{max(1, len(f.session))}]> '):
+                f'{user}[{max(1, len(f.session))}]> '):
             # parse escaped interaction commands
             if text.startswith('/'):
                 cmd = shlex.split(text)
