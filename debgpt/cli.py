@@ -391,26 +391,35 @@ def main(argv=sys.argv[1:]):
         console.print(msg, markup=False)
         exit(0)
 
-    # print the prompt and do the first query, if specified
-    if msg is not None:
-        if not ag.hide_first:
-            console.print(Panel(escape(msg), title='Initial Prompt'))
+    pending_exc = None
 
-        # query the backend
-        frontend.interact_once(f, msg)
+    try:
+        # print the prompt and do the first query, if specified
+        if msg is not None:
+            if not ag.hide_first:
+                console.print(Panel(escape(msg), title='Initial Prompt'))
 
-    # drop the user into interactive mode if specified (-i)
-    if not ag.quit:
-        frontend.interact_with(f)
+            # query the backend
+            frontend.interact_once(f, msg)
 
-    # inplace mode: write the LLM response back to the file
-    sideeffect_inplace(ag, f)
+        # drop the user into interactive mode if specified (-i)
+        if not ag.quit:
+            frontend.interact_with(f)
 
-    # let frontend dump session to json under debgpt_home
-    f.dump()
-    # handle the --output argument
-    sideeffect_output(ag, f)
+        # inplace mode: write the LLM response back to the file
+        sideeffect_inplace(ag, f)
 
+        # handle the --output argument
+        sideeffect_output(ag, f)
+    except Exception as e:
+        # re-raise the exception later
+        pending_exc = e
+    finally:
+        # let frontend dump session to json under debgpt_home
+        f.dump()
+
+    if pending_exc is not None:
+        raise pending_exc
 
 if __name__ == '__main__':
     main()
