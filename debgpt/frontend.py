@@ -144,7 +144,13 @@ class AbstractFrontend():
         _check(self.session)
 
     def __call__(self, *args, **kwargs):
-        return self.query(*args, **kwargs)
+        try:
+            res = self.query(*args, **kwargs)
+            return res
+        except Exception as e:
+            # this will only appear in dumped session files
+            self.update_session({'role': 'system', 'content': str(e)})
+            raise e
 
     def dump(self):
         fpath = os.path.join(self.debgpt_home, str(self.uuid) + '.json')
