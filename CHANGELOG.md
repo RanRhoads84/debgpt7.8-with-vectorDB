@@ -1,6 +1,27 @@
 Changelog
 =========
 
+v0.7.2 -- 2025-01-11
+--------------------
+
+minor improvements:
+ * DebGPT> Makefile: remove deprecated autopep8 target
+ * DebGPT> cli: use repr() for frontend and model names in commit messages
+ * cache: extend cache expiration to 1 month. Closes: #35
+ * cli: add help function to list all supported reader specifications
+ * cli: bugfix for extra arguments.
+ * cli: dump session unconditionally to avoid token waste [Shengqi Chen]
+ * cli: enhance sbuild reader to filter build logs and support custom paths (Closes: #42)
+ * cli: update help for sbuild reader to include path support and filtering
+ * cli: use repr() for prompt and frontend model details in commit messages
+ * cli: workaround sqlite3 multithread expire refresh issue
+ * frontend: append error in dumped session files [Shengqi Chen]
+ * frontend: temporarily disable system message or temperature for o1-preview and o1-mini (Closes: #38)
+ * frontend: try multiple ways to obtain the username [Shengqi Chen]
+ * readme: add toc
+ * readme: update backend part for ollama
+ * remove the unused `debgpt_home` variable
+
 v0.7.1 -- 2024-11-09
 --------------------
 
