@@ -63,7 +63,13 @@ HEADERS = {
 
 def help():
     '''
-    show the list of supported reader specs
+    Show the list of supported reader specs.
+
+    Use any of the following commands to show the help message:
+        debgpt -f :
+        debgpt -f ?
+        debgpt -x :
+        debgpt -x ?
     '''
     console.print(Rule('Supported reader specs (specifiied by -f or -x)'))
     console.print(' • <file_path>       read plain text file')
@@ -188,21 +194,57 @@ def read_file_plaintext(path: str) -> str:
     return content
 
 
-def read_sbuild(*, return_path: bool = False) -> str:
-    '''
-    load the latest sbuild buildlog. we will automatically figure out the
-    latest buildlog file in the parent directory.
-    '''
-    if not os.path.exists('./debian'):
-        raise FileNotFoundError(
-            './debian directory not found. Cannot detect sbuild log location. Are you in the right directory?'
-        )
-    latest_build_log = latest_glob('../*.build')
-    result = read_file_plaintext(latest_build_log)
-    if return_path:
-        return result, latest_build_log
+def extract_build_changes(text):
+  """
+  ! written by Gemini 1.5 Pro
+  Extracts the part of a string that starts with a Build header and
+  ends with a Changes header, using regular expressions, excluding the markers.
+
+  Args:
+    text: A string containing the text to extract from.
+
+  Returns:
+    A string representing the extracted part, or None if no match is found.
+
+  """
+  start_pattern = r"\+[-]+\+\n\| Build +\|\n\+[-]+\+"
+  end_pattern = r"\+[-]+\+\n\| Changes +\|\n\+[-]+\+"
+
+  try:
+    # Find the start and end positions using regex
+    start_match = re.search(start_pattern, text)
+    end_match = re.search(end_pattern, text)
+
+    if start_match:
+      if end_match:
+        return text[start_match.end() : end_match.start()]
+      else:
+        return text[start_match.end() :]  # Match to the end if end_match is None
     else:
-        return result
+      return None
+  except AttributeError:
+    return None
+
+
+def read_sbuild(path: Optional[str] = None, *, return_path: bool = False) -> str:
+    '''
+    load the latest sbuild buildlog. If no path is provided, we will
+    automatically figure out the latest buildlog file in the parent directory.
+    Additionally, we will filter the unimportant lines from the buildlog.
+    '''
+    if path is None:
+        if not os.path.exists('./debian'):
+            raise FileNotFoundError(
+                './debian directory not found. Cannot detect sbuild log location. Are you in the right directory?'
+            )
+        latest_build_log = latest_glob('../*.build')
+        result = read_file_plaintext(latest_build_log)
+    else:
+        latest_build_log = path
+        result = read_file_plaintext(path)
+    # filter out the unimportant lines
+    result = extract_build_changes(result)
+    return (result, latest_build_log) if return_path else result
 
 
 def read_file_pdf(path: str) -> str:
@@ -780,7 +822,11 @@ def read(spec: str,
                 section = content[sectionidx]
                 results.append((source, section, wrapfun, wrapfun_chunk))
     elif spec.startswith('sbuild:'):
-        content, logpath = read_sbuild(return_path=True)
+        if spec == 'sbuild:':
+            content, logpath = read_sbuild(return_path=True)
+        else:
+            path = spec[7:]
+            content, logpath = read_sbuild(path, return_path=True)
         wrapfun = create_wrapper('Here is the sbuild buildlog {}:', logpath)
         wrapfun_chunk = create_chunk_wrapper(
             'Here is the sbuild buildlog {} (lines {}-{}):', logpath)
