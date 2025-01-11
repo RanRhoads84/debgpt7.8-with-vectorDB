@@ -1,3 +1,9 @@
+debgpt (0.7.2) unstable; urgency=medium
+
+  * Release v0.7.2.
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 11 Jan 2025 09:31:27 -0500
+
 debgpt (0.7) unstable; urgency=medium
 
   * Release v0.7 (DebGPT has gone through major refactoring)
