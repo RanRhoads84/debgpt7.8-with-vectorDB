@@ -14,7 +14,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-__version__ = '0.7.1'
+__version__ = '0.7.2'
 __copyright__ = '2024, Mo Zhou <lumin@debian.org>'
 __license__ = 'LGPL-3.0+'
 # do not load all components.
