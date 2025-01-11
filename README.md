@@ -244,6 +244,15 @@ debgpt -Hf pytorch/debian/control -f policy:7.4 -A "Explain what Conflicts+Repla
 debgpt -Hf pytorch/debian/rules -f policy:4.9.1 -A "Implement the support for the 'nocheck' tag based on the example provided in the policy document."
 ```
 
+* `-f nm:<question_id>` for loading nm-template questions.
+
+```
+for Q in PH0 PH1 PH2 PH3 PH4 PH5 PH6 PH7 PHa; do
+debgpt -HQf nm:pp1.${Q} -a 'Be concise and answer in just several sentences.' -o nm-pp1-${Q}-brief.txt;
+debgpt -HQf nm:pp1.${Q} -a 'Be precise and answer with details explained.' -o nm-pp1-${Q}-detail.txt;
+done
+```
+
 #### 3. Inplace Editing of a File
 
 The argument **[--inplace|-i]** is for in-place editing of a file. It is a

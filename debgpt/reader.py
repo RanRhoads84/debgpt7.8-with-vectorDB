@@ -37,6 +37,7 @@ from .defaults import console
 from .defaults import CACHE
 from collections import namedtuple
 from .cache import Cache
+from .nm_templates import NM_TEMPLATES
 
 try:
     import pycurl
@@ -91,6 +92,7 @@ def help():
     console.print(' • sbuild:           load the latest sbuild buildlog, and filter out the unimportant lines')
     console.print(' • sbuild:<path>     load the latest sbuild log from path, and filter out the unimportant lines')
     console.print(' • tldr:<cmd>        read the tldr of a command')
+    console.print(' • nm:<template>     load the nm-templates question')
     console.print(' • stdin             read from stdin')
     console.print(' • -                 read from stdin')
     console.print(Rule('Please specify one or multiple of the above specs.'))
@@ -731,6 +733,25 @@ def read(spec: str,
         wrapfun_chunk = create_chunk_wrapper(
             'Here is the output of command {} (lines {}-{}):', parsed_spec)
         results.append((parsed_spec, content, wrapfun, wrapfun_chunk))
+    elif spec.startswith('nm:'):
+        parsed_spec = spec[3:]
+        content = NM_TEMPLATES[parsed_spec]
+        wrapfun = create_wrapper('Here is the question {} from Debian nm-templates:',
+                                 parsed_spec)
+        results.append((parsed_spec, content, wrapfun, lambda x: x))
+        if parsed_spec == 'pp1.PH7':
+            if not os.path.exists('bad.licenses.tar.bz2'):
+                console.print('[red]Downloading https://people.debian.org/~joerg/bad.licenses.tar.bz2 ...')
+                os.system('wget -c https://people.debian.org/~joerg/bad.licenses.tar.bz2')
+                os.system('tar xvf bad.licenses.tar.bz2')
+            contents = read_directory('licenses')
+            for (fpath, fcontent) in contents:
+                wrapfun = create_wrapper('Here is the contents of file `{}`:',
+                                         fpath)
+                wrapfun_chunk = create_chunk_wrapper(
+                    'Here is the contents of file {} (lines {}-{}):', fpath)
+                entry = Entry(fpath, fcontent, wrapfun, wrapfun_chunk)
+                results.append(entry)
     elif spec.startswith('devref:'):
         # e.g., devref:1 loads section 1, devref: loads the whole devref
         parsed_spec = spec[7:]
