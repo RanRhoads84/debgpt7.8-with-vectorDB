@@ -61,6 +61,34 @@ HEADERS = {
 }
 
 
+def help():
+    '''
+    show the list of supported reader specs
+    '''
+    console.print(Rule('Supported reader specs (specifiied by -f or -x)'))
+    console.print(' • <file_path>       read plain text file')
+    console.print(' • <directory>       read all files under a directory')
+    console.print(' • http://<...>      read plain text from http URL')
+    console.print(' • https://<...>     read plain text from https URL')
+    console.print(' • file://<...>      read plain text from file URL')
+    console.print(' • archwiki:<name>   read ArchWiki page')
+    console.print(' • bts:<bugnumber>   read Debian BTS bug report')
+    console.print(' • buildd:<pkg>      read Debian buildd status')
+    console.print(' • cmd:<cmd_line>    read the output of a command line')
+    console.print(' • devref:all        load whole Debian Devref, full text')
+    console.print(' • devref:<section>  load a specific section of Debian Devref')
+    console.print(' • google:<query>    load the topmost Google search results')
+    console.print(' • ldo:<list>        read the mailing list threads from lists.debian.org, e.g. "debian-ai/2024/11"')
+    console.print(' • man:<man>         read the manual page of a command')
+    console.print(' • policy:all        load whole Debian Policy, full text')
+    console.print(' • policy:<section>  load a specific section of Debian Policy')
+    console.print(' • sbuild:           load the latest sbuild buildlog')
+    console.print(' • tldr:<cmd>        read the tldr of a command')
+    console.print(' • stdin             read from stdin')
+    console.print(' • -                 read from stdin')
+    console.print(Rule('Please specify one or multiple of the above specs.'))
+
+
 def enable_cache(func: callable) -> callable:
     '''
     Enable caching for the function based on the first arg.
@@ -599,7 +627,10 @@ def read(spec: str,
 
     results: List[Tuple[str, str]] = []
     # standard cases: file, directory, URL
-    if os.path.exists(spec) and os.path.isfile(spec):
+    if spec in (':', '?'):
+        help()
+        raise SystemExit()
+    elif os.path.exists(spec) and os.path.isfile(spec):
         parsed_spec = spec
         content = read_file(spec)
         wrapfun = create_wrapper('Here is the contents of file `{}`:', spec)

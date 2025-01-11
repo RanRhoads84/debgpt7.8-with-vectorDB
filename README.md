@@ -197,9 +197,11 @@ It can also read from a directory, or a URL:
 debgpt -Hf 'https://www.debian.org/vote/2022/vote_003' -A 'Please explain the differences among the above choices.'
 ```
 
-
 The unified reader `--file|-f` can also read from other sources with a special
-syntax:
+syntax. Use the command `debgpt -f :` or `debgpt -f '?'` to see the list of
+all supported reader specifications.
+
+Here are some examples of other reader specs:
 
 * `-f bts:<bug_number>` for Debian bug tracking system
 
