@@ -76,4 +76,21 @@ NM_TEMPLATES = {
             under GPL-2+ license. A year later he decided to release the version
             2.0 of the same program under BSD-3-Clause. Is there any licensing
             violation here? Can this software be packaged in Debian?''',
+        # https://salsa.debian.org/nm-team/nm-templates/-/blob/master/nm_pp2.txt?ref_type=heads
+        'pp2.BT2': '''You have a package (current packaged version is 1.3-1),
+            with a set of open bugs:
+
+              #123: eats lots of memory (fixed in 1.2)
+              #345: please package version 1.4
+              #567: typo in package description
+              #789: segfaults every Sunday (fixed in 1.4)
+              #901: please move config file to /usr/local/etc
+
+            Please write a changelog entry for the upload of the new version
+            1.4 of the package.  What do you do with the bugs not mentioned
+            in the changelog?''',
+        'pp2.BT6': '''What do you do if you want to reach the submitter of a
+            bug and keep a copy of the mail in the BTS?''',
+        'pp2.BT8': '''Please explain what a usertag is and why they're useful.
+            How do you tag a bug with a usertag?''',
 }

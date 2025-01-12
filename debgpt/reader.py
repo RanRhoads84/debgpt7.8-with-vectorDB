@@ -759,6 +759,11 @@ def read(spec: str,
             wrapfun_chunk = create_chunk_wrapper(
                     'Here is the contents of URL {} (lines {}-{}):', ph9_url)
             results.append((ph9_url, contents, wrapfun, wrapfun_chunk))
+        if parsed_spec in ('pp2.BT6', 'pp2.BT8'):
+            url1 = 'https://www.debian.org/Bugs/Reporting'
+            results.extend(read(url1))
+            url2 = 'https://www.debian.org/Bugs/Developer'
+            results.extend(read(url2))
     elif spec.startswith('devref:'):
         # e.g., devref:1 loads section 1, devref: loads the whole devref
         parsed_spec = spec[7:]
