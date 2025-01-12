@@ -3,11 +3,11 @@ Upstream-Contact: Mo Zhou <lumin@debian.org>
 Source: https://salsa.debian.org/deeplearning-team/debgpt
 
 Files: *
-Copyright: 2024, Mo Zhou <lumin@debian.org>
+Copyright: 2024-2025, Mo Zhou <lumin@debian.org>
 License: LGPL-3.0+
 
 Files: assets/*
-Copyright: 2024, Mo Zhou <lumin@debian.org>
+Copyright: 2024-2025, Mo Zhou <lumin@debian.org>
 License: CC-BY-4.0
 
 License: LGPL-3.0+

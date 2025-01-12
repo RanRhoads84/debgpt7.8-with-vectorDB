@@ -1,5 +1,5 @@
 % DebGPT(1) | General Purpose Terminal LLM Tool with Some Debian-Specific Design
-% Copyright (C) 2024 Mo Zhou <lumin@debian.org>; GNU LGPL-3.0+ License.
+% Copyright (C) 2024-2025 Mo Zhou <lumin@debian.org>; GNU LGPL-3.0+ License.
 
 NAME
 ====
@@ -622,7 +622,7 @@ code suggestion, code writing, code editing, document writing, with human
 reviews and modifications.
 
 ```
-Copyright (C) 2024 Mo Zhou <lumin@debian.org>
+Copyright (C) 2024-2025 Mo Zhou <lumin@debian.org>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by

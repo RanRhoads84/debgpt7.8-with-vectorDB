@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath('.'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'DebGPT'
-copyright = '2024, Mo Zhou <lumin@debian.org>'
+copyright = '2024-2025, Mo Zhou <lumin@debian.org>'
 author = 'Mo Zhou'
 release = 'development'
 
