@@ -752,6 +752,13 @@ def read(spec: str,
                     'Here is the contents of file {} (lines {}-{}):', fpath)
                 entry = Entry(fpath, fcontent, wrapfun, wrapfun_chunk)
                 results.append(entry)
+        if parsed_spec == 'pp1e.PH9':
+            ph9_url = 'https://www.debian.org/vote/2006/vote_001'
+            contents = read_url(ph9_url)
+            wrapfun = create_wrapper('Here is the contents of URL {}:', ph9_url)
+            wrapfun_chunk = create_chunk_wrapper(
+                    'Here is the contents of URL {} (lines {}-{}):', ph9_url)
+            results.append((ph9_url, contents, wrapfun, wrapfun_chunk))
     elif spec.startswith('devref:'):
         # e.g., devref:1 loads section 1, devref: loads the whole devref
         parsed_spec = spec[7:]
