@@ -47,6 +47,7 @@ TABLE OF CONTENTS
   - [6. Piping through Everywhere](#6-piping-through-everywhere)
   - [7. DebGPT Subcommands](#7-debgpt-subcommands)
   - [8. Prompt Engineering](#8-prompt-engineering)
+  - [9. Debian Specific Usage Cases](#9-debian-specific-usage-cases)
 - [TROUBLESHOOTING](#troubleshooting)
 - [BACKEND](#backend)
   * [Available Backend Implementations](#available-backend-implementations)
@@ -170,69 +171,44 @@ special prompt reader -- `MapReduce`.
 #### 2. Context Readers for Additional Information
 
 Context Reader is a function that reads the plain text contents from the
-specified resource, and wrap them as a part of a prompt for the LLM. Note, the
+specified resource, and wrap them as a part of a prompt for the LLM. The
 context readers can be arbitrarily combined together or specified multiple
-times through the unified argument `--file|-f`.
+times through the unified argument `--file|-f`. It can read from a file,
+a PDF file, a directory, a URL, a Debian Policy section, a Debian Developer
+Reference section, a Debian BTS page, a Debian build status page (buildd),
+a Google search result, etc. The specification syntax of the unified reader
+`--file|-f` can be found using the command `debgpt -f :` or `debgpt -f '?'`.
 
-It can read from a file, a directory, a URL, a Debian Policy section, a Debian
-Developer Reference section, a Debian BTS page, a Debian build status page
-(buildd), a Google search result, etc.
-
-For example, we can ask LLM to explain the contents of a file, or mimick
-the `licensecheck` command:
+Some examples are shown below:
 
 ```
 # read a plain text file and ask a question
-debgpt -Hf README.md -a 'very briefly teach me how to use this software.'
-debgpt -Hf debgpt/policy.py -A 'explain this file'  # --file|-f for small file
-debgpt -Hf debgpt/frontend.py -A 'Briefly tell me an SPDX identifier of this file.'
-
-# PDF file is supported as well
+debgpt -Hf README.md -a 'very briefly teach me how to use this DebGPT.'
+debgpt -Hf debgpt/policy.py -A 'explain this file'
 debgpt -Hf my-resume.pdf -a 'Does this person have any foss-related experience?'
-```
 
-It can also read from a directory, or a URL:
+# read a directory
+debgpt -Hf debian/ -a 'how is this package built? How many binary packages will be produced?'
 
-```
+# read a URL
 debgpt -Hf 'https://www.debian.org/vote/2022/vote_003' -A 'Please explain the differences among the above choices.'
-```
 
-The unified reader `--file|-f` can also read from other sources with a special
-syntax. Use the command `debgpt -f :` or `debgpt -f '?'` to see the list of
-all supported reader specifications.
-
-Here are some examples of other reader specs:
-
-* `-f bts:<bug_number>` for Debian bug tracking system
-
-```
+# reading debian bug tracking system
 debgpt -Hf bts:src:pytorch -A 'Please summarize the above information. Make a table to organize it.'
 debgpt -Hf bts:1056388 -A 'Please summarize the above information.'
-```
 
-* `-f buildd:<package>` for Debian buildd status
-
-```
+# reading debian buildd status
 debgpt -Hf buildd:glibc -A 'Please summarize the above information. Make a table to organize it.'
-```
 
-* `-f cmd:<command_line>` for piping other commands' stdout
-
-```
+# piping from a command line
 debgpt -Hf cmd:'apt list --upgradable' -A 'Briefly summarize the upgradable packages. You can categorize these packages.'
 debgpt -Hf cmd:'git diff --staged' -A 'Briefly describe the change as a git commit message.'
-```
 
-* `-f man:<man_page>` and `-f tldr:<tldr_page>` for reading system manual pages
-
-```
+# read manual page or tldr
 debgpt -Hf man:debhelper-compat-upgrade-checklist -A "what's the change between compat 13 and compat 14?"
 debgpt -H -f tldr:curl -f cmd:'curl -h' -A "download https://localhost/bigfile.iso to /tmp/workspace, in silent mode"
-```
 
-* `-f policy:<section>` and `-f devref:<section>` for reading Debian Policy and Developer Reference
-
-```
+# read a Debian Policy section or Developer Reference section
 debgpt -Hf policy:7.2 -A "what is the difference between Depends: and Pre-Depends: ?"
 debgpt -Hf devref:5.5 -A 'Please summarize the above information.'
 
@@ -244,24 +220,6 @@ debgpt -Hf pytorch/debian/control -f policy:7.4 -A "Explain what Conflicts+Repla
 debgpt -Hf pytorch/debian/rules -f policy:4.9.1 -A "Implement the support for the 'nocheck' tag based on the example provided in the policy document."
 ```
 
-* `-f nm:<question_id>` for loading nm-template questions.
-
-```
-# nm_assigned.txt
-debgpt -f nm:nm_assigned -a 'pretend to be Mo Zhou <lumin@debian.org> and answer the question. Give concrete examples, and links as evidence supporting them are preferred.' -o nm-assigned-selfintro.txt
-
-# nm_pp1.txt
-for Q in PH0 PH1 PH2 PH3 PH4 PH5 PH6 PH7 PHa; do
-debgpt -HQf nm:pp1.${Q} -a 'Be concise and answer in just several sentences.' -o nm-pp1-${Q}-brief.txt;
-debgpt -HQf nm:pp1.${Q} -a 'Be precise and answer with details explained.' -o nm-pp1-${Q}-detail.txt;
-done
-
-# nm_pp1_extras.txt
-for Q in PH0 PH8 PH9 PHb; do
-debgpt -HQf nm:pp1e.${Q} -a 'Be concise and answer in just several sentences.' -o nm-pp1e-${Q}-brief.txt;
-debgpt -HQf nm:pp1e.${Q} -a 'Be precise and answer with details explained.' -o nm-pp1e-${Q}-detail.txt;
-done
-```
 
 #### 3. Inplace Editing of a File
 
@@ -456,6 +414,36 @@ Please refer external resources for more information.
 The usage of LLM is limited by our imaginations. I am glad to hear from you if
 you have more good ideas on how we can make LLMs useful for Debian development:
 https://salsa.debian.org/deeplearning-team/debgpt/-/issues
+
+
+#### 9. Debian Specific Usage Cases
+
+* Analysis of the sbuild buildlog
+
+* Analysis of the ratt buildlog directory
+
+* Evaluation on `nm-templates`. There is a reader spec design for this:
+  `-f nm:<question_id>` for loading nm-template questions. It is just a
+  convenient wrapper of multiple other readers. The following is a script
+  for answering all questions from nm-templates automatically. The answers
+  will be stored in plain text files.
+
+```
+# nm_assigned.txt
+debgpt -f nm:nm_assigned -a 'pretend to be Mo Zhou <lumin@debian.org> and answer the question. Give concrete examples, and links as evidence supporting them are preferred.' -o nm-assigned-selfintro.txt
+
+# nm_pp1.txt
+for Q in PH0 PH1 PH2 PH3 PH4 PH5 PH6 PH7 PHa; do
+debgpt -HQf nm:pp1.${Q} -a 'Be concise and answer in just several sentences.' -o nm-pp1-${Q}-brief.txt;
+debgpt -HQf nm:pp1.${Q} -a 'Be precise and answer with details explained.' -o nm-pp1-${Q}-detail.txt;
+done
+
+# nm_pp1_extras.txt
+for Q in PH0 PH8 PH9 PHb; do
+debgpt -HQf nm:pp1e.${Q} -a 'Be concise and answer in just several sentences.' -o nm-pp1e-${Q}-brief.txt;
+debgpt -HQf nm:pp1e.${Q} -a 'Be precise and answer with details explained.' -o nm-pp1e-${Q}-detail.txt;
+done
+```
 
 
 TROUBLESHOOTING
