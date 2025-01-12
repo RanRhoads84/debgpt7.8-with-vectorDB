@@ -247,6 +247,10 @@ debgpt -Hf pytorch/debian/rules -f policy:4.9.1 -A "Implement the support for th
 * `-f nm:<question_id>` for loading nm-template questions.
 
 ```
+# nm_assigned.txt
+debgpt -f nm:nm_assigned -a 'pretend to be Mo Zhou <lumin@debian.org> and answer the question. Give concrete examples, and links as evidence supporting them are preferred.' -o nm-assigned-selfintro.txt
+
+# nm_pp1.txt
 for Q in PH0 PH1 PH2 PH3 PH4 PH5 PH6 PH7 PHa; do
 debgpt -HQf nm:pp1.${Q} -a 'Be concise and answer in just several sentences.' -o nm-pp1-${Q}-brief.txt;
 debgpt -HQf nm:pp1.${Q} -a 'Be precise and answer with details explained.' -o nm-pp1-${Q}-detail.txt;

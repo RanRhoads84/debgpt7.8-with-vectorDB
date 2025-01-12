@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # From https://salsa.debian.org/nm-team/nm-templates
 NM_TEMPLATES = {
+        # https://salsa.debian.org/nm-team/nm-templates/-/blob/master/nm_assigned.txt?ref_type=heads 
+        'assigned': '''To get started, please tell me about yourself, how you came to GNU/Linux and free software, and why you want to volunteer your time.  Please describe the contributions you have made to Debian, your primary areas of interest within Debian, and any goals you wish to accomplish.''',
         # https://salsa.debian.org/nm-team/nm-templates/-/blob/master/nm_pp1.txt?ref_type=heads
         'pp1.PH0': '''First, please have a careful read of the Social Contract and the DFSG. What do you think are their main points?''',
         'pp1.PH1': '''What is Debian's approach to non-free software? Why? Is non-free part of the Debian System? Please also explain the difference between non-free and the other sections.''',
