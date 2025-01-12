@@ -443,6 +443,12 @@ for Q in PH0 PH8 PH9 PHb; do
 debgpt -HQf nm:pp1e.${Q} -a 'Be concise and answer in just several sentences.' -o nm-pp1e-${Q}-brief.txt;
 debgpt -HQf nm:pp1e.${Q} -a 'Be precise and answer with details explained.' -o nm-pp1e-${Q}-detail.txt;
 done
+
+# nm_pp2.txt
+for Q in BT2 BT6 BT8; do
+debgpt -HQf nm:pp2.${Q} -a 'Be concise and answer in just several sentences.' -o nm-pp2-${Q}-brief.txt;
+debgpt -HQf nm:pp2.${Q} -a 'Be precise and answer with details explained.' -o nm-pp2-${Q}-detail.txt;
+done
 ```
 
 
