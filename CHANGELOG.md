@@ -1,6 +1,20 @@
 Changelog
 =========
 
+v0.7.3 -- 2025-01-16
+--------------------
+
+major changes:
+ * system prompt: enforce citation and URL inclusion in responses
+
+minor improvements:
+ * readme: explain chunk size unit (bytes), not tokens (Closes: #46)
+ * copyright: bump year
+ * reader: support Debian nm-templates `pp1.*`, `pp2.BT{2,6,8}`.
+   (full nm-templates support still WIP)
+   Example: $ debgpt -f nm:pp1.PH0 -a 'answer briefly.'
+ * readme: reorganize contents.
+
 v0.7.2 -- 2025-01-11
 --------------------
 
