@@ -460,6 +460,15 @@ TROUBLESHOOTING
   can switch to the `--mapreduce|-x` special reader, or switch to a model
   or service provider that supports longer context.
 
+* Chunk size (`--mapreduce_chunksize`): In DebGPT, the internal measurement
+  of text length is simply bytes. That's because different LLMs use different
+  tokenizers, and DebGPT wants to support as many LLM inference backends as
+  possible. To simplify software development, I just use bytes. That means
+  accurate calculation and detection of context overlength cannot be done.
+  A rough estimate is that each token has 4 characters in English. That means,
+  if your LLM context size is 32k (tokens), we should be able to use roughly
+  128k (bytes) chunk size with DebGPT.
+
 
 BACKENDS
 ========
