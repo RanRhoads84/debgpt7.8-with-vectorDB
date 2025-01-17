@@ -1,3 +1,9 @@
+debgpt (0.7.3) unstable; urgency=medium
+
+  * Release v0.7.3.
+
+ -- Mo Zhou <lumin@debian.org>  Thu, 16 Jan 2025 20:03:13 -0500
+
 debgpt (0.7.2) unstable; urgency=medium
 
   * Release v0.7.2.
