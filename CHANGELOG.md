@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v0.7.4 -- 2025-01-19
+--------------------
+
+debian specific changes:
+* Fix https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1080577
+
 v0.7.3 -- 2025-01-16
 --------------------
 
