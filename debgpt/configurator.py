@@ -430,7 +430,7 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
         'google': 2,
         'xai': 3,
         'ollama': 4,
-        'llama.cpp': 5,
+        'llamacpp': 5,
         'llamafile': 6,
         'vllm': 7,
         'zmq': 8,
