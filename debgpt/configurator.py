@@ -280,6 +280,16 @@ def _request_frontend_specific_config(frontend: str,
         _abort_on_None(value)
         conf['ollama_model'] = value
 
+    # llamacpp part
+    if frontend == 'llamacpp' and 'llamacpp_base_url' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the llama-server (llama.cpp) service url:",
+            default['llamacpp_base_url'],
+            "Reference: https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md",
+            "Press Enter to confirm. Press Esc to abort.").run()
+        _abort_on_None(value)
+        conf['llamacpp_base_url'] = value
+
     # llamafile part
     if frontend == 'llamafile' and 'llamafile_base_url' not in current_config:
         value = SingleEdit(
@@ -408,6 +418,7 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
         'Google    (Gemini) | commercial,  Google-API',
         'xAI       (Grok)   | commercial,  OpenAI-API',
         'Ollama    (*)      | self-hosted, OpenAI-API',
+        'llama.cpp (*)      | self-hosted, OpenAI-API',
         'LlamaFile (*)      | self-hosted, OpenAI-API',
         'vLLM      (*)      | self-hosted, OpenAI-API',
         'ZMQ       (*)      | self-hosted, DebGPT built-in',
@@ -419,10 +430,11 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
         'google': 2,
         'xai': 3,
         'ollama': 4,
-        'llamafile': 5,
-        'vllm': 6,
-        'zmq': 7,
-        'dryrun': 8,
+        'llama.cpp': 5,
+        'llamafile': 6,
+        'vllm': 7,
+        'zmq': 8,
+        'dryrun': 9,
     }[default['frontend']]
 
     frontend = SingleChoice("DebGPT Configurator",
@@ -444,7 +456,7 @@ using the `--frontend|-F` argument.",
                             "Press Enter to confirm. Press Esc to abort.",
                             focus=frontends_focus).run()
     _abort_on_None(frontend)
-    frontend = frontend.split(' ')[0].lower()
+    frontend = frontend.split(' ')[0].lower().replace('.', '')
     conf['frontend'] = frontend
 
     # step 2: ask for the frontend-specific configuration

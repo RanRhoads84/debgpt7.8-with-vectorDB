@@ -329,6 +329,20 @@ Their prices vary. See https://platform.openai.com/docs/models .')
                     help='the model to use in Ollama. For instance, llama3.2')
     config_template = __add_arg_to_config(config_template, _g, 'ollama_model')
 
+    # Specific to llamacpp Frontend
+    config_template += '''\n
+#########################################################
+# llama.cpp Frontend Options (OpenAI compatibility mode)
+#########################################################
+\n'''
+    _g = ag.add_argument_group('llama.cpp Frontend Options')
+    _g.add_argument('--llamacpp_base_url',
+                    type=str,
+                    default=conf['llamacpp_base_url'],
+                    help='the URL to the llama-server (llama.cpp) API.')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'llamacpp_base_url')
+
     # Specific to vLLM Frontend
     config_template += '''\n
 #########################

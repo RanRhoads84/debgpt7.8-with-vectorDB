@@ -502,6 +502,25 @@ class OllamaFrontend(OpenAIFrontend):
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
 
+class LlamacppFrontend(OpenAIFrontend):
+    '''
+    https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md
+    '''
+    NAME = 'llama.cpp Frontend'
+
+    def __init__(self, args):
+        AbstractFrontend.__init__(self, args)
+        from openai import OpenAI
+        self.client = OpenAI(api_key='no-key-required',
+                             base_url=args.llamacpp_base_url)
+        self.session.append({"role": "system", "content": self.system_message})
+        self.model = 'model-is-specified-at-the-llama-server-arguments'
+        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+        if args.verbose:
+            console.log(f'{self.NAME}> ' +
+                        f'temperature={args.temperature}, top_p={args.top_p}.')
+
+
 class vLLMFrontend(OpenAIFrontend):
     '''
     https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html
@@ -602,6 +621,8 @@ def create_frontend(args):
         frontend = LlamafileFrontend(args)
     elif args.frontend == 'ollama':
         frontend = OllamaFrontend(args)
+    elif args.frontend == 'llamacpp':
+        frontend = LlamacppFrontend(args)
     elif args.frontend == 'vllm':
         frontend = vLLMFrontend(args)
     elif args.frontend == 'dryrun':
