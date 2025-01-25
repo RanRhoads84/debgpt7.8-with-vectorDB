@@ -343,6 +343,34 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     config_template = __add_arg_to_config(config_template, _g,
                                           'llamacpp_base_url')
 
+    # Specific to DeepSeek Frontend
+    config_template += '''\n
+#########################################################
+# DeepSeek Frontend Options
+#########################################################
+\n'''
+    _g = ag.add_argument_group('DeepSeek Frontend Options')
+    _g.add_argument('--deepseek_base_url',
+                    type=str,
+                    default=conf['deepseek_base_url'],
+                    help='the URL to the DeepSeek API service.')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'deepseek_base_url')
+
+    _g.add_argument('--deepseek_api_key',
+                    type=str,
+                    default=conf['deepseek_api_key'],
+                    help='DeepSeek API key')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'deepseek_api_key')
+
+    _g.add_argument('--deepseek_model',
+                    type=str,
+                    default=conf['deepseek_model'],
+                    help='the model to use in DeepSeek.')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'deepseek_model')
+
     # Specific to vLLM Frontend
     config_template += '''\n
 #########################

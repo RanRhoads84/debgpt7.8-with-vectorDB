@@ -506,7 +506,7 @@ class LlamacppFrontend(OpenAIFrontend):
     '''
     https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md
     '''
-    NAME = 'llama.cpp Frontend'
+    NAME = 'LlamacppFrontend'
 
     def __init__(self, args):
         AbstractFrontend.__init__(self, args)
@@ -518,6 +518,28 @@ class LlamacppFrontend(OpenAIFrontend):
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
             console.log(f'{self.NAME}> ' +
+                        f'temperature={args.temperature}, top_p={args.top_p}.')
+
+
+class DeepSeekFrontend(OpenAIFrontend):
+    '''
+    https://api-docs.deepseek.com/
+    '''
+    NAME = 'DeepSeekFrontend'
+
+    def __init__(self, args):
+        AbstractFrontend.__init__(self, args)
+        from openai import OpenAI
+        self.client = OpenAI(api_key=args.deepseek_api_key,
+                             base_url=args.deepseek_base_url)
+        if args.deepseek_model not in ('deepseek-reasoner'):
+            # see the usage recommendations at
+            # https://huggingface.co/deepseek-ai/DeepSeek-R1
+            self.session.append({"role": "system", "content": self.system_message})
+        self.model = args.deepseek_model
+        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+        if args.verbose:
+            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
 
@@ -623,6 +645,8 @@ def create_frontend(args):
         frontend = OllamaFrontend(args)
     elif args.frontend == 'llamacpp':
         frontend = LlamacppFrontend(args)
+    elif args.frontend == 'deepseek':
+        frontend = DeepSeekFrontend(args)
     elif args.frontend == 'vllm':
         frontend = vLLMFrontend(args)
     elif args.frontend == 'dryrun':

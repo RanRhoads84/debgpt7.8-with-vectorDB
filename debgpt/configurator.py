@@ -290,6 +290,34 @@ def _request_frontend_specific_config(frontend: str,
         _abort_on_None(value)
         conf['llamacpp_base_url'] = value
 
+    # deepseek part
+    if frontend == 'deepseek' and 'deepseek_base_url' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the DeepSeek service url:",
+            default['deepseek_base_url'],
+            "Just keep the default if you intend to use DeepSeek API service. Reference: https://api-docs.deepseek.com/",
+            "Press Enter to confirm. Press Esc to abort.").run()
+        _abort_on_None(value)
+        conf['deepseek_base_url'] = value
+
+    if frontend == 'deepseek' and 'deepseek_api_key' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the DeepSeek API key:",
+            default['deepseek_api_key'],
+            "Typically found here: https://platform.deepseek.com/api_keys",
+            "Press Enter to confirm. Press Esc to abort.").run()
+        _abort_on_None(value)
+        conf['deepseek_api_key'] = value
+
+    if frontend == 'deepseek' and 'deepseek_model' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the DeepSeek model name:",
+            default['deepseek_model'],
+            "If not sure, just keep the default. As of Jan 24 2025, the available models are: deepseek-chat, deepseek-reasoner. The list of latest models can be found here: https://api-docs.deepseek.com/quick_start/pricing",
+            "Press Enter to confirm. Press Esc to abort.").run()
+        _abort_on_None(value)
+        conf['deepseek_model'] = value
+
     # llamafile part
     if frontend == 'llamafile' and 'llamafile_base_url' not in current_config:
         value = SingleEdit(
@@ -417,6 +445,7 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
         'Anthropic (Claude) | commercial,  Anthropic-API',
         'Google    (Gemini) | commercial,  Google-API',
         'xAI       (Grok)   | commercial,  OpenAI-API',
+        'DeepSeek           | commercial,  OpenAI-API, MIT-Licensed/publically available',
         'Ollama    (*)      | self-hosted, OpenAI-API',
         'llama.cpp (*)      | self-hosted, OpenAI-API',
         'LlamaFile (*)      | self-hosted, OpenAI-API',
@@ -429,12 +458,13 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
         'anthropic': 1,
         'google': 2,
         'xai': 3,
-        'ollama': 4,
-        'llamacpp': 5,
-        'llamafile': 6,
-        'vllm': 7,
-        'zmq': 8,
-        'dryrun': 9,
+        'deepseek': 4,
+        'ollama': 5,
+        'llamacpp': 6,
+        'llamafile': 7,
+        'vllm': 8,
+        'zmq': 9,
+        'dryrun': 10,
     }[default['frontend']]
 
     frontend = SingleChoice("DebGPT Configurator",

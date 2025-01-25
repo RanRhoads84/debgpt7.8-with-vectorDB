@@ -87,6 +87,10 @@ class Config(object):
             'ollama_model': 'llama3.2',
             # llama.cpp Frontend Specific
             'llamacpp_base_url': 'http://localhost:8080/v1',
+            # DeepSeek Frontend Specific
+            'deepseek_base_url': 'https://api.deepseek.com',
+            'deepseek_model': 'deepseek-reasoner',
+            'deepseek_api_key': 'your-deepseek-api-key',
             # vLLM Frontend Specific
             'vllm_base_url': 'http://localhost:8000/v1',
             'vllm_api_key': 'your-vllm-api-key',
