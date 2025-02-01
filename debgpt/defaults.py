@@ -57,7 +57,7 @@ class Config(object):
             'render_markdown': True,
             # LLM Inference Parameters
             'temperature': 0.5,
-            'top_p': 1.0,
+            'top_p': 0.7,
             # Embedding Settings
             'embedding_frontend': 'openai',
             'embedding_dim': 256,
