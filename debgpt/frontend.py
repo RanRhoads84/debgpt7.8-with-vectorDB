@@ -464,6 +464,26 @@ class XAIFrontend(OpenAIFrontend):
                         f'temperature={args.temperature}, top_p={args.top_p}.')
 
 
+class NvidiaFrontend(OpenAIFrontend):
+    '''
+    This is a frontend for Nvidia's NIM/NeMo service.
+    https://build.nvidia.com/
+    '''
+    NAME = 'Nvidia-Frontend'
+
+    def __init__(self, args):
+        super().__init__(args)
+        from openai import OpenAI
+        self.client = OpenAI(api_key=args.nvidia_api_key,
+                             base_url=args.nvidia_base_url)
+        self.session.append({"role": "system", "content": self.system_message})
+        self.model = args.nvidia_model
+        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+        if args.verbose:
+            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                        f'temperature={args.temperature}, top_p={args.top_p}.')
+
+
 class LlamafileFrontend(OpenAIFrontend):
     '''
     https://github.com/Mozilla-Ocho/llamafile
@@ -639,6 +659,8 @@ def create_frontend(args):
         frontend = GoogleFrontend(args)
     elif args.frontend == 'xai':
         frontend = XAIFrontend(args)
+    elif args.frontend == 'nvidia':
+        frontend = NvidiaFrontend(args)
     elif args.frontend == 'llamafile':
         frontend = LlamafileFrontend(args)
     elif args.frontend == 'ollama':

@@ -276,6 +276,32 @@ Their prices vary. See https://platform.openai.com/docs/models .')
     config_template = __add_arg_to_config(config_template, _g,
                                           'google_embedding_model')
 
+    # Specific to Nvidia-NIM Frontend
+    config_template += '''\n
+##############################
+# Nvidia-NIM Frontend Options
+##############################
+\n'''
+    _g = ag.add_argument_group('Nvidia-NIM Frontend Options')
+    _g.add_argument('--nvidia_base_url',
+                    type=str,
+                    default=conf['nvidia_base_url'],
+                    help='the URL to the Nvidia NIM JSON API service.')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'nvidia_base_url')
+    _g.add_argument('--nvidia_api_key',
+                    type=str,
+                    default=conf['nvidia_api_key'],
+                    help='Nvidia API key')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'nvidia_api_key')
+    _g.add_argument('--nvidia_model',
+                    type=str,
+                    default=conf['nvidia_model'],
+                    help='the Nvidia model, e.g., deepseek-ai/deepseek-r1')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'nvidia_model')
+
     # Specific to xAI Frontend
     config_template += '''\n
 ########################

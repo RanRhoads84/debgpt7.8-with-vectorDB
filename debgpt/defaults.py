@@ -80,6 +80,10 @@ class Config(object):
             # xAI Frontend Specific
             'xai_api_key': 'your-xai-api-key',
             'xai_model': 'grok-beta',
+            # Nvidia Frontend Specific
+            'nvidia_base_url': 'https://integrate.api.nvidia.com/v1',
+            'nvidia_model': 'deepseek-ai/deepseek-r1',
+            'nvidia_api_key': 'your-nvidia-api-key',
             # Llamafile Frontend Specific
             'llamafile_base_url': 'http://localhost:8080/v1',
             # Ollama Frontend Specific

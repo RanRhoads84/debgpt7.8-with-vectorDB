@@ -262,6 +262,32 @@ def _request_frontend_specific_config(frontend: str,
         _abort_on_None(value)
         conf['xai_model'] = value
 
+    # nvidia part
+    if frontend == 'nvidia' and 'nvidia_base_url' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the NVIDIA NIM/NeMo service url:",
+            default['nvidia_base_url'],
+            "Default is https://integrate.api.nvidia.com/v1",
+            "Press Enter to confirm. Press Esc to abort.").run()
+        _abort_on_None(value)
+        conf['nvidia_base_url'] = value
+    if frontend == 'nvidia' and 'nvidia_api_key' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the NVIDIA NIM/NeMo API key:",
+            default['nvidia_api_key'],
+            "Typically found here: https://build.nvidia.com/explore/discover",
+            "Press Enter to confirm. Press Esc to abort.").run()
+        _abort_on_None(value)
+        conf['nvidia_api_key'] = value
+    if frontend == 'nvidia' and not is_embedding and 'nvidia_model' not in current_config:
+        value = SingleEdit(
+            "DebGPT Configurator", "Enter the NVIDIA NIM/NeMo model name:",
+            default['nvidia_model'],
+            "If not sure, just keep the default. Available options: https://build.nvidia.com/explore/discover",
+            "Press Enter to confirm. Press Esc to abort.").run()
+        _abort_on_None(value)
+        conf['nvidia_model'] = value
+
     # ollama part
     if frontend == 'ollama' and 'ollama_base_url' not in current_config:
         value = SingleEdit(
@@ -445,7 +471,8 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
         'Anthropic (Claude) | commercial,  Anthropic-API',
         'Google    (Gemini) | commercial,  Google-API',
         'xAI       (Grok)   | commercial,  OpenAI-API',
-        'DeepSeek           | commercial,  OpenAI-API, MIT-Licensed/publically available',
+        'Nvidia    (*)      | commercial,  OpenAI-API', 
+        'DeepSeek           | commercial,  OpenAI-API, MIT-Licensed Model',
         'Ollama    (*)      | self-hosted, OpenAI-API',
         'llama.cpp (*)      | self-hosted, OpenAI-API',
         'LlamaFile (*)      | self-hosted, OpenAI-API',
@@ -458,13 +485,14 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
         'anthropic': 1,
         'google': 2,
         'xai': 3,
-        'deepseek': 4,
-        'ollama': 5,
-        'llamacpp': 6,
-        'llamafile': 7,
-        'vllm': 8,
-        'zmq': 9,
-        'dryrun': 10,
+        'nvidia': 4,
+        'deepseek': 5,
+        'ollama': 6,
+        'llamacpp': 7,
+        'llamafile': 8,
+        'vllm': 9,
+        'zmq': 10,
+        'dryrun': 11,
     }[default['frontend']]
 
     frontend = SingleChoice("DebGPT Configurator",
