@@ -158,6 +158,13 @@ class AbstractFrontend():
             json.dump(self.session, f, indent=2)
         console.log(f'{self.NAME}> Conversation saved at {fpath}')
 
+    def __len__(self):
+        '''
+        Calculate the number of messages from user and assistant in the session,
+        excluding system message.
+        '''
+        return len([x for x in self.session if x['role'] != 'system'])
+
 
 class EchoFrontend(AbstractFrontend):
     '''
@@ -691,10 +698,10 @@ def interact_once(f: AbstractFrontend, text: str) -> None:
     if f.stream:
         end = '' if not f.render_markdown else '\n'
         if f.monochrome:
-            lprompt = escape(f'LLM[{1+len(f.session)}]> ')
+            lprompt = escape(f'LLM[{2+len(f)}]> ')
             console.print(lprompt, end=end, highlight=False, markup=False)
         else:
-            lprompt = f'[bold green]LLM[{1+len(f.session)}]>[/bold green] '
+            lprompt = f'[bold green]LLM[{2+len(f)}]>[/bold green] '
             console.print(lprompt, end=end)
         _ = f(text)
     else:
@@ -742,7 +749,7 @@ def interact_with(f: AbstractFrontend) -> None:
     user = get_username()
     try:
         while text := prompt_session.prompt(
-                f'{user}[{max(1, len(f.session))}]> '):
+                f'{user}[{1+len(f)}]> '):
             # parse escaped interaction commands
             if text.startswith('/'):
                 cmd = shlex.split(text)
