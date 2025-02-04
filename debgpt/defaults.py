@@ -61,6 +61,7 @@ class Config(object):
             # Embedding Settings
             'embedding_frontend': 'openai',
             'embedding_dim': 256,
+            'random_embedding_model': 'dummy-for-debugging',
             # Mapreduce Settings
             'mapreduce_chunksize': 65536,
             'mapreduce_parallelism': 8,
