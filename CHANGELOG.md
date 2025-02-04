@@ -1,6 +1,22 @@
 Changelog
 =========
 
+v0.7.5 -- 2025-02-03
+--------------------
+
+New frontends:
+
+* b6d4e82 Support Nvidia NIM service.
+* df1591e Frontend: add support for DeepSeek (although you can replace the OpenAI base url for the same)
+  Such extension is helpful when I want to hold multiple API keys in the same debgpt config.
+* 781aba2 frontend: support llama-server (llama.cpp) service in OpenAI compat mode.
+
+Minor improvements:
+
+* defaults: fix the exception when random embedding model is selected.
+* b8ff853 frontend: correctly count the interaction round.
+* d28cd49 defaults: change top_p from 1.0 to 0.7.
+
 v0.7.4 -- 2025-01-19
 --------------------
 
