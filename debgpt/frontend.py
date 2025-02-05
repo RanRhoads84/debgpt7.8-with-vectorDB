@@ -27,11 +27,13 @@ import shlex
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.styles import Style
-from rich.console import Console
+from rich.console import Console, Group
 from rich.live import Live
 from rich.status import Status
 from rich.markdown import Markdown
 from rich.markup import escape
+from rich.text import Text
+from rich.padding import Padding
 
 from . import defaults
 
@@ -260,14 +262,31 @@ class OpenAIFrontend(AbstractFrontend):
                                                          **self.kwargs)
         if self.stream:
             chunks = []
+            think = None
             if self.render_markdown:
                 with Live(Markdown('')) as live:
                     for chunk in completion:
                         if chunk.choices[0].delta.content is None:
                             continue
                         piece = chunk.choices[0].delta.content
-                        chunks.append(piece)
-                        live.update(Markdown(''.join(chunks)), refresh=True)
+                        if piece == '</think>' and think is not None:
+                            think = chunks
+                            chunks = []
+                        elif piece == '<think>':
+                            think = []
+                        else:
+                            chunks.append(piece)
+                        # join chunks
+                        if think is not None:
+                            buffer_think = ''.join(think)
+                            part1 = Text(buffer_think)
+                            part1.stylize('italic bright_black')
+                            part1 = Padding(part1, (0, 2))
+                        else:
+                            part1 = ''
+                        buffer_chunk = ''.join(chunks)
+                        group = Group(part1, Markdown(buffer_chunk))
+                        live.update(group, refresh=True)
             else:
                 for chunk in completion:
                     if chunk.choices[0].delta.content is None:
