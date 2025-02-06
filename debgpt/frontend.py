@@ -34,6 +34,7 @@ from rich.markdown import Markdown
 from rich.markup import escape
 from rich.text import Text
 from rich.padding import Padding
+from rich.style import Style as richStyle
 
 from . import defaults
 
@@ -278,8 +279,8 @@ class OpenAIFrontend(AbstractFrontend):
                         # join chunks
                         buffer_think = ''.join(think)
                         part1 = Text(buffer_think)
-                        part1.stylize('italic bright_black')
-                        part1 = Padding(part1, (0, 2))
+                        part1 = Padding(part1, (0, 2),
+                                        style=richStyle(dim=True, italic=True))
                         buffer_chunk = ''.join(chunks)
                         part2 = Markdown(buffer_chunk)
                         group = Group(part1, part2)
