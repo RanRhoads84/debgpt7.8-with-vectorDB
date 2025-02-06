@@ -261,8 +261,8 @@ class OpenAIFrontend(AbstractFrontend):
                                                          stream=self.stream,
                                                          **self.kwargs)
         if self.stream:
-            chunks = []
-            think = None
+            think, chunks = [], []
+            cursor = chunks
             if self.render_markdown:
                 with Live(Markdown('')) as live:
                     for chunk in completion:
@@ -270,22 +270,19 @@ class OpenAIFrontend(AbstractFrontend):
                             continue
                         piece = chunk.choices[0].delta.content
                         if piece == '</think>' and think is not None:
-                            think = chunks
-                            chunks = []
+                            cursor = chunks
                         elif piece == '<think>':
-                            think = []
+                            cursor = think
                         else:
-                            chunks.append(piece)
+                            cursor.append(piece)
                         # join chunks
-                        if think is not None:
-                            buffer_think = ''.join(think)
-                            part1 = Text(buffer_think)
-                            part1.stylize('italic bright_black')
-                            part1 = Padding(part1, (0, 2))
-                        else:
-                            part1 = ''
+                        buffer_think = ''.join(think)
+                        part1 = Text(buffer_think)
+                        part1.stylize('italic bright_black')
+                        part1 = Padding(part1, (0, 2))
                         buffer_chunk = ''.join(chunks)
-                        group = Group(part1, Markdown(buffer_chunk))
+                        part2 = Markdown(buffer_chunk)
+                        group = Group(part1, part2)
                         live.update(group, refresh=True)
             else:
                 for chunk in completion:
