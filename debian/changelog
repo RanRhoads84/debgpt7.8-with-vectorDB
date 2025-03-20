@@ -1,3 +1,10 @@
+debgpt (0.7.6) unstable; urgency=medium
+
+  * Release 0.7.6.
+    + Properly render the <think> blocks from DeepSeek models.
+
+ -- Mo Zhou <lumin@debian.org>  Thu, 20 Mar 2025 11:26:52 -0400
+
 debgpt (0.7.5) unstable; urgency=medium
 
   * Release v0.7.5.

@@ -1,6 +1,14 @@
 Changelog
 =========
 
+v0.7.6 -- 2025-03-20
+--------------------
+
+Minor improvements:
+
+* Properly render the <think> blocks from DeepSeek responses.
+* Minor updates to the readme.
+
 v0.7.5 -- 2025-02-03
 --------------------
 
