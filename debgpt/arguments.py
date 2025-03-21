@@ -84,6 +84,11 @@ use Meta+Enter to accept the input instead.')
                     type=str,
                     default=None,
                     help='write the last LLM message to specified file')
+    _g.add_argument('--system_message',
+                    '-S',
+                    type=str,
+                    default=conf['system_message'],
+                    help='send a system message to the LLM')
     _g.add_argument('--inplace',
                     '-i',
                     type=str,

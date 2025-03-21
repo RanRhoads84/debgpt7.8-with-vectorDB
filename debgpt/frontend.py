@@ -215,8 +215,7 @@ class OpenAIFrontend(AbstractFrontend):
     NAME: str = 'OpenAIFrontend'
     debug: bool = False
     stream: bool = True
-    system_message: str = defaults.OPENAI_SYSTEM_MESSAGE
-
+    
     def __init__(self, args):
         super().__init__(args)
         try:
@@ -229,7 +228,7 @@ class OpenAIFrontend(AbstractFrontend):
         self.model = args.openai_model
         # XXX: some models do not support system messages yet. nor temperature.
         if self.model not in ('o1-mini', 'o1-preview'):
-            self.session.append({"role": "system", "content": self.system_message})
+            self.session.append({"role": "system", "content": args.system_message})
             self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         else:
             self.kwargs = {}
@@ -480,7 +479,7 @@ class XAIFrontend(OpenAIFrontend):
         from openai import OpenAI
         self.client = OpenAI(api_key=args.xai_api_key,
                              base_url='https://api.x.ai/v1/')
-        self.session.append({"role": "system", "content": self.system_message})
+        self.session.append({"role": "system", "content": args.system_message})
         self.model = args.xai_model
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
@@ -500,7 +499,7 @@ class NvidiaFrontend(OpenAIFrontend):
         from openai import OpenAI
         self.client = OpenAI(api_key=args.nvidia_api_key,
                              base_url=args.nvidia_base_url)
-        self.session.append({"role": "system", "content": self.system_message})
+        self.session.append({"role": "system", "content": args.system_message})
         self.model = args.nvidia_model
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
@@ -519,7 +518,7 @@ class LlamafileFrontend(OpenAIFrontend):
         from openai import OpenAI
         self.client = OpenAI(api_key='no-key-required',
                              base_url=args.llamafile_base_url)
-        self.session.append({"role": "system", "content": self.system_message})
+        self.session.append({"role": "system", "content": args.system_message})
         self.model = 'llamafile from https://github.com/Mozilla-Ocho/llamafile'
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
@@ -538,7 +537,7 @@ class OllamaFrontend(OpenAIFrontend):
         from openai import OpenAI
         self.client = OpenAI(api_key='no-key-required',
                              base_url=args.ollama_base_url)
-        self.session.append({"role": "system", "content": self.system_message})
+        self.session.append({"role": "system", "content": args.system_message})
         self.model = args.ollama_model
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
@@ -557,7 +556,7 @@ class LlamacppFrontend(OpenAIFrontend):
         from openai import OpenAI
         self.client = OpenAI(api_key='no-key-required',
                              base_url=args.llamacpp_base_url)
-        self.session.append({"role": "system", "content": self.system_message})
+        self.session.append({"role": "system", "content": args.system_message})
         self.model = 'model-is-specified-at-the-llama-server-arguments'
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
@@ -579,7 +578,7 @@ class DeepSeekFrontend(OpenAIFrontend):
         if args.deepseek_model not in ('deepseek-reasoner'):
             # see the usage recommendations at
             # https://huggingface.co/deepseek-ai/DeepSeek-R1
-            self.session.append({"role": "system", "content": self.system_message})
+            self.session.append({"role": "system", "content": args.system_message})
         self.model = args.deepseek_model
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
@@ -598,7 +597,7 @@ class vLLMFrontend(OpenAIFrontend):
         from openai import OpenAI
         self.client = OpenAI(api_key='your-vllm-api-key',
                              base_url=args.vllm_base_url)
-        self.session.append({"role": "system", "content": self.system_message})
+        self.session.append({"role": "system", "content": args.system_message})
         self.model = args.vllm_model
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
