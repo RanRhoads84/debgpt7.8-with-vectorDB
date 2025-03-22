@@ -34,6 +34,7 @@ from rich.markdown import Markdown
 from rich.markup import escape
 from rich.text import Text
 from rich.padding import Padding
+from rich.panel import Panel
 from rich.style import Style as richStyle
 
 from . import defaults
@@ -227,7 +228,7 @@ class OpenAIFrontend(AbstractFrontend):
                              base_url=args.openai_base_url)
         self.model = args.openai_model
         # XXX: some models do not support system messages yet. nor temperature.
-        if self.model not in ('o1-mini', 'o1-preview'):
+        if self.model not in ('o1-mini', 'o1-preview', 'o3-mini'):
             self.session.append({"role": "system", "content": args.system_message})
             self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         else:
@@ -266,15 +267,20 @@ class OpenAIFrontend(AbstractFrontend):
             if self.render_markdown:
                 with Live(Markdown('')) as live:
                     for chunk in completion:
-                        if chunk.choices[0].delta.content is None:
-                            continue
-                        piece = chunk.choices[0].delta.content
-                        if piece == '</think>' and think is not None:
-                            cursor = chunks
-                        elif piece == '<think>':
-                            cursor = think
+                        if hasattr(chunk.choices[0].delta, 'reasoning_content'):
+                            if chunk.choices[0].delta.reasoning_content:
+                                rpiece = chunk.choices[0].delta.reasoning_content
+                                think.append(rpiece)
+                        if chunk.choices[0].delta.content:
+                            piece = chunk.choices[0].delta.content
+                            if piece == '</think>' and len(think) > 0:
+                                cursor = chunks
+                            elif piece == '<think>':
+                                cursor = think
+                            else:
+                                cursor.append(piece)
                         else:
-                            cursor.append(piece)
+                            continue
                         # join chunks
                         buffer_think = ''.join(think)
                         part1 = Text(buffer_think)
@@ -286,20 +292,28 @@ class OpenAIFrontend(AbstractFrontend):
                         live.update(group, refresh=True)
             else:
                 for chunk in completion:
-                    if chunk.choices[0].delta.content is None:
+                    if chunk.choices[0].delta.reasoning_content:
+                        piece = chunk.choices[0].delta.reasoning_content
+                        think.append(piece)
+                        print(piece, end="", flush=True)
+                    if chunk.choices[0].delta.content:
+                        piece = chunk.choices[0].delta.content
+                        chunks.append(piece)
+                        print(piece, end="", flush=True)
+                    else:
                         continue
-                    piece = chunk.choices[0].delta.content
-                    chunks.append(piece)
-                    print(piece, end="", flush=True)
             generated_text = ''.join(chunks)
             if not generated_text.endswith('\n'):
                 print()
                 sys.stdout.flush()
         else:
+            reasoning_content = completion.choices[0].delta.reasoning_content
             generated_text = completion.choices[0].message.content
             if self.render_markdown:
+                console_stdout.print(Panel(Markdown(reasoning_content)))
                 console_stdout.print(Markdown(generated_text))
             else:
+                console_stdout.print(Panel(reasoning_content))
                 console_stdout.print(escape(generated_text))
         new_message = {'role': 'assistant', 'content': generated_text}
         self.update_session(new_message)
