@@ -1,6 +1,17 @@
 Changelog
 =========
 
+v0.7.7 -- 2025-05-03
+--------------------
+
+The Debian Trixie release.
+
+Minor updates:
+
+* d1279f7 frontend: support the `reasoning_content` api.
+* f6a2d2e fix the grammar in the default system message
+* b9b3ef7 Add a config option to change the system message
+
 v0.7.6 -- 2025-03-20
 --------------------
 
@@ -23,7 +34,7 @@ Minor improvements:
 
 * defaults: fix the exception when random embedding model is selected.
 * b8ff853 frontend: correctly count the interaction round.
-* d28cd49 defaults: change top_p from 1.0 to 0.7.
+* d28cd49 defaults: change `top_p` from 1.0 to 0.7.
 
 v0.7.4 -- 2025-01-19
 --------------------
