@@ -666,16 +666,16 @@ def get_username():
     try:
         import getpass
         return getpass.getuser()
-    except:
+    except Exception:
         pass
     try:
         import pwd
         return pwd.getpwuid(os.getuid())[0]
-    except:
+    except Exception:
         pass
     try:
         return os.getlogin()
-    except:
+    except Exception:
         pass
     # common shell env
     for env in ('USER', 'USERNAME', 'LOGNAME'):

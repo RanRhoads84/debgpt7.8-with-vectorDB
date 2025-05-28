@@ -461,7 +461,7 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
     if dest and os.path.exists(dest):
         overwrite = _request_overwrite_config(dest)
         _abort_on_None(overwrite)
-        if overwrite == False:
+        if not overwrite:
             print('Aborted.')
             exit(0)
 
