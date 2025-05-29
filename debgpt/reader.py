@@ -519,7 +519,7 @@ def read_bts(spec: str) -> str:
     return '\n'.join(text)
 
 
-def fetch_ldo_threads(spec: str) -> List[str]:
+def fetch_ldo_threads(spec: str, index: str = 'threads.html') -> List[str]:
     '''
     read the mail threads (including the links) from the lists.debian.org.
     Return a list of URLs to the emails.
@@ -529,7 +529,7 @@ def fetch_ldo_threads(spec: str) -> List[str]:
                              ^^^^^^^^^^^^^^^^^
                              spec (Specifier)
     '''
-    url = f'https://lists.debian.org/{spec}/threads.html'
+    url = f'https://lists.debian.org/{spec}/{index}'
     response = requests.get(url)
     if response.status_code != 200:
         console.log(f'Failed to read {url}: HTTP {response.status_code}')
@@ -538,7 +538,14 @@ def fetch_ldo_threads(spec: str) -> List[str]:
     links = soup.find_all('a', href=re.compile(r'^msg.*'))
     links = [x.get('href') for x in links]
     urls = [f'https://lists.debian.org/{spec}/{x}' for x in links]
-    console.log(f'Got {len(urls)} threads from {url}.')
+    console.log(f'Got {len(urls)} threads from {url}')
+
+    # is there a next page? Expand this recursively until no next page.
+    next_page = soup.find('a', text='next page')
+    if next_page:
+        next_index = next_page.get('href')
+        next_urls = fetch_ldo_threads(spec, next_index)
+        urls = urls + next_urls
     return urls
 
 
