@@ -100,6 +100,7 @@ class AbstractFrontend():
         self.monochrome = args.monochrome
         self.multiline = args.multiline
         self.render_markdown = args.render_markdown
+        self.verbose = args.verbose
         console.log(f'{self.NAME}> Starting conversation {self.uuid}')
 
     def reset(self):
@@ -261,11 +262,15 @@ class OpenAIFrontend(AbstractFrontend):
                                                          messages=self.session,
                                                          stream=self.stream,
                                                          **self.kwargs)
+        # if the stream is enabled, we will print the response in real-time.
         if self.stream:
+            n_tokens: int = 0
+            time_start_end: List[float] = [0.0, 0.0]
             think, chunks = [], []
             cursor = chunks
             if self.render_markdown:
                 with Live(Markdown('')) as live:
+                    time_start_end[0] = time.time()
                     for chunk in completion:
                         if hasattr(chunk.choices[0].delta, 'reasoning_content'):
                             if chunk.choices[0].delta.reasoning_content:
@@ -273,6 +278,7 @@ class OpenAIFrontend(AbstractFrontend):
                                 think.append(rpiece)
                         if chunk.choices[0].delta.content:
                             piece = chunk.choices[0].delta.content
+                            n_tokens += 1
                             if piece == '</think>' and len(think) > 0:
                                 cursor = chunks
                             elif piece == '<think>':
@@ -290,7 +296,9 @@ class OpenAIFrontend(AbstractFrontend):
                         part2 = Markdown(buffer_chunk)
                         group = Group(part1, part2)
                         live.update(group, refresh=True)
+                    time_start_end[1] = time.time()
             else:
+                time_start_end[0] = time.time()
                 for chunk in completion:
                     if chunk.choices[0].delta.reasoning_content:
                         piece = chunk.choices[0].delta.reasoning_content
@@ -298,14 +306,21 @@ class OpenAIFrontend(AbstractFrontend):
                         print(piece, end="", flush=True)
                     if chunk.choices[0].delta.content:
                         piece = chunk.choices[0].delta.content
+                        n_tokens += 1
                         chunks.append(piece)
                         print(piece, end="", flush=True)
                     else:
                         continue
+                time_start_end[1] = time.time()
             generated_text = ''.join(chunks)
             if not generated_text.endswith('\n'):
                 print()
                 sys.stdout.flush()
+            # print the generation token per second (TPS) in verbose mode
+            if self.verbose:
+                _gtps = n_tokens / (time_start_end[1] - time_start_end[0])
+                console.log(
+                    f'{self.NAME}[{self.model}]> {_gtps:.2f} generation tokens per second.')
         else:
             reasoning_content = completion.choices[0].delta.reasoning_content
             generated_text = completion.choices[0].message.content
