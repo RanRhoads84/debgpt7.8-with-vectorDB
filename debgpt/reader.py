@@ -23,6 +23,7 @@ import io
 import os
 import subprocess
 import functools as ft
+import itertools as it
 import sys
 import glob
 import shlex
@@ -528,7 +529,53 @@ def fetch_ldo_threads(spec: str, index: str = 'threads.html') -> List[str]:
     https://lists.debian.org/debian-ai/2024/11/threads.html
                              ^^^^^^^^^^^^^^^^^
                              spec (Specifier)
+
+    Special syntax ("*", ",", and ":"):
+      * spec = debian-ai/2024,2025/11
+        expands to debian-ai/2024/11 and debian-ai/2025/11
+      * spec = debian-ai/2025/01:05
+        expands to debian-ai/2025/01 ... debian-ai/2025/05,
+        inclusively for both ends.
     '''
+    # is the spec following the special range syntax?
+    name, year, month = spec.split('/')
+    if any(x in y for x in (',', ':') for y in (name, year, month)):
+        # parse the name part
+        if ':' in name:
+            console.print(f'Error: Does not know how to expand "{name}".')
+            return []
+        elif ',' in name:
+            name = name.split(',')
+        else:
+            name = [name]
+        # parse the year part
+        if ':' in year:
+            start_year, end_year = year.split(':') 
+            year = list(range(int(start_year), int(end_year) + 1))
+            year = list(map(str, year))
+        elif ',' in year:
+            year = year.split(',')
+        else:
+            year = [year]
+        # parse the month part
+        if any(x == month for x in (':',)):
+            # expand to all months
+            month = list(range(1, 13))
+            month = list(map(lambda x: f'{x:02d}', month))
+        elif ':' in month:
+            start_month, end_month = month.split(':')
+            month = list(range(int(start_month), int(end_month) + 1))
+            month = list(map(lambda x: f'{x:02d}', month))
+        elif ',' in month:
+            month = month.split(',')
+        else:
+            month = [month]
+        # calculate the product
+        allcombs = it.product(name, year, month)
+        allcombs = ['/'.join(x) for x in allcombs]
+        urls = ft.reduce(list.__add__, [fetch_ldo_threads(x) for x in allcombs])
+        return urls
+
     url = f'https://lists.debian.org/{spec}/{index}'
     response = requests.get(url)
     if response.status_code != 200:
