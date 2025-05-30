@@ -320,7 +320,7 @@ class OpenAIFrontend(AbstractFrontend):
             if self.verbose:
                 _gtps = n_tokens / (time_start_end[1] - time_start_end[0])
                 console.log(
-                    f'{self.NAME}[{self.model}]> {_gtps:.2f} generation tokens per second.')
+                    f'{self.NAME}({self.model})> {_gtps:.2f} generation tokens per second.')
         else:
             reasoning_content = completion.choices[0].delta.reasoning_content
             generated_text = completion.choices[0].message.content
