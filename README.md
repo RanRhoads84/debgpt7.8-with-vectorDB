@@ -118,7 +118,7 @@ TUTORIAL
 The following examples are carefully ordered. You can start from the first
 example and gradually move to the next one.
 
-#### 1. Chatting with LLM and CLI Behavior
+#### 1. Interaction Mode with LLM and CLI Behavior
 
 When no arguments are given, `debgpt` leads you into a general terminal
 chatting client with LLM backends. Use `debgpt -h` to see detailed options.
@@ -178,12 +178,12 @@ Reference section, a Debian BTS page, a Debian build status page (buildd),
 a Google search result, etc. The specification syntax of the unified reader
 `--file|-f` can be found using the command `debgpt -f :` or `debgpt -f '?'`.
 
-Some examples are shown below:
+Some simple examples are shown below:
 
 ```
-# read a plain text file and ask a question
+# read a plain text file or PDF file and ask a question
 debgpt -Hf README.md -a 'very briefly teach me how to use this DebGPT.'
-debgpt -Hf debgpt/policy.py -A 'explain this file'
+debgpt -Hf debgpt/policy.py -A 'explain the code'
 debgpt -Hf my-resume.pdf -a 'Does this person have any foss-related experience?'
 
 # read a directory
@@ -192,33 +192,14 @@ debgpt -Hf debian/ -a 'how is this package built? How many binary packages will 
 # read a URL
 debgpt -Hf 'https://www.debian.org/vote/2022/vote_003' -A 'Please explain the differences among the above choices.'
 
-# reading debian bug tracking system
-debgpt -Hf bts:src:pytorch -A 'Please summarize the above information. Make a table to organize it.'
-debgpt -Hf bts:1056388 -A 'Please summarize the above information.'
-
-# reading debian buildd status
-debgpt -Hf buildd:glibc -A 'Please summarize the above information. Make a table to organize it.'
-
-# piping from a command line
-debgpt -Hf cmd:'apt list --upgradable' -A 'Briefly summarize the upgradable packages. You can categorize these packages.'
-debgpt -Hf cmd:'git diff --staged' -A 'Briefly describe the change as a git commit message.'
-
-# read manual page or tldr
-debgpt -Hf man:debhelper-compat-upgrade-checklist -A "what's the change between compat 13 and compat 14?"
-debgpt -H -f tldr:curl -f cmd:'curl -h' -A "download https://localhost/bigfile.iso to /tmp/workspace, in silent mode"
-
-# read a Debian Policy section or Developer Reference section
-debgpt -Hf policy:7.2 -A "what is the difference between Depends: and Pre-Depends: ?"
-debgpt -Hf devref:5.5 -A 'Please summarize the above information.'
-
-# when section is not specified, it will read the whole document. This may exceed the LLM context size limit.
-debgpt -Hf policy: -A 'what is the latest changes in this policy?'
-
-# more examples
-debgpt -Hf pytorch/debian/control -f policy:7.4 -A "Explain what Conflicts+Replaces means in pytorch/debian/control based on the provided policy document"
-debgpt -Hf pytorch/debian/rules -f policy:4.9.1 -A "Implement the support for the 'nocheck' tag based on the example provided in the policy document."
+# pipe a command line
+debgpt -Hf cmd:'git diff --staged' -A 'briefly summarize the changes and provide a git commit message.'
 ```
 
+The reader can be specified multiple times to put multiple information source
+into a single context.  The full list of supported reader specs, as well as
+corresponding examples, can be printed using `debgpt -f :`, or `debgpt -f "?"`,
+or `debgpt -x :`.
 
 #### 3. Inplace Editing of a File
 
@@ -274,7 +255,6 @@ left.  As a result, this functionality can be very quota-consuming if you are
 going to deal with long texts. Please keep an eye on your bill when you try
 this on a paied API service.
 
-
 This functionality is implemented as the `--mapreduce|-x` argument. The user
 has to specify the `--ask|-A|-a` argument to tell LLM what kind of question we
 want to ask so it can extract the right information. It will summarize if the
@@ -285,71 +265,42 @@ MapReduce will really make the language model read all information
 you passed to it, while vector retriever will only make language model read
 the most relevant several pieces of information stored in the database.
 
-
 Some usage examples of MapReduce are as follows:
 
+```
+# load a long file (such as buildlog) and ask question
+debgpt -Hx buildlog.txt -A 'Why does the build fail? How to fix it?'
+debgpt -Hx 'https://www.debian.org/doc/debian-policy/policy.txt' -A 'what is the purpose of the archive?'
+debgpt -Hx policy: -A 'what package should enter contrib instead of main or non-free?'
 
-* Load a **file** and ask a question
-```
-debgpt -Hx resume.pdf -A 'Does this person know AI? To what extent?'
-```
+# this will automatically find the buildlog path
+debgpt -Hx sbuild: -A 'why does the build fail? do you have any suggestion?'
 
-* Load a **directory** and ask a question
-```
-debgpt -Hx . -a 'which file implemented mapreduce? how does it work?'
+# I'm really lazy to learn or recall details
+debgpt -H -x policy: -x devref: -a 'which document (and which section) talked about Multi-Arch: ?'
+
+# search google, read pages, and answer question (the --ask|-a|-A is the google search keyword unless specified following "google:")
+debgpt -Hx google: -a 'how to start python programming?'
+debgpt -Hx google:'debian packaging' -a 'how to learn debian packaging?'
+
+# load a directory and ask question
+debgpt -Hx . -a 'which file of this debgpt project implemented mapreduce? how does it work?'
 debgpt -Hx . -a 'teach me how to use this software. Is there any hidden functionality that is not written in its readme?'
 debgpt -Hx ./debian -A 'how is this package built? how many binary packages will be produced?'
+
+# load Debian mailing list threads and answer question
+debgpt -Hx ldo:debian-devel/2025/05 -a 'write a news report to summarize what happend in this month. Always cite the source URL.'
+debgpt -Hx ldo:debian-vote/2025/04,05 -a 'what is the result of the AI DFSG gr? Always cite the source URL.'
 ```
 
-* Load a **URL** and ask a question
-```
-debgpt -Hx 'https://www.debian.org/doc/debian-policy/policy.txt' -A 'what is the purpose of the archive?'
-```
-
-* Load the whole **Debian Policy** document (plain text) and ask a question
-```
-debgpt -Hx policy:all -a "what is the latest changes in this policy?"
-debgpt -Hx policy:all -A 'what package should enter contrib instead of main or non-free?'
-```
-
-* Load the whole **Debian Developer Reference** document (plain text) and ask a question
-```
-debgpt -Hx devref:all -A 'How can I become a debian developer?'
-debgpt -Hx devref:all -a 'how does general resolution work?'
-```
-
-* If you don't really bother to read `policy:` and `devref:`, or forgot which one is talking about the question in you mind, for instance:
-```
-debgpt -H -x policy:all -x devref:all -a 'which document (and which section) talk about Multi-Arch: ?'
-```
-
-* Summarize the mailing list discussions within a month (MapReduce is more suitable than the retrieval (RAG) for this purpose):
-
-```
-debgpt -Hx ldo:debian-project/2024/10 -a 'write a news report based on the provided information. Cover as many topics as possible. You may expand a little bit on important matter. You must include links for every topic to the report.' --no-render
-```
-
-* Load the latest sbuild log file and ask a question
-```
-debgpt -Hx sbuild: -A 'why does the build fail? do you have any suggestion?'
-```
-
-* Google search: `-x google:` will use your prompt as the search query, and answer your question after reading the search results
-```
-debgpt -Hx google: -a 'how to start python programming?'
-```
-
-* Google search: `-x google:<search_query>` gives more control over the search query. Here we let LLM answer the question provided by `-a` based on the search results of "debian packaging".
-```
-debgpt -Hx google:'debian packaging' -a 'how to learn debian packaging?'
-```
+The full list of supported reader specs, as well as corresponding examples, can
+be printed using `debgpt -f :`, or `debgpt -f "?"`, or `debgpt -x :`.
 
 The `-H` argument will skip printing the first prompt generated by `debgpt`,
 because it is typically very lengthy, and only useful for debugging and
 development purpose.  To further tweak the mapreduce behavior, you may want to
 check the `--mapreduce_chunksize <int>` and `--mapreduce_parallelism <int>`
 arguments.
-
 
 
 #### 6. Piping through Everywhere
