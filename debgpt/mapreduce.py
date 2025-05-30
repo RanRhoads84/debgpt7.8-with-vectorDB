@@ -101,6 +101,7 @@ def pad_chunks_before_map(chunks: List[Entry], question: str) -> str:
     template += '\n\n\n'
     for chunk in chunks:
         template += chunk.wrapfun_chunk(chunk.content)
+        template += '\n\n'  # add some separation between chunks
     return template
 
 
