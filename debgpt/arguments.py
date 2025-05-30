@@ -159,6 +159,14 @@ it to web-based LLMs in that case.")
                                           'render_markdown',
                                           formatter=lambda x: str(x).lower())
 
+    _g.add_argument('--vertical_overflow',
+                    type=str,
+                    default=conf['vertical_overflow'],
+                    choices=('ellipsis', 'visible'),
+                    help='vertical overflow behavior for rich Live output. See https://rich.readthedocs.io/en/stable/live.html#vertical-overflow')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'vertical_overflow')
+
     # LLM Inference Arguments
     config_template += '''\n
 #############################

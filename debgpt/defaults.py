@@ -55,6 +55,7 @@ class Config(object):
             'debgpt_home': HOME,
             'monochrome': False,
             'render_markdown': True,
+            'vertical_overflow': 'visible',  # 'visible' or 'ellipsis'
             # LLM Inference Parameters
             'temperature': 0.5,
             'top_p': 0.7,
