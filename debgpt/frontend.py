@@ -269,7 +269,7 @@ class OpenAIFrontend(AbstractFrontend):
             think, chunks = [], []
             cursor = chunks
             if self.render_markdown:
-                with Live(Markdown('')) as live:
+                with Live(Markdown(''), vertical_overflow='visible') as live:
                     time_start_end[0] = time.time()
                     for chunk in completion:
                         if hasattr(chunk.choices[0].delta, 'reasoning_content'):
@@ -394,7 +394,7 @@ class AnthropicFrontend(AbstractFrontend):
                                              max_tokens=self.max_tokens,
                                              **self.kwargs) as stream:
                 if self.render_markdown:
-                    with Live(Markdown('')) as live:
+                    with Live(Markdown(''), vertical_overflow='visible') as live:
                         for chunk in stream.text_stream:
                             chunks.append(chunk)
                             live.update(Markdown(''.join(chunks)),
@@ -473,7 +473,7 @@ class GoogleFrontend(AbstractFrontend):
                                               stream=True,
                                               generation_config=self.kwargs)
             if self.render_markdown:
-                with Live(Markdown('')) as live:
+                with Live(Markdown(''), vertical_overflow='visible') as live:
                     for chunk in response:
                         chunks.append(chunk.text)
                         live.update(Markdown(''.join(chunks)), refresh=True)
