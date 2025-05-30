@@ -521,38 +521,40 @@ using the `--frontend|-F` argument.",
     extra = _request_frontend_specific_config(frontend)
     conf.update(extra)
 
-    # step 3: ask for the embedding frontend
-    embedding_frontends = [
-        'OpenAI    | commercial,  OpenAI-API',
-        'Google    | commercial,  Google-API',
-        'Random    | debug,       DebGPT built-in',
-    ]
-    embedding_frontends_focus = {
-        'openai': 0,
-        'google': 1,
-        'random': 2,
-    }[default['embedding_frontend']]
-    embedding_frontend = SingleChoice(
-        "DebGPT Configurator",
-        "Select an embedding frontend that DebGPT will use:",
-        embedding_frontends,
-        "An embedding model turns text into vector embeddings, \
-unlocking use cases like search. Choose a frontend that will compute the \
-embedding vectors.\n\n\
-The embedding frontend can be different from the frontend.\n\n\
-If you are not going to use the embedding-realted feature, such as vectordb,\
-retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'.",
-        "Press Enter to confirm. Press Esc to abort.",
-        focus=embedding_frontends_focus).run()
-    _abort_on_None(embedding_frontend)
-    embedding_frontend = embedding_frontend.split(' ')[0].lower()
-    conf['embedding_frontend'] = embedding_frontend
-
-    # step 4: ask for the embedding frontend-specific configuration
-    newconf = _request_frontend_specific_config(embedding_frontend,
-                                                conf,
-                                                is_embedding=True)
-    conf.update(newconf)
+#    # TODO: only ask for the embedding frontend-specific configuration
+#    #       when the embedding frontend is really used.
+#    # step 3: ask for the embedding frontend
+#    embedding_frontends = [
+#        'OpenAI    | commercial,  OpenAI-API',
+#        'Google    | commercial,  Google-API',
+#        'Random    | debug,       DebGPT built-in',
+#    ]
+#    embedding_frontends_focus = {
+#        'openai': 0,
+#        'google': 1,
+#        'random': 2,
+#    }[default['embedding_frontend']]
+#    embedding_frontend = SingleChoice(
+#        "DebGPT Configurator",
+#        "Select an embedding frontend that DebGPT will use:",
+#        embedding_frontends,
+#        "An embedding model turns text into vector embeddings, \
+#unlocking use cases like search. Choose a frontend that will compute the \
+#embedding vectors.\n\n\
+#The embedding frontend can be different from the frontend.\n\n\
+#If you are not going to use the embedding-realted feature, such as vectordb,\
+#retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'.",
+#        "Press Enter to confirm. Press Esc to abort.",
+#        focus=embedding_frontends_focus).run()
+#    _abort_on_None(embedding_frontend)
+#    embedding_frontend = embedding_frontend.split(' ')[0].lower()
+#    conf['embedding_frontend'] = embedding_frontend
+#
+#    # step 4: ask for the embedding frontend-specific configuration
+#    newconf = _request_frontend_specific_config(embedding_frontend,
+#                                                conf,
+#                                                is_embedding=True)
+#    conf.update(newconf)
 
     # step 3: ask for the common CLI behavior configuration
     extra = _request_common_cli_behavior_config()
