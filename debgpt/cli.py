@@ -22,6 +22,7 @@ from rich.markup import escape
 from rich.panel import Panel
 from rich.rule import Rule
 from typing import Optional
+import argparse
 import difflib
 import functools as ft
 import os
@@ -347,7 +348,10 @@ def main(argv=sys.argv[1:]):
     ag = arguments.parse_args(argv)
     ag_order = arguments.parse_args_order(argv)
     if ag.verbose:
-        console.log('Arguments:', ag)
+        ag_filtered = {k: v for (k, v) in vars(ag).items()
+                       if k not in ('config_template')}
+        ag_filtered = argparse.Namespace(**ag_filtered)
+        console.log('Arguments (filtered):', ag_filtered)
         console.log('Argument Order:', ag_order)
 
     # process --version (if any) and exit normally.
