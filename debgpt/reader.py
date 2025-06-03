@@ -660,6 +660,9 @@ def google_search(query: str) -> List[str]:
 
 def read_google(spec: str, *, verbose: bool = False) -> List[Tuple[str, str]]:
     urls = google_search(spec)
+    if not urls:
+        console.log(f'No Google Search Results for {repr(spec)}.')
+        return []
     if verbose:
         console.log(f'Google Search Results for {repr(spec)}:', urls)
     else:

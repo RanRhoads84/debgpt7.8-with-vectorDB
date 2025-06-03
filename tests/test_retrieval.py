@@ -28,7 +28,10 @@ def test_vectorretriever_add(tmpdir):
     conf = defaults.Config()
     conf.db = os.path.join(tmpdir, 'test.db')
     embedding_frontend = conf.embedding_frontend
-    api_key = conf[f'{embedding_frontend}_api_key']
+    if embedding_frontend == 'random':
+        api_key = 'random-key'
+    else:
+        api_key = conf[f'{embedding_frontend}_api_key']
     if api_key.startswith('your-') and api_key.endswith('-key'):
         pytest.skip(f'API Key for {embedding_frontend} not configured')
     retriever = retrieval.VectorRetriever(conf)
@@ -37,6 +40,8 @@ def test_vectorretriever_add(tmpdir):
         retriever.add(f'temp{i}', f'fruit{i}')
 
 
+@pytest.mark.skipif(defaults.Config().embedding_frontend == 'random',
+                    reason='this case is pointless for Random embedding')
 def test_vectorretriever_retrieve_onfly(tmpdir):
     conf = defaults.Config()
     conf.db = os.path.join(tmpdir, 'test.db')
@@ -62,6 +67,8 @@ def test_vectorretriever_retrieve_onfly(tmpdir):
     print(results)
 
 
+@pytest.mark.skipif(defaults.Config().embedding_frontend == 'random',
+                    reason='this case is pointless for Random embedding')
 def test_vectorretriever_retrieve_from_db(tmpdir):
     conf = defaults.Config()
     conf.db = os.path.join(tmpdir, 'test.db')
