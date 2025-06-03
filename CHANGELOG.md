@@ -1,6 +1,23 @@
 Changelog
 =========
 
+v0.7.8 -- 2025-06-02
+--------------------
+
+Minor updates:
+
+* reader: support range syntax for ldo_threads reader (Closes: #31)
+* reader: properly deal with "next page" for ldo threads. (Closes: #37)
+* Make streaming output always visible by default. This behavior of rich.Live
+  vertical_overflow behavior is make configurable through cmd line arguments.
+* configurator: do not configure embedding frontend until the cli really
+  uses the embedding model.
+* Update and simplify documentation in readme.
+* frontend: report generation tokens per second for the openai frontend
+  when verbose. (Closes: #51)
+* Simplify verbose mode printing.
+* Misc updates for the unit tests and eliminating Ruff warnings.
+
 v0.7.7 -- 2025-05-03
 --------------------
 
