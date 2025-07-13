@@ -49,10 +49,9 @@ TABLE OF CONTENTS
   - [9. Debian Specific Usage Cases](#9-debian-specific-usage-cases)
 - [TROUBLESHOOTING](#troubleshooting)
 - [BACKENDS](#backends)
-  * [Available Backend Implementations](#available-backend-implementations)
-  * [LLM Selections](#llm-selections)
-  * [Hardware Requirements](#hardware-requirements)
-  * [Usage of the ZMQ Backend](#usage-of-the-zmq-backend)
+  * [Ollama](#ollama)
+  * [llamaFile](#llamafile)
+  * [ZMQ (DebGPT Built-in)](#zmq-debgpt-built-in)
 - [REFERENCES](#references)
 - [LICENSE and ACKNOWLEDGEMENT](#license-and-acknowledgement)
 
