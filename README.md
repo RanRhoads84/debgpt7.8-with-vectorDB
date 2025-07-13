@@ -48,7 +48,7 @@ TABLE OF CONTENTS
   - [8. Prompt Engineering](#8-prompt-engineering)
   - [9. Debian Specific Usage Cases](#9-debian-specific-usage-cases)
 - [TROUBLESHOOTING](#troubleshooting)
-- [BACKEND](#backend)
+- [BACKENDS](#backends)
   * [Available Backend Implementations](#available-backend-implementations)
   * [LLM Selections](#llm-selections)
   * [Hardware Requirements](#hardware-requirements)
