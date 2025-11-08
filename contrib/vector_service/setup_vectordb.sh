@@ -150,7 +150,7 @@ fallback_startup() {
     echo "[WARN] qdrant binary not found; cannot perform manual start." >&2
   fi
 
-  local vector_cmd="PYTHONPATH=/usr/lib/debgpt/vector-service/site-packages /usr/bin/python3 -m debgpt.vector_service.__main__"
+  local env_file="/etc/debgpt/vector-service.env"
   echo "[*] Ensuring DebGPT vector service is running..."
   if pgrep -f 'debgpt.vector_service.__main__' >/dev/null 2>&1; then
     echo "[+] DebGPT vector service already running; skipping manual start."
@@ -158,20 +158,35 @@ fallback_startup() {
   fi
 
   install -d -o debgpt -g debgpt /var/log/debgpt
-  local launch_cmd="cd /usr/lib/debgpt && ${vector_cmd} >/var/log/debgpt/vector-service.log 2>&1 &"
+  local launch_script="/tmp/debgpt-vector-manual-start.sh"
+  cat >"${launch_script}" <<'EOF'
+#!/bin/sh
+set -e
+set -a
+[ -r /etc/debgpt/vector-service.env ] && . /etc/debgpt/vector-service.env
+set +a
+export PYTHONPATH=/usr/lib/debgpt/vector-service/site-packages
+cd /usr/lib/debgpt || exit 1
+nohup /usr/bin/python3 -m debgpt.vector_service.__main__ >> /var/log/debgpt/vector-service.log 2>&1 &
+EOF
+  chown debgpt:debgpt "${launch_script}"
+  chmod 0750 "${launch_script}"
+
   if command -v runuser >/dev/null 2>&1; then
-    if runuser -u debgpt -- sh -c "${launch_cmd}"; then
+    if runuser -u debgpt -- "${launch_script}"; then
       sleep 2
     else
       echo "[WARN] runuser failed to launch the vector service." >&2
     fi
   else
-    if su -s /bin/sh debgpt -c "${launch_cmd}"; then
+    if su -s /bin/sh debgpt -c "${launch_script}"; then
       sleep 2
     else
       echo "[WARN] su failed to launch the vector service." >&2
     fi
   fi
+
+  rm -f "${launch_script}"
 
   if pgrep -f 'debgpt.vector_service.__main__' >/dev/null 2>&1; then
     echo "[+] DebGPT vector service manual launch succeeded."
