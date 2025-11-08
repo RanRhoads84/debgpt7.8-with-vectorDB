@@ -1,5 +1,5 @@
 /usr/share/debgpt/vector_service
 /etc/debgpt
-/lib/systemd/system
+/usr/lib/systemd/system
 /usr/lib/tmpfiles.d
 /usr/lib/debgpt/vector-service
