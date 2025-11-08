@@ -179,19 +179,20 @@ ONE-SHOT DEBIAN INSTALL (CLI + VECTOR SERVICE)
 For a turnkey setup on Debian 13 (trixie) that installs the terminal client,
 the FastAPI vector microservice, and a Qdrant backend in one go:
 
-1. Install the locally built packages together with Qdrant:
+1. Install the locally built packages:
 
   ```
   sudo apt install ./debgpt_0.7.8~vector1_all.deb \
-              ./debgpt-vector-service_0.7.8~vector1_all.deb \
-              qdrant
+              ./debgpt-vector-service_0.7.8~vector1_all.deb
   ```
 
   If you are pulling artifacts from CI, copy the `.deb` files to the target
   machine first and adjust the filenames above as newer versions appear.
 
-  Tip: `contrib/vector_service/setup_vectordb.sh` automates adding the Qdrant
-  repository, installing the package, and restarting the services.
+  Tip: `contrib/vector_service/setup_vectordb.sh` automatically discovers the
+  latest Qdrant release from GitHub (override via `QDRANT_VERSION` or
+  `QDRANT_DEB_URL` if you need something specific), installs it, and restarts
+  the services for you.
 
 2. Enable and start the services:
 

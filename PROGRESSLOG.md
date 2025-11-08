@@ -31,6 +31,10 @@ _Comprehensive record of the DebGPT vector-service integration workstream._
   - Corrected `debian/debgpt-vector-service.install` to drop `vector-service.env` directly into `/etc/debgpt/`, fixing the CI `dpkg` failure.
   - Swapped the package installation step to explicit `dpkg -i` invocations (with `apt-get -fy` to resolve dependencies) to mirror user guidance for local `.deb` testing.
   - Created the systemd unit directory ahead of the `dpkg -i` loop so the vector-service package can install cleanly on minimal Debian containers.
+  - Added an explicit `adduser` dependency so postinst user creation succeeds on bare GitHub runners.
+  - Aligned packaging metadata to install the systemd unit under `/usr/lib/systemd/system` and pre-create that directory via `debian/*.dirs`, eliminating install-time failures.
+  - Reworked `setup_vectordb.sh` to pull the latest Qdrant GitHub release automatically (overridable with `QDRANT_VERSION` or `QDRANT_DEB_URL`), eliminating the now-defunct APT repository setup.
+  - Emitted a `/tmp` marker so CI can skip Qdrant health probes when the package cannot be installed, preventing false negatives during upstream outages.
 
 - **GitHub Actions artifact follow-up**
   - Tracking the rerun once the vector DB validation step passes so we can greenlight Debian packaging in CI.

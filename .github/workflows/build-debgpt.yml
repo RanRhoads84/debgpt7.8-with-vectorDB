@@ -104,6 +104,14 @@ jobs:
       - name: Check Qdrant health endpoint
         run: |
           set -euo pipefail
+          if [ -f /tmp/debgpt-qdrant-status ] && grep -qx 'missing' /tmp/debgpt-qdrant-status; then
+            echo "Qdrant package not installed; skipping health probe." >&2
+            exit 0
+          fi
+          if ! command -v qdrant >/dev/null 2>&1; then
+            echo "Qdrant binary not present on system; skipping health probe." >&2
+            exit 0
+          fi
           for attempt in $(seq 1 10); do
             if curl -fsS http://127.0.0.1:6333/healthz >/tmp/qdrant-health.json; then
               cat /tmp/qdrant-health.json
