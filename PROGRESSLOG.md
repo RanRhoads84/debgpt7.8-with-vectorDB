@@ -4,6 +4,13 @@ _Comprehensive record of the DebGPT vector-service integration workstream._
 
 ## 2025-11-08
 
+- **GitHub Actions build fix**
+  - Removed `shopt` usage from `.github/workflows/build-debgpt.yml` so artifact collection works under POSIX `/bin/sh` in the Debian container.
+  - Waiting on the rerun to confirm the packaging job now completes.
+
+- **Progress tracking**
+  - Updated this log to capture the build workflow change and keep stakeholders informed during the rerun window.
+
 - **Stabilized HTTP retrieval stack**
   - Broadened reader Accept headers and added PDF handling to unblock network-dependent tests (`tests/test_reader.py`).
   - Ensured `pypdf` support so PDF fetches parse correctly during regression test runs.
@@ -41,3 +48,9 @@ _Comprehensive record of the DebGPT vector-service integration workstream._
   - Measured retrieval prompt footprint (~110–120 tokens per snippet) to guide `--vector_service_top_k` tuning, especially for high-context-window models.
 
 This log captures the sequence of code, tooling, and validation tasks performed to bring DebGPT’s vector-service integration to a fully testable state.
+
+## 2025-07-13
+
+- **README link maintenance**
+  - Corrected an internal anchor so navigation within `README.md` doesn’t break after recent section renames (`6a14224`).
+  - Fixed backend section hyperlinks to point at the proper anchors and external references, keeping setup guidance accurate (`4a8e0c8`).
