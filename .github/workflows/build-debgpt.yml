@@ -93,22 +93,23 @@ jobs:
           set -euo pipefail
           find . -maxdepth 1 -type f -name '*.deb' -ls
 
-      - name: Install generated packages
+      - name: Install built Debian packages
         run: |
           set -euo pipefail
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
-          DEB_LIST=$(find . -maxdepth 1 -type f \( -name "debgpt_*.deb" -o -name "debgpt-vector-service_*.deb" \) -print | sort)
-          if [ -z "${DEB_LIST}" ]; then
-            echo "No Debian packages found in workspace" >&2
+          apt-get install -y adduser
+          DEB_DEB=$(find . -maxdepth 1 -type f -name "debgpt_*.deb" | sort | head -n 1)
+          DEB_VEC=$(find . -maxdepth 1 -type f -name "debgpt-vector-service_*.deb" | sort | head -n 1)
+          if [ -z "${DEB_DEB}" ] || [ -z "${DEB_VEC}" ]; then
+            echo "Required .deb files not found in workspace" >&2
             exit 1
           fi
-          mkdir -p /usr/lib/systemd/system
-          for pkg in ${DEB_LIST}; do
-            echo "Installing ${pkg} with dpkg -i"
-            dpkg -i "${pkg}" || true
-          done
+          echo "Installing ${DEB_DEB} and ${DEB_VEC}"
+          dpkg -i "${DEB_DEB}" || true
+          dpkg -i "${DEB_VEC}" || true
           apt-get install -fy
+
 
       # - name: Verify package signatures
       #   run: |
