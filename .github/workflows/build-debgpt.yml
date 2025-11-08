@@ -2,18 +2,14 @@ name: Build DebGPT Packages
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [debian:trixie]
     container:
-      image: ${{ matrix.os }}
+      image: debian:trixie
 
     steps:
       - name: Cache APT archives
@@ -28,59 +24,32 @@ jobs:
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
           apt-get install -y --no-install-recommends \
-            bash \
-            build-essential \
-            ca-certificates \
-            curl \
-            debhelper \
-            dpkg-dev \
-            fakeroot \
-            devscripts \
-            equivs \
-            git \
-            lintian \
-            procps \
-            python3 \
-            python3-pip \
-            python3-setuptools \
-            python3-venv \
-            python3-wheel
+            bash build-essential ca-certificates curl debhelper dpkg-dev fakeroot \
+            devscripts equivs git lintian procps python3 python3-pip python3-setuptools \
+            python3-venv python3-wheel jq
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install package build-dependencies
         run: |
-          if [ -d debgpt7.8-src/debian ]; then
-            BUILD_DIR="debgpt7.8-src"
-          else
-            BUILD_DIR="."
-          fi
+          BUILD_DIR="."
+          [ -d debgpt7.8-src/debian ] && BUILD_DIR="debgpt7.8-src"
           echo "Installing build dependencies from ${BUILD_DIR}/debian/control"
-          (cd "$BUILD_DIR" && mk-build-deps -i -r -t "apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y" debian/control)
+          (cd "$BUILD_DIR" && mk-build-deps -i -r -t "apt-get --no-install-recommends -y" debian/control)
           (cd "$BUILD_DIR" && rm -f ./*-build-deps_*.deb)
 
       - name: Build Debian packages
         run: |
-          echo "::group::Workspace contents"
-          ls -al
-          echo "::endgroup::"
           ROOT_DIR=$(pwd)
-          if [ -d debgpt7.8-src/debian ]; then
-            BUILD_DIR="debgpt7.8-src"
-          else
-            BUILD_DIR="."
-          fi
+          BUILD_DIR="."
+          [ -d debgpt7.8-src/debian ] && BUILD_DIR="debgpt7.8-src"
           echo "Building from ${BUILD_DIR}"
-          (cd "$BUILD_DIR" && dpkg-buildpackage -us -uc)
-          ARTIFACT_SOURCE=$(cd "$BUILD_DIR" && cd .. && pwd)
-          if [ "${ARTIFACT_SOURCE}" != "${ROOT_DIR}" ]; then
-            find "${ARTIFACT_SOURCE}" -maxdepth 1 -type f \
-              \( -name '*.changes' -o -name '*.deb' -o -name '*.dsc' \) \
-              -exec mv {} "${ROOT_DIR}/" \;
-            find "${ARTIFACT_SOURCE}" -maxdepth 1 -type f -name '*.tar.*' \
-              -exec mv {} "${ROOT_DIR}/" \;
-          fi
+          (cd "$BUILD_DIR" && fakeroot dpkg-buildpackage -us -uc)
+          ARTIFACT_SRC=$(cd "$BUILD_DIR" && cd .. && pwd)
+          [ "${ARTIFACT_SRC}" != "${ROOT_DIR}" ] && find "${ARTIFACT_SRC}" -maxdepth 1 -type f \
+            \( -name '*.deb' -o -name '*.changes' -o -name '*.dsc' -o -name '*.tar.*' \) \
+            -exec mv {} "${ROOT_DIR}/" \;
 
       - name: Prepare environment
         run: |
@@ -93,37 +62,33 @@ jobs:
           set -euo pipefail
           find . -maxdepth 1 -type f -name '*.deb' -ls
 
-      - name: Install generated packages
+      - name: Install generated packages (ordered)
         run: |
           set -euo pipefail
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
 
-          DEB_CORE=$(find . -maxdepth 1 -type f -name "debgpt_*.deb" -print | sort)
-          DEB_VECTOR=$(find . -maxdepth 1 -type f -name "debgpt-vector-service_*.deb" -print | sort)
+          DEB_CORE=$(find . -maxdepth 1 -type f -name "debgpt_*.deb" | sort)
+          DEB_VECTOR=$(find . -maxdepth 1 -type f -name "debgpt-vector-service_*.deb" | sort)
 
           if [ -z "${DEB_CORE}${DEB_VECTOR}" ]; then
             echo "No Debian packages found in workspace" >&2
             exit 1
           fi
-
           if [ -z "${DEB_CORE}" ]; then
-            echo "ERROR: debgpt package (debgpt_*.deb) not found in workspace; cannot continue." >&2
+            echo "ERROR: debgpt package not found; cannot continue." >&2
             exit 1
           fi
 
           mkdir -p /usr/lib/systemd/system
-
-          echo "Installing core packages (debgpt)..."
+          echo "Installing core package(s)..."
           for pkg in ${DEB_CORE}; do
-            echo "dpkg -i ${pkg}"
             dpkg -i "${pkg}" || true
           done
 
           if [ -n "${DEB_VECTOR}" ]; then
-            echo "Installing vector-service packages..."
+            echo "Installing vector-service package(s)..."
             for pkg in ${DEB_VECTOR}; do
-              echo "dpkg -i ${pkg}"
               dpkg -i "${pkg}" || true
             done
           else
@@ -131,11 +96,9 @@ jobs:
           fi
 
           apt-get install -fy
-
-
-      # - name: Verify package signatures
-      #   run: |
-      #     echo "TODO: implement GPG verification for downloaded .deb files"
+          echo "Package status summary:"
+          dpkg -l | grep -E 'debgpt|qdrant' || true
+          dpkg --audit || true
 
       - name: Run vector DB bootstrapper
         id: bootstrap_vectordb
@@ -143,24 +106,20 @@ jobs:
           SKIP_SYSTEMCTL: "1"
         run: |
           set -euo pipefail
+          if ! dpkg-query -W -f='${Status}' debgpt 2>/dev/null | grep -q "install ok installed"; then
+            echo "debgpt package not installed/configured; aborting vector DB bootstrap." >&2
+            dpkg --audit || true
+            exit 2
+          fi
           /usr/share/debgpt/vector_service/setup_vectordb.sh
 
       - name: Bootstrap failure diagnostics
         if: failure() && steps.bootstrap_vectordb.outcome == 'failure'
         run: |
           set -euo pipefail
-          if [ -f /var/log/qdrant/standalone.log ]; then
-            echo '--- tail /var/log/qdrant/standalone.log ---'
-            tail -n 20 /var/log/qdrant/standalone.log
-          fi
-          if [ -f /var/log/debgpt/vector-service.log ]; then
-            echo '--- tail /var/log/debgpt/vector-service.log ---'
-            tail -n 20 /var/log/debgpt/vector-service.log
-          fi
-          if [ -f /tmp/debgpt-qdrant-status ]; then
-            echo '--- /tmp/debgpt-qdrant-status ---'
-            cat /tmp/debgpt-qdrant-status
-          fi
+          for f in /var/log/qdrant/standalone.log /var/log/debgpt/vector-service.log /tmp/debgpt-qdrant-status; do
+            [ -f "$f" ] && { echo "--- $f ---"; tail -n 20 "$f"; }
+          done
 
       - name: Ensure Qdrant is running
         run: |
@@ -170,10 +129,8 @@ jobs:
             exit 0
           fi
           if ! dpkg-query -W -f='${Status}' qdrant 2>/dev/null | grep -q "install ok installed"; then
-            if command -v qdrant >/dev/null 2>&1; then
-              echo "Qdrant binary present but package status unknown; continuing with manual checks." >&2
-            else
-              echo "Qdrant not installed on system; skipping startup attempts." >&2
+            if ! command -v qdrant >/dev/null 2>&1; then
+              echo "Qdrant not installed; skipping startup attempts." >&2
               exit 0
             fi
           fi
@@ -181,44 +138,31 @@ jobs:
             systemctl start qdrant || true
           fi
           if ! pgrep -f '^qdrant' >/dev/null 2>&1; then
-            if command -v qdrant >/dev/null 2>&1; then
-              echo "Starting qdrant manually via nohup"
-              nohup qdrant --config /etc/qdrant/config.yaml >/var/log/qdrant/standalone.log 2>&1 &
-            else
-              echo "Qdrant binary not found; skipping manual start"
-            fi
+            echo "Starting qdrant manually"
+            nohup qdrant --config /etc/qdrant/config.yaml >/var/log/qdrant/standalone.log 2>&1 &
           fi
-          HEALTH_OK=0
-          for i in $(seq 1 12); do
-            if curl -fsS http://127.0.0.1:6333/healthz >/tmp/qdrant-health.json 2>/dev/null; then
+
+          echo "Waiting for Qdrant to become healthy..."
+          timeout=60
+          interval=5
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            if curl -fsS http://127.0.0.1:6333/healthz -o /tmp/qdrant-health.json 2>/dev/null; then
+              echo "Qdrant is healthy:"
               cat /tmp/qdrant-health.json
-              HEALTH_OK=1
-              break
+              exit 0
             fi
-            sleep 5
+            sleep $interval
+            elapsed=$((elapsed + interval))
           done
-          if [ "${HEALTH_OK}" -eq 0 ]; then
-            echo "Qdrant health endpoint did not respond within 60s" >&2
-          fi
+          echo "Qdrant health endpoint did not respond within ${timeout}s" >&2
+          exit 1
 
       - name: Validate vector-service environment configuration
         run: |
           set -euo pipefail
           grep -qx 'QDRANT_URL=http://127.0.0.1:6333' /etc/debgpt/vector-service.env
           grep -qx 'QDRANT_COLLECTION=chat_messages' /etc/debgpt/vector-service.env
-
-      - name: Check Qdrant health endpoint
-        run: |
-          set -euo pipefail
-          if [ -f /tmp/debgpt-qdrant-status ] && grep -qx 'missing' /tmp/debgpt-qdrant-status; then
-            echo "Qdrant package not installed; skipping health probe." >&2
-            exit 0
-          fi
-          if ! command -v qdrant >/dev/null 2>&1; then
-            echo "Qdrant binary not present on system; skipping health probe." >&2
-            exit 0
-          fi
-          curl -fsS --retry 5 --retry-delay 2 --retry-all-errors http://127.0.0.1:6333/healthz | tee /tmp/qdrant-health.json
 
       - name: Check DebGPT vector service health endpoint
         run: |
