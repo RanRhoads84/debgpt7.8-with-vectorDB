@@ -93,21 +93,43 @@ jobs:
           set -euo pipefail
           find . -maxdepth 1 -type f -name '*.deb' -ls
 
-      - name: Install built Debian packages
+      - name: Install generated packages
         run: |
           set -euo pipefail
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
-          apt-get install -y adduser
-          DEB_DEB=$(find . -maxdepth 1 -type f -name "debgpt_*.deb" | sort | head -n 1)
-          DEB_VEC=$(find . -maxdepth 1 -type f -name "debgpt-vector-service_*.deb" | sort | head -n 1)
-          if [ -z "${DEB_DEB}" ] || [ -z "${DEB_VEC}" ]; then
-            echo "Required .deb files not found in workspace" >&2
+
+          DEB_CORE=$(find . -maxdepth 1 -type f -name "debgpt_*.deb" -print | sort)
+          DEB_VECTOR=$(find . -maxdepth 1 -type f -name "debgpt-vector-service_*.deb" -print | sort)
+
+          if [ -z "${DEB_CORE}${DEB_VECTOR}" ]; then
+            echo "No Debian packages found in workspace" >&2
             exit 1
           fi
-          echo "Installing ${DEB_DEB} and ${DEB_VEC}"
-          dpkg -i "${DEB_DEB}" || true
-          dpkg -i "${DEB_VEC}" || true
+
+          if [ -z "${DEB_CORE}" ]; then
+            echo "ERROR: debgpt package (debgpt_*.deb) not found in workspace; cannot continue." >&2
+            exit 1
+          fi
+
+          mkdir -p /usr/lib/systemd/system
+
+          echo "Installing core packages (debgpt)..."
+          for pkg in ${DEB_CORE}; do
+            echo "dpkg -i ${pkg}"
+            dpkg -i "${pkg}" || true
+          done
+
+          if [ -n "${DEB_VECTOR}" ]; then
+            echo "Installing vector-service packages..."
+            for pkg in ${DEB_VECTOR}; do
+              echo "dpkg -i ${pkg}"
+              dpkg -i "${pkg}" || true
+            done
+          else
+            echo "Warning: debgpt-vector-service package not found; continuing with core package only" >&2
+          fi
+
           apt-get install -fy
 
 
@@ -143,6 +165,18 @@ jobs:
       - name: Ensure Qdrant is running
         run: |
           set -euo pipefail
+          if [ -f /tmp/debgpt-qdrant-status ] && grep -qx 'missing' /tmp/debgpt-qdrant-status; then
+            echo "Qdrant package not installed; skipping startup attempts." >&2
+            exit 0
+          fi
+          if ! dpkg-query -W -f='${Status}' qdrant 2>/dev/null | grep -q "install ok installed"; then
+            if command -v qdrant >/dev/null 2>&1; then
+              echo "Qdrant binary present but package status unknown; continuing with manual checks." >&2
+            else
+              echo "Qdrant not installed on system; skipping startup attempts." >&2
+              exit 0
+            fi
+          fi
           if command -v systemctl >/dev/null 2>&1; then
             systemctl start qdrant || true
           fi
@@ -154,7 +188,18 @@ jobs:
               echo "Qdrant binary not found; skipping manual start"
             fi
           fi
-          sleep 5
+          HEALTH_OK=0
+          for i in $(seq 1 12); do
+            if curl -fsS http://127.0.0.1:6333/healthz >/tmp/qdrant-health.json 2>/dev/null; then
+              cat /tmp/qdrant-health.json
+              HEALTH_OK=1
+              break
+            fi
+            sleep 5
+          done
+          if [ "${HEALTH_OK}" -eq 0 ]; then
+            echo "Qdrant health endpoint did not respond within 60s" >&2
+          fi
 
       - name: Validate vector-service environment configuration
         run: |

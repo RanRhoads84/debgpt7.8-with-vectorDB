@@ -13,6 +13,18 @@ if [[ "${EUID}" -ne 0 ]]; then
   exit 1
 fi
 
+if ! dpkg-query -W -f='${Status}' debgpt 2>/dev/null | grep -q "install ok installed"; then
+  echo "[ERROR] debgpt package not installed/configured; aborting vector DB bootstrap." >&2
+  dpkg --audit || true
+  exit 2
+fi
+
+if ! dpkg-query -W -f='${Status}' debgpt-vector-service 2>/dev/null | grep -q "install ok installed"; then
+  echo "[ERROR] debgpt-vector-service package is not fully installed; aborting vector DB bootstrap." >&2
+  dpkg --audit || true
+  exit 2
+fi
+
 VECTOR_ENV="/etc/debgpt/vector-service.env"
 QDRANT_URL="http://127.0.0.1:6333"
 SKIP_SYSTEMCTL="${SKIP_SYSTEMCTL:-0}"
