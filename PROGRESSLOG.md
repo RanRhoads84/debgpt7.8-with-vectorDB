@@ -35,6 +35,7 @@ _Comprehensive record of the DebGPT vector-service integration workstream._
   - Aligned packaging metadata to install the systemd unit under `/usr/lib/systemd/system` and pre-create that directory via `debian/*.dirs`, eliminating install-time failures.
   - Reworked `setup_vectordb.sh` to pull the latest Qdrant GitHub release automatically (overridable with `QDRANT_VERSION` or `QDRANT_DEB_URL`), eliminating the now-defunct APT repository setup.
   - Emitted a `/tmp` marker so CI can skip Qdrant health probes when the package cannot be installed, preventing false negatives during upstream outages.
+  - Added CI smoke checks that print health responses from both Qdrant (`:6333/healthz`) and the DebGPT vector service (`:8000/healthz`) for easier verification in logs.
 
 - **GitHub Actions artifact follow-up**
   - Tracking the rerun once the vector DB validation step passes so we can greenlight Debian packaging in CI.

@@ -108,18 +108,29 @@ jobs:
             echo "Qdrant package not installed; skipping health probe." >&2
             exit 0
           fi
-          if ! command -v qdrant >/dev/null 2>&1; then
+            if ! command -v qdrant >/dev/null 2>&1; then
             echo "Qdrant binary not present on system; skipping health probe." >&2
             exit 0
           fi
           for attempt in $(seq 1 10); do
-            if curl -fsS http://127.0.0.1:6333/healthz >/tmp/qdrant-health.json; then
-              cat /tmp/qdrant-health.json
+            if curl -fsS http://127.0.0.1:6333/healthz | tee /tmp/qdrant-health.json; then
               exit 0
             fi
             sleep 1
           done
           echo "Qdrant health endpoint did not respond in time" >&2
+          exit 1
+
+      - name: Check DebGPT vector service health endpoint
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 10); do
+            if curl -fsS http://127.0.0.1:8000/healthz | tee /tmp/vector-service-health.json; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Vector service health endpoint did not respond in time" >&2
           exit 1
 
       - name: Run lintian
