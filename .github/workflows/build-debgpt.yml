@@ -51,6 +51,45 @@ jobs:
             \( -name '*.deb' -o -name '*.changes' -o -name '*.dsc' -o -name '*.tar.*' \) \
             -exec mv {} "${ROOT_DIR}/" \;
 
+      - name: Verify and install built packages
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+
+          echo "Checking for built .deb packages..."
+          find . -name "*.deb" -ls || true
+
+          DEB_CORE=$(find . -type f -name "debgpt_*.deb" | sort)
+          DEB_VECTOR=$(find . -type f -name "debgpt-vector-service_*.deb" | sort)
+          QDRANT_DEB=$(find . -type f -name "qdrant_*.deb" | sort)
+
+          if [ -z "${DEB_CORE}" ]; then
+            echo "ERROR: debgpt .deb not found in workspace" >&2
+            exit 1
+          fi
+
+          echo "Installing debgpt core package(s)..."
+          dpkg -i ${DEB_CORE} || true
+          apt-get install -fy
+
+          if [ -n "${DEB_VECTOR}" ]; then
+            echo "Installing vector service..."
+            dpkg -i ${DEB_VECTOR} || true
+          else
+            echo "WARNING: debgpt-vector-service not found" >&2
+          fi
+
+          if [ -n "${QDRANT_DEB}" ]; then
+            echo "Installing qdrant package..."
+            dpkg -i ${QDRANT_DEB} || true
+          else
+            echo "WARNING: qdrant .deb not found — setup_vectordb.sh will attempt download" >&2
+          fi
+
+          apt-get install -fy
+          echo "Installed packages summary:"
+          dpkg -l | grep -E 'debgpt|qdrant' || true
+
       - name: Prepare environment
         run: |
           set -euo pipefail
@@ -61,44 +100,6 @@ jobs:
         run: |
           set -euo pipefail
           find . -maxdepth 1 -type f -name '*.deb' -ls
-
-      - name: Install generated packages (ordered)
-        run: |
-          set -euo pipefail
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update
-
-          DEB_CORE=$(find . -maxdepth 1 -type f -name "debgpt_*.deb" | sort)
-          DEB_VECTOR=$(find . -maxdepth 1 -type f -name "debgpt-vector-service_*.deb" | sort)
-
-          if [ -z "${DEB_CORE}${DEB_VECTOR}" ]; then
-            echo "No Debian packages found in workspace" >&2
-            exit 1
-          fi
-          if [ -z "${DEB_CORE}" ]; then
-            echo "ERROR: debgpt package not found; cannot continue." >&2
-            exit 1
-          fi
-
-          mkdir -p /usr/lib/systemd/system
-          echo "Installing core package(s)..."
-          for pkg in ${DEB_CORE}; do
-            dpkg -i "${pkg}" || true
-          done
-
-          if [ -n "${DEB_VECTOR}" ]; then
-            echo "Installing vector-service package(s)..."
-            for pkg in ${DEB_VECTOR}; do
-              dpkg -i "${pkg}" || true
-            done
-          else
-            echo "Warning: debgpt-vector-service package not found; continuing with core package only" >&2
-          fi
-
-          apt-get install -fy
-          echo "Package status summary:"
-          dpkg -l | grep -E 'debgpt|qdrant' || true
-          dpkg --audit || true
 
       - name: Run vector DB bootstrapper
         id: bootstrap_vectordb
@@ -143,10 +144,10 @@ jobs:
           fi
 
           echo "Waiting for Qdrant to become healthy..."
-          timeout=60
+          timeout=120
           interval=5
           elapsed=0
-          while [ $elapsed -lt $timeout ]; do
+          while [ "$elapsed" -lt "$timeout" ]; do
             if curl -fsS http://127.0.0.1:6333/healthz -o /tmp/qdrant-health.json 2>/dev/null; then
               echo "Qdrant is healthy:"
               cat /tmp/qdrant-health.json
