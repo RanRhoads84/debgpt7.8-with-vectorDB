@@ -56,39 +56,83 @@ jobs:
           set -euo pipefail
           export DEBIAN_FRONTEND=noninteractive
 
-          echo "Checking for built .deb packages..."
-          find . -name "*.deb" -ls || true
+          echo "=== Checking for built .deb packages ==="
+          find . -maxdepth 1 -name "*.deb" -ls || true
 
-          DEB_CORE=$(find . -type f -name "debgpt_*.deb" | sort)
-          DEB_VECTOR=$(find . -type f -name "debgpt-vector-service_*.deb" | sort)
-          QDRANT_DEB=$(find . -type f -name "qdrant_*.deb" | sort)
+          DEB_CORE=$(find . -maxdepth 1 -type f -name "debgpt_*.deb" | head -n1)
+          DEB_VECTOR=$(find . -maxdepth 1 -type f -name "debgpt-vector-service_*.deb" | head -n1)
+          QDRANT_DEB=$(find . -maxdepth 1 -type f -name "qdrant_*.deb" | head -n1)
 
           if [ -z "${DEB_CORE}" ]; then
             echo "ERROR: debgpt .deb not found in workspace" >&2
+            echo "Searching for .deb files in parent directories..."
+            find .. -maxdepth 2 -name "*.deb" -ls || true
             exit 1
           fi
 
-          echo "Installing debgpt core package(s)..."
-          dpkg -i ${DEB_CORE} || true
-          apt-get install -fy
+          echo "=== Installing debgpt core package ==="
+          echo "Package: ${DEB_CORE}"
+          if dpkg -i "${DEB_CORE}"; then
+            echo "✓ debgpt package installed successfully"
+          else
+            echo "dpkg reported errors, attempting to fix dependencies..."
+            apt-get install -fy
+          fi
+
+          # Verify debgpt is properly installed before proceeding
+          if dpkg-query -W -f='${Status}' debgpt 2>/dev/null | grep -q "install ok installed"; then
+            echo "✓ debgpt package verification: PASSED"
+          else
+            echo "ERROR: debgpt package not properly installed" >&2
+            dpkg --audit
+            exit 1
+          fi
 
           if [ -n "${DEB_VECTOR}" ]; then
-            echo "Installing vector service..."
-            dpkg -i ${DEB_VECTOR} || true
+            echo "=== Installing debgpt-vector-service package ==="
+            echo "Package: ${DEB_VECTOR}"
+            if dpkg -i "${DEB_VECTOR}"; then
+              echo "✓ debgpt-vector-service package installed successfully"
+            else
+              echo "dpkg reported errors, attempting to fix dependencies..."
+              apt-get install -fy
+            fi
+
+            # Verify debgpt-vector-service is properly installed
+            if dpkg-query -W -f='${Status}' debgpt-vector-service 2>/dev/null | grep -q "install ok installed"; then
+              echo "✓ debgpt-vector-service package verification: PASSED"
+            else
+              echo "WARNING: debgpt-vector-service package not properly installed" >&2
+              dpkg --audit
+            fi
           else
-            echo "WARNING: debgpt-vector-service not found" >&2
+            echo "WARNING: debgpt-vector-service .deb not found in workspace" >&2
           fi
 
           if [ -n "${QDRANT_DEB}" ]; then
-            echo "Installing qdrant package..."
-            dpkg -i ${QDRANT_DEB} || true
+            echo "=== Installing qdrant package ==="
+            echo "Package: ${QDRANT_DEB}"
+            if dpkg -i "${QDRANT_DEB}"; then
+              echo "✓ qdrant package installed successfully"
+            else
+              echo "dpkg reported errors, attempting to fix dependencies..."
+              apt-get install -fy
+            fi
+
+            if dpkg-query -W -f='${Status}' qdrant 2>/dev/null | grep -q "install ok installed"; then
+              echo "✓ qdrant package verification: PASSED"
+            else
+              echo "WARNING: qdrant package not properly installed" >&2
+            fi
           else
-            echo "WARNING: qdrant .deb not found — setup_vectordb.sh will attempt download" >&2
+            echo "INFO: qdrant .deb not found — setup_vectordb.sh will attempt download" >&2
           fi
 
+          echo "=== Final dependency resolution ==="
           apt-get install -fy
-          echo "Installed packages summary:"
-          dpkg -l | grep -E 'debgpt|qdrant' || true
+
+          echo "=== Installed packages summary ==="
+          dpkg -l | grep -E 'debgpt|qdrant' || echo "No debgpt or qdrant packages found in dpkg database"
 
       - name: Prepare environment
         run: |
@@ -107,73 +151,297 @@ jobs:
           SKIP_SYSTEMCTL: "1"
         run: |
           set -euo pipefail
+          echo "=== Pre-bootstrap validation ==="
+          
+          # Check debgpt package installation
           if ! dpkg-query -W -f='${Status}' debgpt 2>/dev/null | grep -q "install ok installed"; then
-            echo "debgpt package not installed/configured; aborting vector DB bootstrap." >&2
+            echo "ERROR: debgpt package not installed/configured; aborting vector DB bootstrap." >&2
+            echo "Package status:"
+            dpkg-query -W -f='${Status}' debgpt 2>&1 || true
             dpkg --audit || true
             exit 2
           fi
+          echo "✓ debgpt package is properly installed"
+
+          # Check debgpt-vector-service package installation
+          if ! dpkg-query -W -f='${Status}' debgpt-vector-service 2>/dev/null | grep -q "install ok installed"; then
+            echo "WARNING: debgpt-vector-service package not installed/configured" >&2
+            echo "Package status:"
+            dpkg-query -W -f='${Status}' debgpt-vector-service 2>&1 || true
+          else
+            echo "✓ debgpt-vector-service package is properly installed"
+          fi
+
+          # Check for setup script
+          if [ ! -f /usr/share/debgpt/vector_service/setup_vectordb.sh ]; then
+            echo "ERROR: setup_vectordb.sh not found at expected location" >&2
+            echo "Contents of /usr/share/debgpt/vector_service/:"
+            ls -la /usr/share/debgpt/vector_service/ 2>&1 || echo "Directory does not exist"
+            exit 2
+          fi
+          echo "✓ setup_vectordb.sh found"
+
+          echo "=== Running setup_vectordb.sh ==="
           /usr/share/debgpt/vector_service/setup_vectordb.sh
 
       - name: Bootstrap failure diagnostics
         if: failure() && steps.bootstrap_vectordb.outcome == 'failure'
         run: |
-          set -euo pipefail
-          for f in /var/log/qdrant/standalone.log /var/log/debgpt/vector-service.log /tmp/debgpt-qdrant-status; do
-            [ -f "$f" ] && { echo "--- $f ---"; tail -n 20 "$f"; }
+          echo "=== Bootstrap Failure Diagnostics ==="
+          
+          echo "=== Package Installation Status ==="
+          dpkg -l | grep -E 'debgpt|qdrant' || echo "No debgpt/qdrant packages found"
+          
+          echo ""
+          echo "=== Detailed Package Status ==="
+          for pkg in debgpt debgpt-vector-service qdrant; do
+            echo "--- $pkg ---"
+            dpkg-query -W -f='${Status}\n' "$pkg" 2>&1 || echo "Package not found"
           done
+          
+          echo ""
+          echo "=== Log Files ==="
+          for f in /var/log/qdrant/standalone.log /var/log/debgpt/vector-service.log /tmp/debgpt-qdrant-status; do
+            if [ -f "$f" ]; then
+              echo "--- Contents of $f ---"
+              tail -n 50 "$f"
+              echo ""
+            else
+              echo "--- $f: NOT FOUND ---"
+            fi
+          done
+          
+          echo ""
+          echo "=== Process Status ==="
+          ps aux | grep -E 'qdrant|debgpt' | grep -v grep || echo "No qdrant or debgpt processes running"
+          
+          echo ""
+          echo "=== Environment Configuration ==="
+          if [ -f /etc/debgpt/vector-service.env ]; then
+            echo "--- /etc/debgpt/vector-service.env ---"
+            cat /etc/debgpt/vector-service.env
+          else
+            echo "--- /etc/debgpt/vector-service.env: NOT FOUND ---"
+          fi
 
       - name: Ensure Qdrant is running
         run: |
           set -euo pipefail
+          echo "=== Qdrant startup and health check ==="
+          
+          # Check if Qdrant was marked as missing by bootstrap script
           if [ -f /tmp/debgpt-qdrant-status ] && grep -qx 'missing' /tmp/debgpt-qdrant-status; then
-            echo "Qdrant package not installed; skipping startup attempts." >&2
+            echo "INFO: Qdrant package not installed (bootstrap reported 'missing'); skipping startup attempts."
             exit 0
           fi
+          
+          # Check if Qdrant package is installed
           if ! dpkg-query -W -f='${Status}' qdrant 2>/dev/null | grep -q "install ok installed"; then
             if ! command -v qdrant >/dev/null 2>&1; then
-              echo "Qdrant not installed; skipping startup attempts." >&2
+              echo "INFO: Qdrant not installed and binary not found; skipping startup attempts."
               exit 0
             fi
+            echo "WARNING: Qdrant binary found but package not properly installed"
+          else
+            echo "✓ Qdrant package is installed"
           fi
+          
+          # Attempt to start Qdrant via systemd if available
           if command -v systemctl >/dev/null 2>&1; then
-            systemctl start qdrant || true
+            echo "Attempting to start qdrant via systemctl..."
+            systemctl start qdrant || echo "systemctl start failed, will try manual start"
           fi
+          
+          # Check if Qdrant is already running, if not start it manually
           if ! pgrep -f '^qdrant' >/dev/null 2>&1; then
-            echo "Starting qdrant manually"
+            echo "Qdrant process not detected, starting manually..."
+            mkdir -p /var/log/qdrant
             nohup qdrant --config /etc/qdrant/config.yaml >/var/log/qdrant/standalone.log 2>&1 &
+            sleep 3
+            
+            if pgrep -f '^qdrant' >/dev/null 2>&1; then
+              echo "✓ Qdrant process started successfully"
+            else
+              echo "WARNING: Unable to confirm Qdrant process is running"
+              echo "Recent log output:"
+              tail -n 20 /var/log/qdrant/standalone.log 2>/dev/null || echo "No log file available"
+            fi
+          else
+            echo "✓ Qdrant process already running"
           fi
 
-          echo "Waiting for Qdrant to become healthy..."
+          echo ""
+          echo "Waiting for Qdrant health endpoint to respond..."
           timeout=120
           interval=5
           elapsed=0
+          attempt=1
           while [ "$elapsed" -lt "$timeout" ]; do
+            echo "Health check attempt $attempt (${elapsed}s elapsed)..."
             if curl -fsS http://127.0.0.1:6333/healthz -o /tmp/qdrant-health.json 2>/dev/null; then
-              echo "Qdrant is healthy:"
+              echo "✓ Qdrant is healthy!"
+              echo "Health response:"
               cat /tmp/qdrant-health.json
               exit 0
             fi
             sleep $interval
             elapsed=$((elapsed + interval))
+            attempt=$((attempt + 1))
           done
-          echo "Qdrant health endpoint did not respond within ${timeout}s" >&2
+          
+          echo "ERROR: Qdrant health endpoint did not respond within ${timeout}s" >&2
+          echo "Final diagnostics:"
+          echo "- Process status:"
+          ps aux | grep qdrant | grep -v grep || echo "  No qdrant process found"
+          echo "- Recent logs:"
+          tail -n 30 /var/log/qdrant/standalone.log 2>/dev/null || echo "  No log file available"
+          echo "- Network connections:"
+          netstat -tlnp 2>/dev/null | grep 6333 || ss -tlnp 2>/dev/null | grep 6333 || echo "  Port 6333 not listening"
           exit 1
 
       - name: Validate vector-service environment configuration
         run: |
           set -euo pipefail
-          grep -qx 'QDRANT_URL=http://127.0.0.1:6333' /etc/debgpt/vector-service.env
-          grep -qx 'QDRANT_COLLECTION=chat_messages' /etc/debgpt/vector-service.env
+          echo "=== Validating vector-service configuration ==="
+          
+          if [ ! -f /etc/debgpt/vector-service.env ]; then
+            echo "ERROR: /etc/debgpt/vector-service.env not found" >&2
+            exit 1
+          fi
+          
+          echo "Configuration file contents:"
+          cat /etc/debgpt/vector-service.env
+          echo ""
+          
+          if grep -qx 'QDRANT_URL=http://127.0.0.1:6333' /etc/debgpt/vector-service.env; then
+            echo "✓ QDRANT_URL is correctly set"
+          else
+            echo "ERROR: QDRANT_URL not properly configured" >&2
+            exit 1
+          fi
+          
+          if grep -qx 'QDRANT_COLLECTION=chat_messages' /etc/debgpt/vector-service.env; then
+            echo "✓ QDRANT_COLLECTION is correctly set"
+          else
+            echo "ERROR: QDRANT_COLLECTION not properly configured" >&2
+            exit 1
+          fi
 
       - name: Check DebGPT vector service health endpoint
         run: |
           set -euo pipefail
-          curl -fsS --retry 5 --retry-delay 2 --retry-all-errors http://127.0.0.1:8000/healthz | tee /tmp/vector-service-health.json
+          echo "=== Checking DebGPT vector service health ==="
+          
+          # Check if the service process is running
+          if pgrep -f 'debgpt.vector_service.__main__' >/dev/null 2>&1; then
+            echo "✓ Vector service process is running"
+          else
+            echo "WARNING: Vector service process not detected"
+            echo "Attempting to check service status via systemctl..."
+            systemctl status debgpt-vector-service.service || true
+          fi
+          
+          echo ""
+          echo "Checking health endpoint (with retries)..."
+          if curl -fsS --retry 5 --retry-delay 2 --retry-all-errors http://127.0.0.1:8000/healthz -o /tmp/vector-service-health.json; then
+            echo "✓ Vector service health check passed!"
+            echo "Health response:"
+            cat /tmp/vector-service-health.json
+          else
+            echo "ERROR: Vector service health check failed" >&2
+            echo "Diagnostics:"
+            echo "- Process status:"
+            ps aux | grep debgpt | grep -v grep || echo "  No debgpt processes found"
+            echo "- Service logs (if available):"
+            tail -n 50 /var/log/debgpt/vector-service.log 2>/dev/null || echo "  No log file available"
+            echo "- Network connections on port 8000:"
+            netstat -tlnp 2>/dev/null | grep 8000 || ss -tlnp 2>/dev/null | grep 8000 || echo "  Port 8000 not listening"
+            exit 1
+          fi
 
       - name: Verify installed DebGPT packages
         run: |
           set -euo pipefail
+          echo "=== Final package verification ==="
           dpkg -l | grep debgpt
+
+      - name: Comprehensive failure diagnostics
+        if: failure()
+        run: |
+          echo "=============================================="
+          echo "=== COMPREHENSIVE CI FAILURE DIAGNOSTICS ==="
+          echo "=============================================="
+          echo ""
+          
+          echo "=== 1. Package Installation Status ==="
+          dpkg -l | grep -E 'debgpt|qdrant' || echo "No debgpt/qdrant packages in dpkg database"
+          echo ""
+          
+          echo "=== 2. Detailed Package Query ==="
+          for pkg in debgpt debgpt-vector-service qdrant; do
+            echo "--- Package: $pkg ---"
+            dpkg-query -W -f='Package: ${Package}\nStatus: ${Status}\nVersion: ${Version}\n' "$pkg" 2>&1 || echo "Package not found in dpkg database"
+            echo ""
+          done
+          
+          echo "=== 3. Built Artifacts in Workspace ==="
+          find . -maxdepth 1 -name "*.deb" -ls || echo "No .deb files found"
+          echo ""
+          
+          echo "=== 4. Process Status ==="
+          echo "All processes containing 'qdrant' or 'debgpt':"
+          ps aux | grep -E 'qdrant|debgpt' | grep -v grep || echo "No matching processes found"
+          echo ""
+          
+          echo "=== 5. Network Status ==="
+          echo "Listening ports (6333 for Qdrant, 8000 for vector service):"
+          netstat -tlnp 2>/dev/null | grep -E '6333|8000' || ss -tlnp 2>/dev/null | grep -E '6333|8000' || echo "Ports not listening"
+          echo ""
+          
+          echo "=== 6. Log Files ==="
+          for logfile in /var/log/qdrant/standalone.log /var/log/debgpt/vector-service.log; do
+            if [ -f "$logfile" ]; then
+              echo "--- Last 50 lines of $logfile ---"
+              tail -n 50 "$logfile"
+              echo ""
+            else
+              echo "--- $logfile: NOT FOUND ---"
+              echo ""
+            fi
+          done
+          
+          echo "=== 7. Configuration Files ==="
+          for conffile in /etc/debgpt/vector-service.env /etc/qdrant/config.yaml /tmp/debgpt-qdrant-status; do
+            if [ -f "$conffile" ]; then
+              echo "--- Contents of $conffile ---"
+              cat "$conffile"
+              echo ""
+            else
+              echo "--- $conffile: NOT FOUND ---"
+              echo ""
+            fi
+          done
+          
+          echo "=== 8. Directory Structure ==="
+          echo "--- /usr/share/debgpt/ ---"
+          ls -laR /usr/share/debgpt/ 2>&1 || echo "Directory does not exist"
+          echo ""
+          
+          echo "=== 9. System Resources ==="
+          echo "Disk usage:"
+          df -h
+          echo ""
+          echo "Memory usage:"
+          free -h
+          echo ""
+          
+          echo "=== 10. dpkg Audit ==="
+          dpkg --audit || echo "dpkg audit completed with errors"
+          echo ""
+          
+          echo "=============================================="
+          echo "=== END OF DIAGNOSTICS ==="
+          echo "=============================================="
 
       - name: Run lintian
         if: always()
