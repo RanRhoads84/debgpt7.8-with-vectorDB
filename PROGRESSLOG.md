@@ -38,6 +38,8 @@ _Comprehensive record of the DebGPT vector-service integration workstream._
   - Added CI smoke checks that print health responses from both Qdrant (`:6333/healthz`) and the DebGPT vector service (`:8000/healthz`) for easier verification in logs.
   - When systemd is unavailable (e.g., SKIP_SYSTEMCTL=1 in CI), the bootstrapper now launches both Qdrant and the vector service manually so the new health probes pass.
   - Simplified the Qdrant installer again to mirror the one-liner GitHub-release flow; earlier attempts to get fancy with JSON parsing broke the URL, so we reverted to the straightforward approach.
+  - Expanded the GitHub Actions workflow to a matrix covering both Debian bookworm and trixie, cached APT archives for faster runs, added an environment prep step (`adduser`, `curl`, `jq`, `procps`), and captured build artifacts with explicit `find` logging to diagnose missing `.deb` files.
+  - Ensured Qdrant is started (via `systemctl` or a nohup fallback) and logged before health checks, with bootstrap diagnostics tailing system logs when the script fails.
 
 - **GitHub Actions artifact follow-up**
   - Tracking the rerun once the vector DB validation step passes so we can greenlight Debian packaging in CI.
