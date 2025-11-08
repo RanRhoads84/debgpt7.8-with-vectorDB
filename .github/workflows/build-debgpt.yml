@@ -28,14 +28,16 @@ jobs:
             python3-wheel
 
       - name: Build Debian packages
-        working-directory: debgpt7.8-src
         run: |
+          cd debgpt7.8-src
           dpkg-buildpackage -us -uc
 
       - name: Run lintian
         if: always()
         run: |
-          lintian ../*.changes || true
+          if ls *.changes 1>/dev/null 2>&1; then
+            lintian *.changes || true
+          fi
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
