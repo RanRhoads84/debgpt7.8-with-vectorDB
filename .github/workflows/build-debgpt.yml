@@ -82,6 +82,17 @@ jobs:
               -exec mv {} "${ROOT_DIR}/" \;
           fi
 
+      - name: Prepare environment
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y adduser curl jq procps
+
+      - name: List generated Debian packages
+        run: |
+          set -euo pipefail
+          find . -maxdepth 1 -type f -name '*.deb' -ls
+
       - name: Install generated packages
         run: |
           set -euo pipefail
@@ -104,6 +115,7 @@ jobs:
       #     echo "TODO: implement GPG verification for downloaded .deb files"
 
       - name: Run vector DB bootstrapper
+        id: bootstrap_vectordb
         env:
           SKIP_SYSTEMCTL: "1"
         run: |
@@ -111,7 +123,7 @@ jobs:
           /usr/share/debgpt/vector_service/setup_vectordb.sh
 
       - name: Bootstrap failure diagnostics
-        if: failure()
+        if: failure() && steps.bootstrap_vectordb.outcome == 'failure'
         run: |
           set -euo pipefail
           if [ -f /var/log/qdrant/standalone.log ]; then
@@ -126,6 +138,22 @@ jobs:
             echo '--- /tmp/debgpt-qdrant-status ---'
             cat /tmp/debgpt-qdrant-status
           fi
+
+      - name: Ensure Qdrant is running
+        run: |
+          set -euo pipefail
+          if command -v systemctl >/dev/null 2>&1; then
+            systemctl start qdrant || true
+          fi
+          if ! pgrep -f '^qdrant' >/dev/null 2>&1; then
+            if command -v qdrant >/dev/null 2>&1; then
+              echo "Starting qdrant manually via nohup"
+              nohup qdrant --config /etc/qdrant/config.yaml >/var/log/qdrant/standalone.log 2>&1 &
+            else
+              echo "Qdrant binary not found; skipping manual start"
+            fi
+          fi
+          sleep 5
 
       - name: Validate vector-service environment configuration
         run: |
