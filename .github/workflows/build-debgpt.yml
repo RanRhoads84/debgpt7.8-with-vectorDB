@@ -20,6 +20,8 @@ jobs:
             build-essential \
             ca-certificates \
             debhelper \
+            dpkg-dev \
+            fakeroot \
             devscripts \
             equivs \
             git \
