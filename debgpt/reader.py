@@ -32,10 +32,10 @@ from rich.rule import Rule
 from rich.progress import track
 import concurrent.futures
 from urllib.parse import urlparse
-import urllib.parse
 from . import policy as debian_policy
 from .defaults import console
 from .defaults import CACHE
+from .defaults import Config
 from collections import namedtuple
 from .cache import Cache
 from .nm_templates import NM_TEMPLATES
@@ -55,12 +55,38 @@ Entry = namedtuple('Entry', ['path', 'content', 'wrapfun', 'wrapfun_chunk'])
 
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
-            + "AppleWebKit/537.36 (KHTML, like Gecko) " \
-            + "Chrome/91.0.4472.124 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    + "AppleWebKit/537.36 (KHTML, like Gecko) "
+    + "Chrome/91.0.4472.124 Safari/537.36",
+    # Include PDF explicitly so sites honoring Accept negotiation serve binary content.
     'Accept':
-    'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    'text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf;q=0.8,*/*;q=0.7'
 }
+
+GOOGLE_CUSTOM_SEARCH_URL = 'https://www.googleapis.com/customsearch/v1'
+
+
+@ft.lru_cache(maxsize=1)
+def _load_reader_config() -> Optional[Config]:
+    try:
+        return Config()
+    except Exception:
+        return None
+
+
+def _resolve_google_search_credentials() -> Tuple[Optional[str], Optional[str]]:
+    api_key = os.getenv('GOOGLE_SEARCH_API_KEY') or os.getenv('GOOGLE_API_KEY')
+    search_cx = os.getenv('GOOGLE_SEARCH_CX') or os.getenv('GOOGLE_CSE_ID')
+    if api_key and search_cx:
+        return api_key, search_cx
+    config = _load_reader_config()
+    if config is not None:
+        if not api_key:
+            api_key = getattr(config, 'google_search_api_key', None) or getattr(
+                config, 'google_api_key', None)
+        if not search_cx:
+            search_cx = getattr(config, 'google_search_cx', None)
+    return api_key, search_cx
 
 
 def help():
@@ -74,10 +100,12 @@ def help():
         debgpt -x ?
     '''
     console.print(Rule('Supported reader specs (specifiied by -f or -x)'))
-    console.print('The -f will read all information into the context, while -x will chunk the information into smaller pieces and perform MapReduce.')
+    console.print(
+        'The -f will read all information into the context, while -x will chunk the information into smaller pieces and perform MapReduce.')
     console.print('')
     console.print('===[General Reader Specs]===', style='bold')
-    console.print(' • <file_path>       read plain text file or PDF file, e.g., "README.md", "manual.pdf"')
+    console.print(
+        ' • <file_path>       read plain text file or PDF file, e.g., "README.md", "manual.pdf"')
     console.print(' • <directory>       read all files under a directory')
     console.print(' • http://<...>      read plain text from http URL')
     console.print(' • https://<...>     read plain text from https URL')
@@ -85,7 +113,8 @@ def help():
     console.print('')
     console.print('===[Special Reader Specs]===', style='bold')
     console.print(' • cmd:<cmd_line>    read the output of a command line, e.g., "cmd:\'git diff --staged\'" and ask the LLM to briefly summarize the changes.')
-    console.print(' • google:<query>    load the topmost Google search results')
+    console.print(
+        ' • google:<query>    load the topmost Google search results')
     console.print(' • man:<man>         read the manual page of a command, e.g., "man:debhelper-compat-upgrade-checklist" and ask the LLM to explain the change between compat 13 and compat 14.')
     console.print(' • tldr:<cmd>        read the tldr of a command, e.g., "tldr:curl" and ask the LLM to give a command line to download a URL into a destination in silent mode.')
     console.print(' • stdin             read from stdin')
@@ -93,21 +122,29 @@ def help():
     console.print('')
     console.print('===[Linux Distribution Reader Specs]===', style='bold')
     console.print(' • archwiki:<name>   read ArchWiki page')
-    console.print(' • bts:<bugnumber>   read Debian BTS bug report, e.g., "bts:src:pytorch", "bts:1056388".')
-    console.print(' • buildd:<pkg>      read Debian buildd status, e.g., "buildd:glibc".')
+    console.print(
+        ' • bts:<bugnumber>   read Debian BTS bug report, e.g., "bts:src:pytorch", "bts:1056388".')
+    console.print(
+        ' • buildd:<pkg>      read Debian buildd status, e.g., "buildd:glibc".')
     console.print(' • ldo:<list>        read the mailing list threads from lists.debian.org, e.g., "debian-ai/2024/11". Range syntax is suported, e.g., "debian-ai/2024,2025/01-12", "debian-ai/2025/04,05", "debian-ai/2025/:" (this means 01-12), "debian-ai/2021-2025/:". It is recommended to use this reader in MapReduce mode (-x) instead of plain read mode (-f).')
     console.print(' • nm:<template>     load the nm-templates question')
     console.print('')
     console.print(' • policy:           load whole Debian Policy, chunked into sections for MapReduce mode (-x). May ask, for instance, the LLM to explain the latest changes in the policy.')
-    console.print(' • policy:all        load whole Debian Policy, full text in one single chunk. More suitable for the plain read mode (-f).')
+    console.print(
+        ' • policy:all        load whole Debian Policy, full text in one single chunk. More suitable for the plain read mode (-f).')
     console.print(' • policy:<section>  load a specific section of Debian Policy, e.g., "policy:7.2" and ask the LLM to explain the difference between Depends and Pre-Depends.')
     console.print('')
-    console.print(' • devref:           load whole Debian Devref, chunked into sections for MapReduce mode (-x).')
-    console.print(' • devref:all        load whole Debian Devref, full text in one single chunk.')
-    console.print(' • devref:<section>  load a specific section of Debian Devref, e.g., "devref:5.5".')
+    console.print(
+        ' • devref:           load whole Debian Devref, chunked into sections for MapReduce mode (-x).')
+    console.print(
+        ' • devref:all        load whole Debian Devref, full text in one single chunk.')
+    console.print(
+        ' • devref:<section>  load a specific section of Debian Devref, e.g., "devref:5.5".')
     console.print('')
-    console.print(' • sbuild:           load the latest sbuild buildlog, and filter out the unimportant lines')
-    console.print(' • sbuild:<path>     load the latest sbuild log from path, and filter out the unimportant lines')
+    console.print(
+        ' • sbuild:           load the latest sbuild buildlog, and filter out the unimportant lines')
+    console.print(
+        ' • sbuild:<path>     load the latest sbuild log from path, and filter out the unimportant lines')
     console.print('')
     console.print('===[Note]===', style='bold')
     console.print('The reader specs can be repeated multiple times, e.g.,')
@@ -217,35 +254,36 @@ def read_file_plaintext(path: str) -> str:
 
 
 def extract_build_changes(text):
-  """
-  ! written by Gemini 1.5 Pro
-  Extracts the part of a string that starts with a Build header and
-  ends with a Changes header, using regular expressions, excluding the markers.
+    """
+    ! written by Gemini 1.5 Pro
+    Extracts the part of a string that starts with a Build header and
+    ends with a Changes header, using regular expressions, excluding the markers.
 
-  Args:
-    text: A string containing the text to extract from.
+    Args:
+      text: A string containing the text to extract from.
 
-  Returns:
-    A string representing the extracted part, or None if no match is found.
+    Returns:
+      A string representing the extracted part, or None if no match is found.
 
-  """
-  start_pattern = r"\+[-]+\+\n\| Build +\|\n\+[-]+\+"
-  end_pattern = r"\+[-]+\+\n\| Changes +\|\n\+[-]+\+"
+    """
+    start_pattern = r"\+[-]+\+\n\| Build +\|\n\+[-]+\+"
+    end_pattern = r"\+[-]+\+\n\| Changes +\|\n\+[-]+\+"
 
-  try:
-    # Find the start and end positions using regex
-    start_match = re.search(start_pattern, text)
-    end_match = re.search(end_pattern, text)
+    try:
+        # Find the start and end positions using regex
+        start_match = re.search(start_pattern, text)
+        end_match = re.search(end_pattern, text)
 
-    if start_match:
-      if end_match:
-        return text[start_match.end() : end_match.start()]
-      else:
-        return text[start_match.end() :]  # Match to the end if end_match is None
-    else:
-      return None
-  except AttributeError:
-    return None
+        if start_match:
+            if end_match:
+                return text[start_match.end(): end_match.start()]
+            else:
+                # Match to the end if end_match is None
+                return text[start_match.end():]
+        else:
+            return None
+    except AttributeError:
+        return None
 
 
 def read_sbuild(path: Optional[str] = None, *, return_path: bool = False) -> str:
@@ -418,7 +456,7 @@ def read_url__pycurl(url: str) -> str:
             return ''
     try:
         content = buffer.getvalue().decode('utf-8')
-        #console.log(f'Content-Type: {headers}')
+        # console.log(f'Content-Type: {headers}')
         # if HTML, parse it
         if _is_content_type_html(headers):
             soup = BeautifulSoup(content, features='html.parser')
@@ -464,7 +502,14 @@ def read_url__requests(url: str) -> str:
         # Open and read the file
         return read_file(file_path)
     # Send request to the URL
-    response = requests.get(url, headers=HEADERS)
+    if url.lower().endswith('.pdf'):
+        headers = {
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': 'application/pdf,*/*;q=0.8',
+        }
+    else:
+        headers = HEADERS
+    response = requests.get(url, headers=headers)
     if response.status_code != 200:
         raise ValueError(f'Failed to read {url}')
     # dispatch content type
@@ -568,7 +613,7 @@ def fetch_ldo_threads(spec: str, index: str = 'threads.html') -> List[str]:
             name = [name]
         # parse the year part
         if ':' in year:
-            start_year, end_year = year.split(':') 
+            start_year, end_year = year.split(':')
             year = list(range(int(start_year), int(end_year) + 1))
             year = list(map(str, year))
         elif ',' in year:
@@ -591,7 +636,8 @@ def fetch_ldo_threads(spec: str, index: str = 'threads.html') -> List[str]:
         # calculate the product
         allcombs = it.product(name, year, month)
         allcombs = ['/'.join(x) for x in allcombs]
-        urls = ft.reduce(list.__add__, [fetch_ldo_threads(x) for x in allcombs])
+        urls = ft.reduce(
+            list.__add__, [fetch_ldo_threads(x) for x in allcombs])
         return urls
 
     url = f'https://lists.debian.org/{spec}/{index}'
@@ -638,23 +684,41 @@ def google_search(query: str) -> List[str]:
     Returns:
         List[str]: the search results, each element is a URL
     '''
-    # Format the query for URL
-    query = urllib.parse.quote_plus(query)
-    # Send request to Google
-    url = f"https://www.google.com/search?q={query}"
-    response = requests.get(url, headers=HEADERS)
-    if response.status_code != 200:
-        raise ValueError(f'Failed to read {url}: HTTP {response.status_code}')
-    # Parse the response
-    soup = BeautifulSoup(response.text, 'html.parser')
-    # Find search results
-    search_results = soup.find_all('div', class_='g')
+    api_key, search_cx = _resolve_google_search_credentials()
+    if not api_key or not search_cx:
+        console.log(
+            'Google Custom Search is not configured. Set GOOGLE_SEARCH_API_KEY/GOOGLE_API_KEY and GOOGLE_SEARCH_CX/GOOGLE_CSE_ID.')
+        return []
+    params = {
+        'key': api_key,
+        'cx': search_cx,
+        'q': query,
+    }
+    try:
+        response = requests.get(GOOGLE_CUSTOM_SEARCH_URL,
+                                params=params,
+                                timeout=10)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        console.log(f'Google Custom Search request failed: {exc}')
+        return []
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        console.log(f'Failed to decode Google Custom Search response: {exc}')
+        return []
+    if isinstance(payload, dict) and 'error' in payload:
+        message = payload['error'].get('message', 'unknown error')
+        console.log(f'Google Custom Search error: {message}')
+        return []
+    items = payload.get('items', []) if isinstance(payload, dict) else []
     results = []
-    for result in search_results:
-        title = result.find('h3')
-        link = result.find('a', href=True)
-        if title and link:
-            results.append(link.get('href'))
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        link = item.get('link')
+        if link:
+            results.append(link)
     return results
 
 
@@ -816,8 +880,10 @@ def read(spec: str,
         results.append((parsed_spec, content, wrapfun, lambda x: x))
         if parsed_spec == 'pp1.PH7':
             if not os.path.exists('bad.licenses.tar.bz2'):
-                console.print('[red]Downloading https://people.debian.org/~joerg/bad.licenses.tar.bz2 ...')
-                os.system('wget -c https://people.debian.org/~joerg/bad.licenses.tar.bz2')
+                console.print(
+                    '[red]Downloading https://people.debian.org/~joerg/bad.licenses.tar.bz2 ...')
+                os.system(
+                    'wget -c https://people.debian.org/~joerg/bad.licenses.tar.bz2')
                 os.system('tar xvf bad.licenses.tar.bz2')
             contents = read_directory('licenses')
             for (fpath, fcontent) in contents:
@@ -830,9 +896,10 @@ def read(spec: str,
         if parsed_spec == 'pp1e.PH9':
             ph9_url = 'https://www.debian.org/vote/2006/vote_001'
             contents = read_url(ph9_url)
-            wrapfun = create_wrapper('Here is the contents of URL {}:', ph9_url)
+            wrapfun = create_wrapper(
+                'Here is the contents of URL {}:', ph9_url)
             wrapfun_chunk = create_chunk_wrapper(
-                    'Here is the contents of URL {} (lines {}-{}):', ph9_url)
+                'Here is the contents of URL {} (lines {}-{}):', ph9_url)
             results.append((ph9_url, contents, wrapfun, wrapfun_chunk))
         if parsed_spec in ('pp2.BT6', 'pp2.BT8'):
             url1 = 'https://www.debian.org/Bugs/Reporting'
@@ -984,7 +1051,7 @@ def chunk_lines(
         containing the start and end index of the chunked lines, and the value
         is the chunked lines.
     '''
-    #print('DEBUG:', len(lines), len('\n'.join(lines[start:end]).encode('utf8')),
+    # print('DEBUG:', len(lines), len('\n'.join(lines[start:end]).encode('utf8')),
     #    'c', max_chunk_size, 'start', start, 'end', end)
     # deal with the unspecified param case. This allows chunk_lines(lines, 1000)
     # to work properly without specifying the start and end in another wrapper.

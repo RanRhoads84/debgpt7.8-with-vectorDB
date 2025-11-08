@@ -1,0 +1,39 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        if ! getent group debgpt >/dev/null; then
+            addgroup --system debgpt
+        fi
+        if ! getent passwd debgpt >/dev/null; then
+            adduser --system --ingroup debgpt \
+                --home /var/lib/debgpt \
+                --shell /usr/sbin/nologin \
+                --disabled-login \
+                debgpt
+        fi
+        install -d -o debgpt -g debgpt -m 0750 /var/lib/debgpt
+        install -d -o debgpt -g debgpt -m 0700 /var/lib/debgpt/vector-service
+        systemd-tmpfiles --create /usr/lib/tmpfiles.d/debgpt-vector-service.conf >/dev/null 2>&1 || true
+
+        SITE_PKGS="/usr/lib/debgpt/vector-service/site-packages"
+        REQ_FILE="/usr/share/debgpt/vector_service/requirements.txt"
+        install -d -m 0755 "$SITE_PKGS"
+        if [ -x /usr/bin/pip3 ] && [ -f "$REQ_FILE" ]; then
+            /usr/bin/pip3 install \
+                --no-warn-script-location \
+                --upgrade \
+                --requirement "$REQ_FILE" \
+                --target "$SITE_PKGS"
+        fi
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    *)
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

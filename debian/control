@@ -43,3 +43,27 @@ Description: General Purpose Terminal LLM Tool with Some Debian-Specific Design
  models. DebGPT supports a range of LLM service providers, both commercial and
  self-hosted, including OpenAI, Anthropic, Google Gemini, Ollama, LlamaFile,
  vLLM, and ZMQ (DebGPT's built-in backend for self-containment).
+
+Package: debgpt-vector-service
+Architecture: all
+Depends: debgpt (= ${binary:Version}),
+         python3,
+         python3-pip,
+         python3-venv,
+         python3-setuptools,
+         python3-wheel,
+         ${misc:Depends}
+Recommends: docker.io | podman,
+            qdrant,
+            python3-fastapi,
+            python3-uvicorn
+Description: DebGPT semantic memory microservice and helpers
+ This package equips DebGPT with a production-ready vector microservice
+ that persists chat sessions and exposes FastAPI endpoints for retrieval
+ augmented generation. It installs systemd units for the uvicorn process,
+ ships helper scripts (docker-compose, environment generator, test suite),
+ and configures storage under /var/lib/debgpt/vector-service.
+ .
+ The service integrates with Qdrant for vector storage and uses
+ sentence-transformers to embed conversation snippets. Environment
+ variables can be tuned via /etc/debgpt/vector-service.env.

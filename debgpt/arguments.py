@@ -98,15 +98,13 @@ This option will toggle --quit and turn off markdown rendering.')
     _g.add_argument(
         '--inplace-git-add-commit',
         action='store_true',
-        help=
-        'automatically `git add` (no human review) and `git commit` the changes to git repo.'
+        help='automatically `git add` (no human review) and `git commit` the changes to git repo.'
     )
     _g.add_argument(
         '--inplace-git-add-p-commit',
         '-I',
         action='store_true',
-        help=
-        'automatically `git add -p` (with human review) and `git commit commit` the changes to git repo.'
+        help='automatically `git add -p` (with human review) and `git commit commit` the changes to git repo.'
     )
     _g.add_argument('--version',
                     action='store_true',
@@ -124,6 +122,7 @@ This option will toggle --quit and turn off markdown rendering.')
             # development and debugging
             'dryrun',
             'echo',
+            'vectorecho',
             # commercial services
             'openai',
             'anthropic',
@@ -448,6 +447,45 @@ Their prices vary. See https://platform.openai.com/docs/models .')
         default=conf['zmq_backend'],
         help='the ZMQ backend URL that the frontend will connect to')
     config_template = __add_arg_to_config(config_template, _g, 'zmq_backend')
+
+    config_template += '''\n
+###########################
+# Vector Service Options
+###########################
+\n'''
+    _g = ag.add_argument_group('Vector Service Options')
+    _g.add_argument('--vector_service_enabled',
+                    action=argparse.BooleanOptionalAction,
+                    default=conf['vector_service_enabled'],
+                    help='toggle semantic memory integration via the vector microservice')
+    config_template = __add_arg_to_config(config_template,
+                                          _g,
+                                          'vector_service_enabled',
+                                          formatter=lambda x: str(x).lower())
+    _g.add_argument('--vector_service_url',
+                    type=str,
+                    default=conf['vector_service_url'],
+                    help='base URL for the vector microservice (health, message, context)')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'vector_service_url')
+    _g.add_argument('--vector_service_timeout',
+                    type=float,
+                    default=conf['vector_service_timeout'],
+                    help='HTTP timeout in seconds for vector microservice calls')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'vector_service_timeout')
+    _g.add_argument('--vector_service_top_k',
+                    type=int,
+                    default=conf['vector_service_top_k'],
+                    help='number of retrieved records to include as semantic context for each user prompt')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'vector_service_top_k')
+    _g.add_argument('--vector_service_conversation_id',
+                    type=str,
+                    default=conf['vector_service_conversation_id'],
+                    help='optional override for the conversation identifier shared with the vector microservice')
+    config_template = __add_arg_to_config(config_template, _g,
+                                          'vector_service_conversation_id')
 
     # Embedding Models
     config_template += '''\n

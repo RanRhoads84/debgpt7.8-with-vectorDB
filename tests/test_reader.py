@@ -317,23 +317,63 @@ def test_read_stdin(monkeypatch):
     assert len(context) > 0
 
 
-def test_google_search(keyword='python programming'):
+def test_google_search(monkeypatch, keyword='python programming'):
+    payload = {
+        'items': [
+            {'link': 'https://example.com/result-1'},
+            {'link': 'https://example.com/result-2'},
+        ]
+    }
+
+    class DummyResponse:
+
+        def __init__(self, data):
+            self._data = data
+
+        def json(self):
+            return self._data
+
+        def raise_for_status(self):
+            return None
+
+    def fake_get(url, params=None, timeout=None):
+        assert url == reader.GOOGLE_CUSTOM_SEARCH_URL
+        assert params is not None
+        assert params.get('q') == keyword
+        assert params.get('key') == 'fake-key'
+        assert params.get('cx') == 'fake-cx'
+        return DummyResponse(payload)
+
+    monkeypatch.setenv('GOOGLE_SEARCH_API_KEY', 'fake-key')
+    monkeypatch.setenv('GOOGLE_SEARCH_CX', 'fake-cx')
+    monkeypatch.setattr(reader.requests, 'get', fake_get)
+
     results = reader.google_search(keyword)
-    print('google search results:', results)
-    assert len(results) > 0
-    for r in results:
-        assert r.startswith('http')
+    assert results == [
+        'https://example.com/result-1',
+        'https://example.com/result-2'
+    ]
 
 
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 @pytest.mark.parametrize('keyword', ('python programming', 'debian'))
-def test_read_google(keyword: str):
+def test_read_google(monkeypatch, keyword: str):
+    urls = [f'https://example.com/{keyword.replace(" ", "-")}-0',
+            f'https://example.com/{keyword.replace(" ", "-")}-1']
+
+    monkeypatch.setattr(reader, 'google_search', lambda _: urls)
+
+    def fake_read_url(url: str) -> str:
+        return f'content for {url}'
+
+    monkeypatch.setattr(reader, 'read_url', fake_read_url)
+
     results: List[Tuple[str, str]] = reader.read_google(keyword)
-    assert len(results) > 0
+    assert results == [(url, f'content for {url}') for url in urls]
     for url, content in results:
         assert url.startswith('http')
         assert isinstance(content, str)
-        assert len(content) >= 0
+        assert content.startswith('content for ')
 
 
 @pytest.mark.parametrize('keyword', ('Archiving_and_compression', ))

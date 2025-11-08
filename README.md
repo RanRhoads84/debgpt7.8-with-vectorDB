@@ -27,7 +27,7 @@ To achieve that, DebGPT gathers relevant information from various sources like
 files, directories, and URLs, and compiles it into a prompt for the LLM. DebGPT
 supports a range of LLM service providers, either commercial and self-hosted,
 including OpenAI, Anthropic, Google Gemini, Ollama, LlamaFile, vLLM, and ZMQ
-(DebGPT's built-in backend for self-containment). 
+(DebGPT's built-in backend for self-containment).
 
 TABLE OF CONTENTS
 =================
@@ -52,6 +52,8 @@ TABLE OF CONTENTS
   * [Ollama](#ollama)
   * [llamaFile](#llamafile)
   * [ZMQ (DebGPT Built-in)](#zmq-debgpt-built-in)
+  * [Debugging Frontends](docs/debugging-frontends.md)
+- [VECTOR SERVICE](#vector-service)
 - [REFERENCES](#references)
 - [LICENSE and ACKNOWLEDGEMENT](#license-and-acknowledgement)
 
@@ -318,7 +320,7 @@ cat Makefile | debgpt -a 'delete the deprecated targets' pipe | tee tmp ; mv tmp
 The pipe mode can be used for editing something in vim in-place.
 
 ```
-# In vim debgpt/task.py, use 'V' mode to select the task_backend function, then 
+# In vim debgpt/task.py, use 'V' mode to select the task_backend function, then
 :'<,'>!debgpt -a 'add type annotations and comments to this function' pipe
 ```
 
@@ -544,6 +546,20 @@ REFERENCES
 
 [1] Access large language models from the command-line
 : https://github.com/simonw/llm
+
+VECTOR SERVICE
+==============
+
+An optional FastAPI microservice ships with the source tree to persist chat
+history in SQLite while storing embeddings in Qdrant. Install DebGPT with the
+`vector-service` extra (`pip install debgpt[vector-service]`) and review the
+deployment assets under `contrib/vector_service/` for docker-compose, helper
+scripts, and production-oriented examples (systemd, nginx). The service exposes
+REST endpoints (`/message`, `/context`, `/generate`, etc.) so the existing
+terminal client can retrieve semantic context or delegate response generation to
+local or hosted model backends. After installing the extra, start the service
+with `debgpt-vector-service` or by pointing Uvicorn at
+`debgpt.vector_service.app:create_app`.
 
 [2] Turn your task descriptions into precise shell commands
 : https://github.com/sderev/shellgenius

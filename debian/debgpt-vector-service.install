@@ -1,0 +1,5 @@
+contrib/vector_service/* usr/share/debgpt/vector_service/
+requirements-vector-service.txt usr/share/debgpt/vector_service/requirements.txt
+debian/debgpt-vector-service.service lib/systemd/system/
+debian/debgpt-vector-service.tmpfiles usr/lib/tmpfiles.d/debgpt-vector-service.conf
+debian/vector-service.env etc/debgpt/vector-service.env

@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    remove)
+        if [ -x /bin/systemctl ] || [ -x /usr/bin/systemctl ]; then
+            systemctl --quiet stop debgpt-vector-service.service || true
+            systemctl disable debgpt-vector-service.service >/dev/null 2>&1 || true
+        fi
+        ;;
+    upgrade|failed-upgrade|abort-install|abort-upgrade)
+        ;;
+    *)
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

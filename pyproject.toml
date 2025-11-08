@@ -43,6 +43,7 @@ Issues = "https://salsa.debian.org/deeplearning-team/debgpt/-/issues"
 
 [project.scripts]
 debgpt = "debgpt.cli:main"
+debgpt-vector-service = "debgpt.vector_service.__main__:main"
 
 [project.optional-dependencies]
 dev = [
@@ -57,4 +58,18 @@ dev = [
     'google-generativeai',
     'pytorch',
     'transformers',
+]
+vector-service = [
+    "fastapi",
+    "uvicorn[standard]",
+    "qdrant-client",
+    "sentence-transformers",
+    "sqlalchemy",
+    "aiosqlite",
+    "python-dotenv",
+    "huggingface-hub",
+    "openai",
+    "google-cloud-aiplatform",
+    "requests",
+    "numpy",
 ]

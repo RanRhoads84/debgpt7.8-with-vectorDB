@@ -1,0 +1,18 @@
+[Unit]
+Description=DebGPT Vector Service (FastAPI semantic memory)
+After=network.target qdrant.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/debgpt/vector-service.env
+WorkingDirectory=/usr/lib/debgpt
+ExecStart=/usr/bin/python3 -m debgpt.vector_service.__main__
+Environment=PYTHONPATH=/usr/lib/debgpt/vector-service/site-packages
+Restart=on-failure
+User=debgpt
+Group=debgpt
+RuntimeDirectory=debgpt-vector-service
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target

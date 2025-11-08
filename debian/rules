@@ -14,4 +14,3 @@ override_dh_auto_test:
 execute_after_dh_auto_install:
 	mkdir -p debian/debgpt/usr/share/doc/debgpt/
 	install -m0644 CHANGELOG.md debian/debgpt/usr/share/doc/debgpt/changelog-full.md
-

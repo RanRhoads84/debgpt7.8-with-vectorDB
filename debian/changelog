@@ -1,3 +1,12 @@
+debgpt (0.7.8~vector1) UNRELEASED; urgency=medium
+
+  * Add debgpt-vector-service binary package to ship FastAPI microservice.
+    - Package helper scripts, systemd unit, and tmpfiles config.
+    - Provide default environment file and dedicated system user.
+    - Declare dependencies for Qdrant client, embedding stack, and uvicorn.
+
+ -- Ran Rhoads <ran@example.com>  Sat, 08 Nov 2025 03:25:00 -0500
+
 debgpt (0.7.7) unstable; urgency=medium
 
   * Release 0.7.7 for Trixie.

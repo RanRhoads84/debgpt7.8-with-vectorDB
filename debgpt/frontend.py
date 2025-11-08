@@ -38,6 +38,7 @@ from rich.panel import Panel
 from rich.style import Style as richStyle
 
 from . import defaults
+from .vector_service.client import VectorServiceClient
 
 console = defaults.console
 console_stdout = Console()
@@ -103,12 +104,27 @@ class AbstractFrontend():
         self.vertical_overflow = args.vertical_overflow
         self.verbose = args.verbose
         console.log(f'{self.NAME}> Starting conversation {self.uuid}')
+        self._vector_client: Optional[VectorServiceClient] = None
+        self._vector_context_prompt: Optional[str] = None
+        self._vector_top_k: int = getattr(args, 'vector_service_top_k', 0)
+        conv_override = getattr(args, 'vector_service_conversation_id', '')
+        self._vector_conversation_id = conv_override or str(self.uuid)
+        if getattr(args, 'vector_service_enabled', False):
+            self._vector_client = VectorServiceClient(
+                getattr(args, 'vector_service_url', 'http://127.0.0.1:8000'),
+                timeout=getattr(args, 'vector_service_timeout', 5.0),
+                enabled=True,
+                logger=console,
+            )
 
     def reset(self):
         '''
         clear the context. No need to change UUID I think.
         '''
         self.session = []
+        self._vector_context_prompt = None
+        if self._vector_client is not None:
+            self._vector_conversation_id = str(uuid.uuid4())
 
     def oneshot(self, message: str) -> str:
         '''
@@ -142,9 +158,12 @@ class AbstractFrontend():
         elif isinstance(messages, dict):
             # just append a new dict
             self.session.append(messages)
+            self._vector_after_append(messages)
         elif isinstance(messages, str):
             # just append a new user dict
-            self.session.append({'role': 'user', 'content': messages})
+            new_message = {'role': 'user', 'content': messages}
+            self.session.append(new_message)
+            self._vector_after_append(new_message)
         else:
             raise TypeError(type(messages))
         _check(self.session)
@@ -163,6 +182,8 @@ class AbstractFrontend():
         with open(fpath, 'wt') as f:
             json.dump(self.session, f, indent=2)
         console.log(f'{self.NAME}> Conversation saved at {fpath}')
+        if self._vector_client is not None:
+            self._vector_client.close()
 
     def __len__(self):
         '''
@@ -170,6 +191,82 @@ class AbstractFrontend():
         excluding system message.
         '''
         return len([x for x in self.session if x['role'] != 'system'])
+
+    @property
+    def _vector_active(self) -> bool:
+        client = getattr(self, '_vector_client', None)
+        return client is not None and getattr(client, 'enabled', False)
+
+    def _vector_after_append(self, message: Dict) -> None:
+        if not self._vector_active:
+            return
+        client = getattr(self, '_vector_client', None)
+        if client is None:
+            return
+        role = message.get('role')
+        content = message.get('content', '').strip()
+        if role == 'user':
+            self._vector_prepare_context(content)
+            client.save_message(
+                conversation_id=self._vector_conversation_id,
+                role='user',
+                text=content,
+            )
+        elif role == 'assistant':
+            client.save_message(
+                conversation_id=self._vector_conversation_id,
+                role='assistant',
+                text=content,
+            )
+            self._vector_context_prompt = None
+
+    def _vector_prepare_context(self, query: str) -> None:
+        if not query:
+            self._vector_context_prompt = None
+            return
+        if not self._vector_active or self._vector_top_k <= 0:
+            self._vector_context_prompt = None
+            return
+        client = getattr(self, '_vector_client', None)
+        if client is None:
+            self._vector_context_prompt = None
+            return
+        results = client.query_context(
+            conversation_id=self._vector_conversation_id,
+            query=query,
+            top_k=self._vector_top_k,
+        )
+        if not results:
+            self._vector_context_prompt = None
+            return
+        lines = [
+            'You have access to the following retrieved conversation snippets. '
+            'Use them to ground your response when relevant.',
+        ]
+        for idx, item in enumerate(results, start=1):
+            role = item.get('role', 'unknown')
+            score = item.get('score')
+            text = (item.get('text') or '').replace('\n', ' ').strip()
+            if len(text) > 512:
+                text = text[:509] + '...'
+            header = f'{role}'
+            if isinstance(score, (int, float)):
+                header += f' (score={score:.3f})'
+            lines.append(f'{idx}. {header}: {text}')
+        lines.append('If none of the snippets apply, continue normally.')
+        self._vector_context_prompt = '\n'.join(lines)
+
+    def _messages_for_llm(self) -> List[Dict[str, str]]:
+        base = list(self.session)
+        if not base or not self._vector_context_prompt:
+            return base
+        if base[-1].get('role') != 'user':
+            return base
+        injected = {
+            'role': 'system',
+            'content': self._vector_context_prompt,
+        }
+        return base[:-1] + [injected, base[-1]]
 
 
 class EchoFrontend(AbstractFrontend):
@@ -211,6 +308,36 @@ class EchoFrontend(AbstractFrontend):
         pass
 
 
+class VectorEchoFrontend(AbstractFrontend):
+    '''
+    Like EchoFrontend but keeps the vector service plumbing enabled.
+    '''
+    NAME = 'VectorEchoFrontend'
+    lossy_mode: bool = False
+    lossy_rate: int = 2
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.stream = False
+        self.monochrome = False
+        self.multiline = False
+        self.render_markdown = False
+
+    def oneshot(self, message: str) -> str:
+        if self.lossy_mode:
+            return message[::self.lossy_rate]
+        return message
+
+    def query(self, messages: Union[List, Dict, str]) -> list:
+        self.update_session(messages)
+        new_input = self.session[-1]['content']
+        response = new_input[::self.lossy_rate] if self.lossy_mode else new_input
+        console_stdout.print(response)
+        new_message = {'role': 'assistant', 'content': response}
+        self.update_session(new_message)
+        return self.session[-1]['content']
+
+
 class OpenAIFrontend(AbstractFrontend):
     '''
     https://platform.openai.com/docs/quickstart?context=python
@@ -218,7 +345,7 @@ class OpenAIFrontend(AbstractFrontend):
     NAME: str = 'OpenAIFrontend'
     debug: bool = False
     stream: bool = True
-    
+
     def __init__(self, args):
         super().__init__(args)
         try:
@@ -229,26 +356,98 @@ class OpenAIFrontend(AbstractFrontend):
         self.client = OpenAI(api_key=args.openai_api_key,
                              base_url=args.openai_base_url)
         self.model = args.openai_model
+    # GitHub Copilot: runtime detection for sampling parameter support.
+    # Track whether the backend has confirmed support for sampling params.
+        self._sampling_params_supported: Optional[bool] = None
         # XXX: some models do not support system messages yet. nor temperature.
         if self.model not in ('o1-mini', 'o1-preview', 'o3-mini'):
-            self.session.append({"role": "system", "content": args.system_message})
-            self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+            self.session.append(
+                {"role": "system", "content": args.system_message})
+            # GitHub Copilot: collect user-provided sampling params once per session.
+            self.kwargs = self._collect_sampling_kwargs(args)
+            if not self.kwargs:
+                self._sampling_params_supported = False
         else:
             self.kwargs = {}
+            self._sampling_params_supported = False
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
-                        f'temperature={args.temperature}, top_p={args.top_p}.')
+            if self.kwargs:
+                console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                            f"temperature={self.kwargs.get('temperature')}, " +
+                            f"top_p={self.kwargs.get('top_p')}.")
+            else:
+                console.log(
+                    f'{self.NAME}> model={repr(self.model)}, using server default sampling parameters.')
+
+    # GitHub Copilot: helper to gather sampling kwargs while we probe API support.
+    def _collect_sampling_kwargs(self, args) -> Dict[str, float]:
+        sampling_kwargs: Dict[str, float] = {}
+        for key in ('temperature', 'top_p'):
+            if hasattr(args, key):
+                value = getattr(args, key)
+                if value is not None:
+                    sampling_kwargs[key] = value
+        return sampling_kwargs
+
+    # GitHub Copilot: strip unsupported sampling params and retry once detected.
+    def _handle_sampling_error(self, exc: Exception) -> bool:
+        if not self.kwargs:
+            return False
+        message = str(exc).lower()
+        token_map = {
+            'temperature': ('temperature',),
+            'top_p': ('top_p', 'top-p')
+        }
+        unsupported = [param for param, aliases in token_map.items()
+                       if any(alias in message for alias in aliases) and param in self.kwargs]
+        if not unsupported:
+            return False
+        for param in unsupported:
+            self.kwargs.pop(param, None)
+        if self.verbose:
+            rejected = ', '.join(unsupported)
+            console.log(
+                f'{self.NAME}> model={repr(self.model)} rejected {rejected}; retrying without it.')
+        if not self.kwargs:
+            self._sampling_params_supported = False
+            if self.verbose:
+                console.log(
+                    f'{self.NAME}> falling back to server default sampling parameters.')
+        else:
+            self._sampling_params_supported = None
+        return True
+
+    # GitHub Copilot: centralize create() calls so retries happen transparently.
+    def _chat_completions_create(self, **kwargs):
+        while True:
+            if self.kwargs and self._sampling_params_supported is False:
+                # Sampling params were disabled previously; re-evaluate in case they were reassigned.
+                self._sampling_params_supported = None
+            request_kwargs = dict(kwargs)
+            if self.kwargs and self._sampling_params_supported is not False:
+                request_kwargs.update(self.kwargs)
+            try:
+                completion = self.client.chat.completions.create(
+                    **request_kwargs)
+            except Exception as exc:
+                if self.kwargs and self._sampling_params_supported is not False and self._handle_sampling_error(exc):
+                    continue
+                raise
+            else:
+                if self.kwargs:
+                    self._sampling_params_supported = True
+                return completion
 
     def oneshot(self, message: str) -> str:
 
         def _func() -> str:
-            _callable = self.client.chat.completions.create
-            completions = _callable(model=self.model,
-                                    messages=[{
-                                        "role": "user",
-                                        "content": message
-                                    }],
-                                    **self.kwargs)
+            completions = self._chat_completions_create(
+                model=self.model,
+                messages=[{
+                    "role": "user",
+                    "content": message
+                }],
+                stream=False)
             return completions.choices[0].message.content
 
         from openai import RateLimitError
@@ -259,10 +458,11 @@ class OpenAIFrontend(AbstractFrontend):
         self.update_session(messages)
         if self.debug:
             console.log('send:', self.session[-1])
-        completion = self.client.chat.completions.create(model=self.model,
-                                                         messages=self.session,
-                                                         stream=self.stream,
-                                                         **self.kwargs)
+        request_messages = self._messages_for_llm()
+        completion = self._chat_completions_create(
+            model=self.model,
+            messages=request_messages,
+            stream=self.stream)
         # if the stream is enabled, we will print the response in real-time.
         if self.stream:
             n_tokens: int = 0
@@ -364,8 +564,13 @@ class AnthropicFrontend(AbstractFrontend):
         self.model = args.anthropic_model
         self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
-                        f'temperature={args.temperature}, top_p={args.top_p}.')
+            if self.kwargs:
+                console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                            f"temperature={self.kwargs.get('temperature')}, " +
+                            f"top_p={self.kwargs.get('top_p')}.")
+            else:
+                console.log(
+                    f'{self.NAME}> model={repr(self.model)}, using server default sampling parameters.')
 
     def oneshot(self, message: str) -> str:
 
@@ -388,10 +593,11 @@ class AnthropicFrontend(AbstractFrontend):
         self.update_session(messages)
         if self.debug:
             console.log('send:', self.session[-1])
+        request_messages = self._messages_for_llm()
         if self.stream:
             chunks = []
             with self.client.messages.stream(model=self.model,
-                                             messages=self.session,
+                                             messages=request_messages,
                                              max_tokens=self.max_tokens,
                                              **self.kwargs) as stream:
                 if self.render_markdown:
@@ -411,7 +617,7 @@ class AnthropicFrontend(AbstractFrontend):
         else:
             completion = self.client.messages.create(
                 model=self.model,
-                messages=self.session,
+                messages=request_messages,
                 max_tokens=self.max_tokens,
                 stream=self.stream,
                 **self.kwargs)
@@ -468,9 +674,13 @@ class GoogleFrontend(AbstractFrontend):
         self.update_session(messages)
         if self.debug:
             console.log('send:', self.session[-1])
+        prompt_text = self.session[-1]['content']
+        if self._vector_context_prompt:
+            prompt_text = (
+                f"{self._vector_context_prompt}\n\nUser request:\n{prompt_text}")
         if self.stream:
             chunks = []
-            response = self.chat.send_message(self.session[-1]['content'],
+            response = self.chat.send_message(prompt_text,
                                               stream=True,
                                               generation_config=self.kwargs)
             if self.render_markdown:
@@ -484,7 +694,7 @@ class GoogleFrontend(AbstractFrontend):
                     print(chunk.text, end="", flush=True)
             generated_text = ''.join(chunks)
         else:
-            response = self.chat.send_message(self.session[-1]['content'],
+            response = self.chat.send_message(prompt_text,
                                               generation_config=self.kwargs)
             generated_text = response.text
             if self.render_markdown:
@@ -511,10 +721,17 @@ class XAIFrontend(OpenAIFrontend):
                              base_url='https://api.x.ai/v1/')
         self.session.append({"role": "system", "content": args.system_message})
         self.model = args.xai_model
-        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+    # GitHub Copilot: reuse helper so sampling params degrade gracefully.
+        self.kwargs = self._collect_sampling_kwargs(args)
+        self._sampling_params_supported = None if self.kwargs else False
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
-                        f'temperature={args.temperature}, top_p={args.top_p}.')
+            if self.kwargs:
+                console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                            f"temperature={self.kwargs.get('temperature')}, " +
+                            f"top_p={self.kwargs.get('top_p')}.")
+            else:
+                console.log(
+                    f'{self.NAME}> model={repr(self.model)}, using server default sampling parameters.')
 
 
 class NvidiaFrontend(OpenAIFrontend):
@@ -531,10 +748,17 @@ class NvidiaFrontend(OpenAIFrontend):
                              base_url=args.nvidia_base_url)
         self.session.append({"role": "system", "content": args.system_message})
         self.model = args.nvidia_model
-        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+    # GitHub Copilot: reuse helper so sampling params degrade gracefully.
+        self.kwargs = self._collect_sampling_kwargs(args)
+        self._sampling_params_supported = None if self.kwargs else False
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
-                        f'temperature={args.temperature}, top_p={args.top_p}.')
+            if self.kwargs:
+                console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                            f"temperature={self.kwargs.get('temperature')}, " +
+                            f"top_p={self.kwargs.get('top_p')}.")
+            else:
+                console.log(
+                    f'{self.NAME}> model={repr(self.model)}, using server default sampling parameters.')
 
 
 class LlamafileFrontend(OpenAIFrontend):
@@ -550,10 +774,17 @@ class LlamafileFrontend(OpenAIFrontend):
                              base_url=args.llamafile_base_url)
         self.session.append({"role": "system", "content": args.system_message})
         self.model = 'llamafile from https://github.com/Mozilla-Ocho/llamafile'
-        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+    # GitHub Copilot: reuse helper so sampling params degrade gracefully.
+        self.kwargs = self._collect_sampling_kwargs(args)
+        self._sampling_params_supported = None if self.kwargs else False
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
-                        f'temperature={args.temperature}, top_p={args.top_p}.')
+            if self.kwargs:
+                console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                            f"temperature={self.kwargs.get('temperature')}, " +
+                            f"top_p={self.kwargs.get('top_p')}.")
+            else:
+                console.log(
+                    f'{self.NAME}> model={repr(self.model)}, using server default sampling parameters.')
 
 
 class OllamaFrontend(OpenAIFrontend):
@@ -569,10 +800,17 @@ class OllamaFrontend(OpenAIFrontend):
                              base_url=args.ollama_base_url)
         self.session.append({"role": "system", "content": args.system_message})
         self.model = args.ollama_model
-        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+    # GitHub Copilot: reuse helper so sampling params degrade gracefully.
+        self.kwargs = self._collect_sampling_kwargs(args)
+        self._sampling_params_supported = None if self.kwargs else False
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
-                        f'temperature={args.temperature}, top_p={args.top_p}.')
+            if self.kwargs:
+                console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                            f"temperature={self.kwargs.get('temperature')}, " +
+                            f"top_p={self.kwargs.get('top_p')}.")
+            else:
+                console.log(
+                    f'{self.NAME}> model={repr(self.model)}, using server default sampling parameters.')
 
 
 class LlamacppFrontend(OpenAIFrontend):
@@ -588,10 +826,17 @@ class LlamacppFrontend(OpenAIFrontend):
                              base_url=args.llamacpp_base_url)
         self.session.append({"role": "system", "content": args.system_message})
         self.model = 'model-is-specified-at-the-llama-server-arguments'
-        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+    # GitHub Copilot: reuse helper so sampling params degrade gracefully.
+        self.kwargs = self._collect_sampling_kwargs(args)
+        self._sampling_params_supported = None if self.kwargs else False
         if args.verbose:
-            console.log(f'{self.NAME}> ' +
-                        f'temperature={args.temperature}, top_p={args.top_p}.')
+            if self.kwargs:
+                console.log(f'{self.NAME}> ' +
+                            f"temperature={self.kwargs.get('temperature')}, " +
+                            f"top_p={self.kwargs.get('top_p')}.")
+            else:
+                console.log(
+                    f'{self.NAME}> using server default sampling parameters.')
 
 
 class DeepSeekFrontend(OpenAIFrontend):
@@ -608,12 +853,20 @@ class DeepSeekFrontend(OpenAIFrontend):
         if args.deepseek_model not in ('deepseek-reasoner'):
             # see the usage recommendations at
             # https://huggingface.co/deepseek-ai/DeepSeek-R1
-            self.session.append({"role": "system", "content": args.system_message})
+            self.session.append(
+                {"role": "system", "content": args.system_message})
         self.model = args.deepseek_model
-        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+        # GitHub Copilot: reuse helper so sampling params degrade gracefully.
+        self.kwargs = self._collect_sampling_kwargs(args)
+        self._sampling_params_supported = None if self.kwargs else False
         if args.verbose:
-            console.log(f'{self.NAME}> model={repr(self.model)}, ' +
-                        f'temperature={args.temperature}, top_p={args.top_p}.')
+            if self.kwargs:
+                console.log(f'{self.NAME}> model={repr(self.model)}, ' +
+                            f"temperature={self.kwargs.get('temperature')}, " +
+                            f"top_p={self.kwargs.get('top_p')}.")
+            else:
+                console.log(
+                    f'{self.NAME}> model={repr(self.model)}, using server default sampling parameters.')
 
 
 class vLLMFrontend(OpenAIFrontend):
@@ -629,7 +882,9 @@ class vLLMFrontend(OpenAIFrontend):
                              base_url=args.vllm_base_url)
         self.session.append({"role": "system", "content": args.system_message})
         self.model = args.vllm_model
-        self.kwargs = {'temperature': args.temperature, 'top_p': args.top_p}
+    # GitHub Copilot: reuse helper so sampling params degrade gracefully.
+        self.kwargs = self._collect_sampling_kwargs(args)
+        self._sampling_params_supported = None if self.kwargs else False
         if args.verbose:
             console.log(f'{self.NAME}> model={repr(self.model)}, ' +
                         f'temperature={args.temperature}, top_p={args.top_p}.')
@@ -659,20 +914,20 @@ class ZMQFrontend(AbstractFrontend):
             console.log('warning! --top_p not yet supported for this frontend')
 
     def query(self, content: Union[List, Dict, str]) -> list:
-        if isinstance(content, list):
-            self.session = content
-        elif isinstance(content, dict):
-            self.session.append(content)
-        elif isinstance(content, str):
-            self.session.append({'role': 'user', 'content': content})
-        _check(self.session)
-        msg_json = json.dumps(self.session)
+        self.update_session(content)
+        baseline_len = len(self.session)
+        request_messages = self._messages_for_llm()
+        msg_json = json.dumps(request_messages)
         if self.debug:
             console.log('send:', msg_json)
         self.socket.send_string(msg_json)
         msg = self.socket.recv()
-        self.session = json.loads(msg)
-        _check(self.session)
+        new_session = json.loads(msg)
+        _check(new_session)
+        self.session = new_session
+        if len(self.session) > baseline_len:
+            for message in self.session[baseline_len:]:
+                self._vector_after_append(message)
         if self.debug:
             console.log('recv:', self.session[-1])
         return self.session[-1]['content']
@@ -728,6 +983,8 @@ def create_frontend(args):
         frontend = None
     elif args.frontend == 'echo':
         frontend = EchoFrontend(args)
+    elif args.frontend == 'vectorecho':
+        frontend = VectorEchoFrontend(args)
     else:
         raise NotImplementedError
     return frontend

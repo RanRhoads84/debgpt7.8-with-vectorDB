@@ -1,0 +1,3 @@
+# Ensure runtime directory exists with correct ownership
+# Type Path           Mode UID     GID     Age Argument
+D    /var/lib/debgpt/vector-service 0700 debgpt debgpt -   -

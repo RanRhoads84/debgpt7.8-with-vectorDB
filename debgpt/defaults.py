@@ -79,6 +79,8 @@ class Config(object):
             'google_api_key': 'your-google-api-key',
             'google_model': 'gemini-1.5-flash',
             'google_embedding_model': 'models/text-embedding-004',
+            'google_search_api_key': 'your-google-custom-search-api-key',
+            'google_search_cx': 'your-google-custom-search-cx',
             # xAI Frontend Specific
             'xai_api_key': 'your-xai-api-key',
             'xai_model': 'grok-beta',
@@ -103,6 +105,12 @@ class Config(object):
             'vllm_model': 'NousResearch/Meta-Llama-3-8B-Instruct',
             # ZMQ Frontend Specific
             'zmq_backend': 'tcp://localhost:11177',
+            # Vector service integration
+            'vector_service_enabled': False,
+            'vector_service_url': 'http://127.0.0.1:8000',
+            'vector_service_top_k': 5,
+            'vector_service_timeout': 5.0,
+            'vector_service_conversation_id': '',
             # System messages
             'system_message': '''\
 You are an excellent free software developer. You write high-quality code.
@@ -137,6 +145,20 @@ URL links in plain text format in the response.'''
             if verbose:
                 console.log('Found environment variable GOOGLE_API_KEY.')
             self.toml['google_api_key'] = google_api_key
+        if (google_search_api_key := os.getenv('GOOGLE_SEARCH_API_KEY',
+                                               None)) is not None:
+            if verbose:
+                console.log(
+                    'Found environment variable GOOGLE_SEARCH_API_KEY.')
+            self.toml['google_search_api_key'] = google_search_api_key
+        if (google_search_cx := os.getenv('GOOGLE_SEARCH_CX', None)) is not None:
+            if verbose:
+                console.log('Found environment variable GOOGLE_SEARCH_CX.')
+            self.toml['google_search_cx'] = google_search_cx
+        elif (google_cse_id := os.getenv('GOOGLE_CSE_ID', None)) is not None:
+            if verbose:
+                console.log('Found environment variable GOOGLE_CSE_ID.')
+            self.toml['google_search_cx'] = google_cse_id
         # create default vector db name
         emb_model = self.toml[f'{self.embedding_frontend}_embedding_model']
         self.toml['db'] = os.path.join(
