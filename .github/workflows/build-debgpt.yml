@@ -81,6 +81,7 @@ jobs:
             echo "No Debian packages found in workspace" >&2
             exit 1
           fi
+          mkdir -p /usr/lib/systemd/system
           for pkg in ${DEB_LIST}; do
             echo "Installing ${pkg} with dpkg -i"
             dpkg -i "${pkg}" || true

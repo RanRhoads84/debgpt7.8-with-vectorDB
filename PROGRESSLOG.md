@@ -30,6 +30,7 @@ _Comprehensive record of the DebGPT vector-service integration workstream._
   - Enabled `pip3` in `debian/debgpt-vector-service.postinst` with `--break-system-packages` so dependency installation survives Debian’s patched pip.
   - Corrected `debian/debgpt-vector-service.install` to drop `vector-service.env` directly into `/etc/debgpt/`, fixing the CI `dpkg` failure.
   - Swapped the package installation step to explicit `dpkg -i` invocations (with `apt-get -fy` to resolve dependencies) to mirror user guidance for local `.deb` testing.
+  - Created the systemd unit directory ahead of the `dpkg -i` loop so the vector-service package can install cleanly on minimal Debian containers.
 
 - **GitHub Actions artifact follow-up**
   - Tracking the rerun once the vector DB validation step passes so we can greenlight Debian packaging in CI.
