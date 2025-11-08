@@ -8,10 +8,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [debian:bookworm, debian:trixie]
     container:
-      image: debian:trixie
+      image: ${{ matrix.os }}
 
     steps:
+      - name: Cache APT archives
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-${{ hashFiles('**/debian/control') }}
+          restore-keys: ${{ runner.os }}-apt-
+
       - name: Install base tooling
         run: |
           export DEBIAN_FRONTEND=noninteractive
@@ -88,12 +99,33 @@ jobs:
           done
           apt-get install -fy
 
+      # - name: Verify package signatures
+      #   run: |
+      #     echo "TODO: implement GPG verification for downloaded .deb files"
+
       - name: Run vector DB bootstrapper
         env:
           SKIP_SYSTEMCTL: "1"
         run: |
           set -euo pipefail
           /usr/share/debgpt/vector_service/setup_vectordb.sh
+
+      - name: Bootstrap failure diagnostics
+        if: failure()
+        run: |
+          set -euo pipefail
+          if [ -f /var/log/qdrant/standalone.log ]; then
+            echo '--- tail /var/log/qdrant/standalone.log ---'
+            tail -n 20 /var/log/qdrant/standalone.log
+          fi
+          if [ -f /var/log/debgpt/vector-service.log ]; then
+            echo '--- tail /var/log/debgpt/vector-service.log ---'
+            tail -n 20 /var/log/debgpt/vector-service.log
+          fi
+          if [ -f /tmp/debgpt-qdrant-status ]; then
+            echo '--- /tmp/debgpt-qdrant-status ---'
+            cat /tmp/debgpt-qdrant-status
+          fi
 
       - name: Validate vector-service environment configuration
         run: |
@@ -108,30 +140,21 @@ jobs:
             echo "Qdrant package not installed; skipping health probe." >&2
             exit 0
           fi
-            if ! command -v qdrant >/dev/null 2>&1; then
+          if ! command -v qdrant >/dev/null 2>&1; then
             echo "Qdrant binary not present on system; skipping health probe." >&2
             exit 0
           fi
-          for attempt in $(seq 1 10); do
-            if curl -fsS http://127.0.0.1:6333/healthz | tee /tmp/qdrant-health.json; then
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "Qdrant health endpoint did not respond in time" >&2
-          exit 1
+          curl -fsS --retry 5 --retry-delay 2 --retry-all-errors http://127.0.0.1:6333/healthz | tee /tmp/qdrant-health.json
 
       - name: Check DebGPT vector service health endpoint
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 10); do
-            if curl -fsS http://127.0.0.1:8000/healthz | tee /tmp/vector-service-health.json; then
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "Vector service health endpoint did not respond in time" >&2
-          exit 1
+          curl -fsS --retry 5 --retry-delay 2 --retry-all-errors http://127.0.0.1:8000/healthz | tee /tmp/vector-service-health.json
+
+      - name: Verify installed DebGPT packages
+        run: |
+          set -euo pipefail
+          dpkg -l | grep debgpt
 
       - name: Run lintian
         if: always()
