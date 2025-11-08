@@ -18,24 +18,35 @@ SOURCES_LIST="/etc/apt/sources.list.d/qdrant.list"
 VECTOR_ENV="/etc/debgpt/vector-service.env"
 QDRANT_URL="http://127.0.0.1:6333"
 SKIP_SYSTEMCTL="${SKIP_SYSTEMCTL:-0}"
+USE_UPSTREAM_REPO=1
+QDRANT_INSTALLED=0
 
 add_qdrant_repo() {
   if [[ ! -f "${KEYRING_PATH}" ]]; then
     echo "[*] Fetching Qdrant signing key..."
     mkdir -p "$(dirname "${KEYRING_PATH}")"
-    curl -fsSL https://deps.qdrant.tech/deb/public.gpg -o "${KEYRING_PATH}"
-    chmod 0644 "${KEYRING_PATH}"
+    if curl -fsSL https://deps.qdrant.tech/deb/public.gpg -o "${KEYRING_PATH}"; then
+      chmod 0644 "${KEYRING_PATH}"
+    else
+      echo "[WARN] Unable to reach deps.qdrant.tech; continuing without upstream repository." >&2
+      rm -f "${KEYRING_PATH}"
+      USE_UPSTREAM_REPO=0
+    fi
   else
     echo "[+] Qdrant signing key already present."
   fi
 
-  if [[ ! -f "${SOURCES_LIST}" ]]; then
-    echo "[*] Adding Qdrant APT source..."
-    cat <<EOF >"${SOURCES_LIST}"
+  if [[ "${USE_UPSTREAM_REPO}" == "1" ]]; then
+    if [[ ! -f "${SOURCES_LIST}" ]]; then
+      echo "[*] Adding Qdrant APT source..."
+      cat <<EOF >"${SOURCES_LIST}"
 deb [signed-by=${KEYRING_PATH}] https://deps.qdrant.tech/deb stable main
 EOF
+    else
+      echo "[+] Qdrant APT source already configured."
+    fi
   else
-    echo "[+] Qdrant APT source already configured."
+    echo "[INFO] Skipping upstream Qdrant APT source configuration." >&2
   fi
 }
 
@@ -43,7 +54,12 @@ install_qdrant() {
   echo "[*] Updating package lists..."
   apt-get update
   echo "[*] Installing qdrant..."
-  apt-get install -y qdrant
+  if apt-get install -y qdrant; then
+    QDRANT_INSTALLED=1
+  else
+    echo "[WARN] Failed to install qdrant package automatically. Install it manually to enable local vector storage." >&2
+    QDRANT_INSTALLED=0
+  fi
 }
 
 configure_vector_env() {
@@ -123,5 +139,9 @@ install_qdrant
 configure_vector_env
 restart_services
 
-echo "[DONE] Qdrant is installed and DebGPT vector service is bound to ${QDRANT_URL}."
-echo "      Validate with: curl http://127.0.0.1:8000/healthz"
+if [[ "${QDRANT_INSTALLED}" == "1" ]]; then
+  echo "[DONE] Qdrant is installed and DebGPT vector service is bound to ${QDRANT_URL}."
+  echo "      Validate with: curl http://127.0.0.1:8000/healthz"
+else
+  echo "[WARN] Qdrant was not installed; DebGPT vector service remains configured but requires a running Qdrant instance." >&2
+fi
