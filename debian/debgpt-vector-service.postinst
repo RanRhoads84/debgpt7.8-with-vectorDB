@@ -23,6 +23,7 @@ case "$1" in
         if [ -x /usr/bin/pip3 ] && [ -f "$REQ_FILE" ]; then
             /usr/bin/pip3 install \
                 --no-warn-script-location \
+                --break-system-packages \
                 --upgrade \
                 --requirement "$REQ_FILE" \
                 --target "$SITE_PKGS"
