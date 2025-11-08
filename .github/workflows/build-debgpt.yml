@@ -20,12 +20,24 @@ jobs:
             build-essential \
             debhelper \
             devscripts \
+            equivs \
             lintian \
             python3 \
             python3-pip \
             python3-venv \
             python3-setuptools \
             python3-wheel
+
+      - name: Install package build-dependencies
+        run: |
+          if [ -d debgpt7.8-src/debian ]; then
+            BUILD_DIR="debgpt7.8-src"
+          else
+            BUILD_DIR="."
+          fi
+          echo "Installing build dependencies from ${BUILD_DIR}/debian/control"
+          (cd "$BUILD_DIR" && sudo mk-build-deps -i -r -t "apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y" debian/control)
+          (cd "$BUILD_DIR" && rm -f ./*-build-deps_*.deb)
 
       - name: Build Debian packages
         run: |
