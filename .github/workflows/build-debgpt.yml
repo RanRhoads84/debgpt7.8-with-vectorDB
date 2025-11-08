@@ -61,7 +61,6 @@ jobs:
           (cd "$BUILD_DIR" && dpkg-buildpackage -us -uc)
           ARTIFACT_SOURCE=$(cd "$BUILD_DIR" && cd .. && pwd)
           if [ "${ARTIFACT_SOURCE}" != "${ROOT_DIR}" ]; then
-            shopt -s nullglob
             for ext in changes deb dsc; do
               for file in "${ARTIFACT_SOURCE}"/*.${ext}; do
                 [ -e "${file}" ] || continue
@@ -72,7 +71,6 @@ jobs:
               [ -e "${file}" ] || continue
               mv "${file}" "${ROOT_DIR}/"
             done
-            shopt -u nullglob
           fi
 
       - name: Run lintian
