@@ -19,6 +19,7 @@ jobs:
           apt-get install -y --no-install-recommends \
             build-essential \
             ca-certificates \
+            curl \
             debhelper \
             dpkg-dev \
             fakeroot \
@@ -26,6 +27,7 @@ jobs:
             equivs \
             git \
             lintian \
+            procps \
             python3 \
             python3-pip \
             python3-setuptools \
@@ -61,6 +63,7 @@ jobs:
           (cd "$BUILD_DIR" && dpkg-buildpackage -us -uc)
           ARTIFACT_SOURCE=$(cd "$BUILD_DIR" && cd .. && pwd)
           if [ "${ARTIFACT_SOURCE}" != "${ROOT_DIR}" ]; then
+            shopt -s nullglob
             for ext in changes deb dsc; do
               for file in "${ARTIFACT_SOURCE}"/*.${ext}; do
                 [ -e "${file}" ] || continue
@@ -71,7 +74,46 @@ jobs:
               [ -e "${file}" ] || continue
               mv "${file}" "${ROOT_DIR}/"
             done
+            shopt -u nullglob
           fi
+
+      - name: Install generated packages
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          mapfile -t debs < <(find . -maxdepth 1 -type f \( -name "debgpt_*.deb" -o -name "debgpt-vector-service_*.deb" \) | sort)
+          if [ "${#debs[@]}" -eq 0 ]; then
+            echo "No Debian packages found in workspace" >&2
+            exit 1
+          fi
+          apt-get install -y "${debs[@]}"
+
+      - name: Run vector DB bootstrapper
+        env:
+          SKIP_SYSTEMCTL: "1"
+        run: |
+          set -euo pipefail
+          /usr/share/debgpt/vector_service/setup_vectordb.sh
+
+      - name: Validate vector-service environment configuration
+        run: |
+          set -euo pipefail
+          grep -qx 'QDRANT_URL=http://127.0.0.1:6333' /etc/debgpt/vector-service.env
+          grep -qx 'QDRANT_COLLECTION=chat_messages' /etc/debgpt/vector-service.env
+
+      - name: Check Qdrant health endpoint
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 10); do
+            if curl -fsS http://127.0.0.1:6333/healthz >/tmp/qdrant-health.json; then
+              cat /tmp/qdrant-health.json
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Qdrant health endpoint did not respond in time" >&2
+          exit 1
 
       - name: Run lintian
         if: always()

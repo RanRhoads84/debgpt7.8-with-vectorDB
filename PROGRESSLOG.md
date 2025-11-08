@@ -1,12 +1,31 @@
+
 # Project Progress Log
 
 _Comprehensive record of the DebGPT vector-service integration workstream._
 
 ## 2025-11-08
 
-- **GitHub Actions build fix**
-  - Removed `shopt` usage from `.github/workflows/build-debgpt.yml` so artifact collection works under POSIX `/bin/sh` in the Debian container.
-  - Waiting on the rerun to confirm the packaging job now completes.
+- **Documentation polish**
+  - Added pip/uv installation guidance to `README.md`, stressing use of a virtual environment before invoking `debgpt`.
+  - Removed redundant instructions in the README tutorial so the latest context-reader guidance is single-sourced from the MapReduce section.
+  - Documented a one-shot Debian installation path that installs the CLI, vector service, and Qdrant via `apt install`.
+
+- **CI migration to Debian 13**
+  - Switched `.github/workflows/build-debgpt.yml` to run inside a `debian:trixie` container instead of Ubuntu 24.04.
+  - Installed the missing Debian packaging toolchain (`dpkg-dev`, `fakeroot`, etc.) directly in the container to unblock `dpkg-buildpackage`.
+  - Noted follow-up: workflow still fails on the post-build artifact step because `/bin/sh` lacks `shopt`; need to replace the bashism.
+
+- **Vector DB bootstrap helper**
+  - Added `contrib/vector_service/setup_vectordb.sh` to add the upstream Qdrant APT repo, install the service, align `/etc/debgpt/vector-service.env`, and restart relevant systemd units.
+  - Called out the script in the README’s one-shot install section for easier ops hand-off.
+
+- **Manual Debian install validation**
+  - Installed the generated `.deb` on a clean Debian 13 environment; CLI (`debgpt --help`) and vector-config TUI launched successfully.
+  - Confirms packaging artifacts function end-to-end outside of CI.
+
+- **GitHub Actions artifact follow-up**
+  - Need to replace lingering `shopt` usage in `.github/workflows/build-debgpt.yml` so the post-build artifact copy works under POSIX `/bin/sh`.
+  - Tracking the rerun once the bashism is removed to confirm the Debian packaging job completes end-to-end.
 
 - **Progress tracking**
   - Updated this log to capture the build workflow change and keep stakeholders informed during the rerun window.

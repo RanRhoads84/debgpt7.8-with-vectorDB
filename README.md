@@ -39,6 +39,7 @@ TABLE OF CONTENTS
 - [MAJOR CHANGES IN THIS FORK](#major-changes-in-this-fork)
 - [QUICK START](#quick-start)
 - [INSTALLING WITH PIP OR UV](#installing-with-pip-or-uv)
+- [ONE-SHOT DEBIAN INSTALL (CLI + VECTOR SERVICE)](#one-shot-debian-install-cli--vector-service)
 - [COMMAND-LINE HELP](#command-line-help)
 - [FRONTENDS](#frontends)
 - [TUTORIAL](#tutorial)
@@ -171,6 +172,54 @@ uv run debgpt --help
 
 `uv run` automatically executes the command inside the active environment, so
 you can keep dependencies isolated without manually manipulating `PATH`.
+
+ONE-SHOT DEBIAN INSTALL (CLI + VECTOR SERVICE)
+=============================================
+
+For a turnkey setup on Debian 13 (trixie) that installs the terminal client,
+the FastAPI vector microservice, and a Qdrant backend in one go:
+
+1. Install the locally built packages together with Qdrant:
+
+  ```
+  sudo apt install ./debgpt_0.7.8~vector1_all.deb \
+              ./debgpt-vector-service_0.7.8~vector1_all.deb \
+              qdrant
+  ```
+
+  If you are pulling artifacts from CI, copy the `.deb` files to the target
+  machine first and adjust the filenames above as newer versions appear.
+
+  Tip: `contrib/vector_service/setup_vectordb.sh` automates adding the Qdrant
+  repository, installing the package, and restarting the services.
+
+2. Enable and start the services:
+
+  ```
+  sudo systemctl enable --now qdrant.service
+  sudo systemctl enable --now debgpt-vector-service.service
+  ```
+
+3. Tailor the vector-service environment (credentials, backend defaults) by
+  running `debgpt --vector-config` (the TUI edits `/etc/debgpt/vector-service.env`
+  for you) or manually editing that file with your preferred editor. The
+  installer seeds it with sensible defaults that talk to the local Qdrant
+  instance and store message history in `/var/lib/debgpt/vector-service/messages.db`.
+  Qdrant itself installs its configuration under `/etc/qdrant/config.yaml` and
+  persists data beneath `/var/lib/qdrant`.
+
+4. Confirm everything is wired up:
+
+  ```
+  curl http://127.0.0.1:8000/healthz
+  debgpt --vector-config
+  ```
+
+  The health endpoint should return `{"status":"ok"}`; the configurator
+  allows you to tweak the `.env` file without hand-editing it.
+
+Once these steps finish, the packaged `debgpt` CLI can issue vector-aware calls
+out of the box (e.g., `--frontend vectorecho` or `debgpt vdb dump`).
 
 COMMAND-LINE HELP
 =================
