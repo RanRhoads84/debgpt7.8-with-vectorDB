@@ -150,7 +150,34 @@ fallback_startup() {
     echo "[WARN] qdrant binary not found; cannot perform manual start." >&2
   fi
 
-  echo "[INFO] If debgpt-vector-service is required, start it manually once systemd is available." >&2
+  local vector_cmd="PYTHONPATH=/usr/lib/debgpt/vector-service/site-packages /usr/bin/python3 -m debgpt.vector_service.__main__"
+  echo "[*] Ensuring DebGPT vector service is running..."
+  if pgrep -f 'debgpt.vector_service.__main__' >/dev/null 2>&1; then
+    echo "[+] DebGPT vector service already running; skipping manual start."
+    return
+  fi
+
+  install -d -o debgpt -g debgpt /var/log/debgpt
+  local launch_cmd="cd /usr/lib/debgpt && ${vector_cmd} >/var/log/debgpt/vector-service.log 2>&1 &"
+  if command -v runuser >/dev/null 2>&1; then
+    if runuser -u debgpt -- sh -c "${launch_cmd}"; then
+      sleep 2
+    else
+      echo "[WARN] runuser failed to launch the vector service." >&2
+    fi
+  else
+    if su -s /bin/sh debgpt -c "${launch_cmd}"; then
+      sleep 2
+    else
+      echo "[WARN] su failed to launch the vector service." >&2
+    fi
+  fi
+
+  if pgrep -f 'debgpt.vector_service.__main__' >/dev/null 2>&1; then
+    echo "[+] DebGPT vector service manual launch succeeded."
+  else
+    echo "[WARN] Unable to confirm DebGPT vector service is running." >&2
+  fi
 }
 
 install_qdrant
