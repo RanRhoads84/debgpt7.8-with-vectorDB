@@ -13,19 +13,26 @@ _Comprehensive record of the DebGPT vector-service integration workstream._
 - **CI migration to Debian 13**
   - Switched `.github/workflows/build-debgpt.yml` to run inside a `debian:trixie` container instead of Ubuntu 24.04.
   - Installed the missing Debian packaging toolchain (`dpkg-dev`, `fakeroot`, etc.) directly in the container to unblock `dpkg-buildpackage`.
-  - Noted follow-up: workflow still fails on the post-build artifact step because `/bin/sh` lacks `shopt`; need to replace the bashism.
+  - Replaced the lingering `shopt` usage with POSIX `find … -exec mv …` so post-build artifact moves succeed under `/bin/sh`.
 
 - **Vector DB bootstrap helper**
   - Added `contrib/vector_service/setup_vectordb.sh` to add the upstream Qdrant APT repo, install the service, align `/etc/debgpt/vector-service.env`, and restart relevant systemd units.
   - Called out the script in the README’s one-shot install section for easier ops hand-off.
+  - Hardened the script for non-systemd environments by honoring `SKIP_SYSTEMCTL` and manually launching Qdrant when needed.
 
 - **Manual Debian install validation**
   - Installed the generated `.deb` on a clean Debian 13 environment; CLI (`debgpt --help`) and vector-config TUI launched successfully.
   - Confirms packaging artifacts function end-to-end outside of CI.
 
+- **GitHub Actions vector DB exercise**
+  - Extended `.github/workflows/build-debgpt.yml` to install the freshly built packages, run `setup_vectordb.sh`, validate `/etc/debgpt/vector-service.env`, and hit Qdrant’s `/healthz`.
+  - Pulled `bash`, `curl`, and `procps` into the base tooling to satisfy the script’s runtime requirements.
+  - Enabled `pip3` in `debian/debgpt-vector-service.postinst` with `--break-system-packages` so dependency installation survives Debian’s patched pip.
+  - Corrected `debian/debgpt-vector-service.install` to drop `vector-service.env` directly into `/etc/debgpt/`, fixing the CI `dpkg` failure.
+  - Swapped the package installation step to explicit `dpkg -i` invocations (with `apt-get -fy` to resolve dependencies) to mirror user guidance for local `.deb` testing.
+
 - **GitHub Actions artifact follow-up**
-  - Need to replace lingering `shopt` usage in `.github/workflows/build-debgpt.yml` so the post-build artifact copy works under POSIX `/bin/sh`.
-  - Tracking the rerun once the bashism is removed to confirm the Debian packaging job completes end-to-end.
+  - Tracking the rerun once the vector DB validation step passes so we can greenlight Debian packaging in CI.
 
 - **Progress tracking**
   - Updated this log to capture the build workflow change and keep stakeholders informed during the rerun window.
