@@ -52,6 +52,7 @@ Depends: debgpt (= ${binary:Version}),
          python3-venv,
          python3-setuptools,
          python3-wheel,
+         adduser,
          ${misc:Depends}
 Recommends: docker.io | podman,
             qdrant,
