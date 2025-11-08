@@ -140,7 +140,7 @@ jobs:
           fi
           if ! pgrep -f '^qdrant' >/dev/null 2>&1; then
             echo "Starting qdrant manually"
-            nohup qdrant --config /etc/qdrant/config.yaml >/var/log/qdrant/standalone.log 2>&1 &
+            nohup qdrant --config-path /etc/qdrant/config.yaml >/var/log/qdrant/standalone.log 2>&1 &
           fi
 
           echo "Waiting for Qdrant to become healthy..."
