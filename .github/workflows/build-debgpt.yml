@@ -29,8 +29,14 @@ jobs:
 
       - name: Build Debian packages
         run: |
-          cd debgpt7.8-src
-          dpkg-buildpackage -us -uc
+          echo "::group::Workspace contents"
+          ls -al
+          echo "::endgroup::"
+          if [ ! -d debgpt7.8-src ]; then
+            echo "Expected debgpt7.8-src directory is missing" >&2
+            exit 1
+          fi
+          (cd debgpt7.8-src && dpkg-buildpackage -us -uc)
 
       - name: Run lintian
         if: always()
@@ -48,3 +54,4 @@ jobs:
             *.changes
             *.dsc
             *.tar.*
+          if-no-files-found: ignore
