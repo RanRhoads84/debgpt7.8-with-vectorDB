@@ -22,56 +22,38 @@ QDRANT_REPO="${QDRANT_REPO:-qdrant/qdrant}"
 QDRANT_VERSION="${QDRANT_VERSION:-}"
 QDRANT_DEB_URL="${QDRANT_DEB_URL:-}"
 
-resolve_qdrant_url() {
-  local repo="${QDRANT_REPO}"
-  local tag
-  local version
-  local pkg
-  local url
-
-  if [[ -n "${QDRANT_DEB_URL}" ]]; then
-    echo "${QDRANT_DEB_URL}"
-    return 0
-  fi
-
-  if [[ -n "${QDRANT_VERSION}" ]]; then
-    tag="v${QDRANT_VERSION#v}"
-  else
-    echo "[*] Discovering latest Qdrant release tag from GitHub..."
-    tag=$(curl -fsSL \
-      -H "Accept: application/vnd.github+json" \
-      -H "User-Agent: debgpt-vector-bootstrap" \
-      "https://api.github.com/repos/${repo}/releases/latest" | \
-      grep -m1 '"tag_name"' | cut -d '"' -f4)
-    if [[ -z "${tag}" ]]; then
-      echo "[WARN] Unable to determine latest Qdrant release; falling back to v1.15.5." >&2
-      tag="v1.15.5"
-    fi
-  fi
-
-  version="${tag#v}"
-  pkg="qdrant_${version}-1_amd64.deb"
-  url="https://github.com/${repo}/releases/download/${tag}/${pkg}"
-  echo "${url}"
-}
-
 install_qdrant() {
-  local url
-  local pkg
-  url=$(resolve_qdrant_url)
-  pkg="${url##*/}"
+  local repo="${QDRANT_REPO}"
+  local tag="${QDRANT_VERSION}"
+  local url="${QDRANT_DEB_URL}"
+
+  if [[ -z "${url}" ]]; then
+    if [[ -z "${tag}" ]]; then
+      echo "[*] Fetching latest Qdrant release tag from GitHub..."
+      tag=$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" \
+        | grep -Po '"tag_name": "\K.*?(?=")' | head -n1)
+      if [[ -z "${tag}" ]]; then
+        echo "[WARN] Unable to determine latest Qdrant release; defaulting to v1.15.5." >&2
+        tag="v1.15.5"
+      fi
+    else
+      tag="v${tag#v}"
+    fi
+    local version="${tag#v}"
+    local pkg="qdrant_${version}-1_amd64.deb"
+    url="https://github.com/${repo}/releases/download/${tag}/${pkg}"
+    echo "[+] Selected Qdrant release tag: ${tag}"
+  fi
+
   echo "[*] Downloading Qdrant package from ${url}..."
   TMP_DEB="$(mktemp /tmp/qdrant-XXXXXXXX.deb)"
-  if curl -fLo "${TMP_DEB}" \
-      -H "User-Agent: debgpt-vector-bootstrap" \
-      "${url}"; then
+  if curl -fsSL "${url}" -o "${TMP_DEB}"; then
     echo "[*] Installing qdrant via dpkg..."
     if dpkg -i "${TMP_DEB}"; then
-      apt-get update
       apt-get install -fy
       QDRANT_INSTALLED=1
     else
-      echo "[WARN] dpkg could not install ${pkg}." >&2
+      echo "[WARN] dpkg failed to install ${url##*/}." >&2
       QDRANT_INSTALLED=0
     fi
   else
