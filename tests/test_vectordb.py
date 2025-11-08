@@ -169,6 +169,18 @@ def test_vdb_show(tmpdir):
     vdb.close()
 
 
+def test_dump(tmpdir):
+    """Ensure dump returns structured entries."""
+    vdb = _prepare_vdb(tmpdir)
+    snapshot = vdb.dump()
+    assert len(snapshot) == 11
+    assert {'id', 'source', 'text'} <= snapshot[0].keys()
+    with_vectors = vdb.dump(ids=[snapshot[-1]['id']], include_vector=True)
+    assert len(with_vectors) == 1
+    assert isinstance(with_vectors[0]['vector'], list)
+    vdb.close()
+
+
 def test_main_demo(tmpdir):
     """
     Test running the demo command in the main function.

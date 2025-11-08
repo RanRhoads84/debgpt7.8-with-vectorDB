@@ -10,3 +10,4 @@ openai
 google-cloud-aiplatform
 requests
 numpy
+tldr

@@ -24,11 +24,35 @@ from . import defaults
 
 console = defaults.console
 
+SHORT_HELP_MESSAGE = (
+    "DebGPT - AI assistant for the terminal\n\n"
+    "Usage:\n"
+    "  debgpt [options] --ask \"prompt\"\n"
+    "  debgpt -f file.py --ask \"summarize\"\n\n"
+    "Common options:\n"
+    "  -a, --ask TEXT        prompt to send to the LLM\n"
+    "  -f, --file PATH       include file or glob content\n"
+    "  -F, --frontend NAME   pick a backend (dryrun, vectorecho, openai, ...)\n"
+    "  -q, --quit            exit after first response\n"
+    "  --vector-config       run the vector-service env configurator\n"
+    "  -o FILE               capture the last reply to a file\n"
+    "  debgpt config         rerun the setup wizard\n\n"
+    "Tips:\n"
+    "  stdin can feed prompts when you use --frontend dryrun\n"
+    "  --frontend vectorecho talks to the local semantic memory service\n"
+    "  --mapreduce SPEC summarizes large sources before asking\n\n"
+    "See `debgpt --help-all` or `man debgpt` for the full reference.\n"
+)
+
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
     '''
     argparse with subparsers. Generate a config.toml template as byproduct.
     '''
+
+    if any(flag in argv for flag in ('-h', '--help')):
+        print(SHORT_HELP_MESSAGE, end='')
+        sys.exit(0)
 
     # helper functions
     def __add_arg_to_config(template,
@@ -48,8 +72,11 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     # if ~/.debgpt/config.toml exists, parse it to override the built-in defaults.
     _verbose = any(x in argv for x in ('-v', '--verbose'))
     conf = defaults.Config(verbose=_verbose)
+
     # override the loaded configurations again with command line arguments
-    ag = argparse.ArgumentParser()
+    ag = argparse.ArgumentParser(add_help=False)
+    ag.add_argument('--help-all', action='help',
+                    help='show the complete command reference and exit')
 
     # CLI Behavior / Frontend Arguments
     config_template = '''\
@@ -79,6 +106,9 @@ use Meta+Enter to accept the input instead.')
                     '-v',
                     action='store_true',
                     help='verbose mode. helpful for debugging')
+    _g.add_argument('--vector-config',
+                    action='store_true',
+                    help='run the interactive vector service environment configurator and exit')
     _g.add_argument('--output',
                     '-o',
                     type=str,
@@ -617,6 +647,19 @@ including buildd:<package>, bts:<number>, archwiki:<keyword>, man:<man>, cmd:<cm
                            default=None,
                            nargs='?',
                            help='vector ID')
+    ps_vdb_dump = vdb_subps.add_parser('dump',
+                                       help='emit JSON lines of vector entries')
+    ps_vdb_dump.add_argument('--ids',
+                             metavar='ID',
+                             nargs='*',
+                             help='optional list of vector IDs to dump')
+    ps_vdb_dump.add_argument('--include-vector',
+                             action='store_true',
+                             help='include the numeric vector payload')
+    ps_vdb_dump.add_argument('--dump-output',
+                             type=str,
+                             default='-',
+                             help='write JSON to file instead of stdout')
 
     # Task: replay
     ps_replay = subps.add_parser('replay',

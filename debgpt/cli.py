@@ -21,10 +21,11 @@ from pygments.lexers import DiffLexer
 from rich.markup import escape
 from rich.panel import Panel
 from rich.rule import Rule
-from typing import Optional
+from typing import Optional, Sequence
 import argparse
 import difflib
 import functools as ft
+import json
 import os
 import sys
 import tempfile
@@ -67,6 +68,10 @@ def subcmd_replay(ag) -> None:
     exit(0)
 
 
+def run_vector_configurator() -> int:
+    return configurator.configure_vector_service_env()
+
+
 def subcmd_config(ag) -> None:
     '''
     re-run the configurator.fresh_install_guide() to reconfigure.
@@ -102,6 +107,29 @@ def subcmd_vdb(ag) -> None:
 def subcmd_vdb_ls(ag) -> None:
     vdb = vectordb.VectorDB(ag.db, ag.embedding_dim)
     vdb.ls(ag.id)
+    vdb.close()
+    exit(0)
+
+
+def subcmd_vdb_dump(ag) -> None:
+    ids: Optional[Sequence[int]] = None
+    if ag.ids:
+        ids = [int(x) for x in ag.ids]
+    vdb = vectordb.VectorDB(ag.db, ag.embedding_dim)
+    rows = vdb.dump(ids=ids, include_vector=ag.include_vector)
+    vdb.close()
+    handle = sys.stdout
+    need_close = False
+    if ag.dump_output and ag.dump_output != '-':
+        handle = open(ag.dump_output, 'wt')
+        need_close = True
+    try:
+        for row in rows:
+            handle.write(json.dumps(row))
+            handle.write('\n')
+    finally:
+        if need_close:
+            handle.close()
     exit(0)
 
 
@@ -257,6 +285,8 @@ def _dispatch_subcommand(ag):
     if ag.subparser_name == 'vdb':
         if ag.vdb_subparser_name == 'ls':
             subcmd_vdb_ls(ag)
+        elif ag.vdb_subparser_name == 'dump':
+            subcmd_vdb_dump(ag)
         else:
             subcmd_vdb(ag)
     elif ag.subparser_name == 'replay':
@@ -344,6 +374,9 @@ def sideeffect_inplace(ag: object, f: frontend.AbstractFrontend) -> None:
 
 
 def main(argv=sys.argv[1:]):
+    if '--vector-config' in argv and not any(
+            flag in argv for flag in ('-h', '--help', '--help-all')):
+        exit(configurator.configure_vector_service_env())
     # parse args, argument order, and prepare debgpt_home
     ag = arguments.parse_args(argv)
     ag_order = arguments.parse_args_order(argv)
@@ -358,6 +391,9 @@ def main(argv=sys.argv[1:]):
     if ag.version:
         version()
         exit(0)
+
+    if getattr(ag, 'vector_config', False):
+        exit(run_vector_configurator())
 
     # detect first-time launch (fresh install) where config is missing
     if _debgpt_is_not_configured(ag):
@@ -424,6 +460,7 @@ def main(argv=sys.argv[1:]):
 
     if pending_exc is not None:
         raise pending_exc
+
 
 if __name__ == '__main__':
     main()

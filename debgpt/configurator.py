@@ -14,7 +14,8 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-from typing import Iterable, Optional, Dict
+from typing import Iterable, Optional, Dict, List, Tuple, Sequence
+from pathlib import Path
 import urwid
 import os
 import re
@@ -26,6 +27,64 @@ default = defaults.Config()
 console = defaults.console
 
 _TITLE = 'DebGPT Configurator'
+_VECTOR_TITLE = 'Vector Service Configurator'
+_SENSITIVE_SUFFIXES = ('_KEY', '_TOKEN', '_SECRET', '_PASSWORD')
+DEFAULT_VECTOR_SERVICE_DIR = Path(__file__).resolve(
+).parents[1] / 'contrib' / 'vector_service'
+
+
+def _vector_is_secret(key: str) -> bool:
+    upper_key = key.upper()
+    return any(upper_key.endswith(suffix) for suffix in _SENSITIVE_SUFFIXES)
+
+
+def _vector_parse_env(path: Path) -> Dict[str, str]:
+    values: Dict[str, str] = {}
+    if not path.exists():
+        return values
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in raw_line:
+            continue
+        key, value = raw_line.split('=', 1)
+        values[key] = value
+    return values
+
+
+def _vector_read_example(path: Path) -> Tuple[List[str], List[str], Dict[str, str]]:
+    lines = path.read_text().splitlines()
+    order: List[str] = []
+    defaults: Dict[str, str] = {}
+    for raw_line in lines:
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith('#') or '=' not in raw_line:
+            continue
+        key, value = raw_line.split('=', 1)
+        order.append(key)
+        defaults[key] = value
+    return lines, order, defaults
+
+
+def _vector_build_output(example_lines: Sequence[str],
+                         values: Dict[str, str],
+                         extras: Dict[str, str]) -> str:
+    result_lines: List[str] = []
+    for raw_line in example_lines:
+        stripped = raw_line.strip()
+        if stripped and not stripped.startswith('#') and '=' in raw_line:
+            key = raw_line.split('=', 1)[0]
+            result_lines.append(f"{key}={values.get(key, '')}")
+        else:
+            result_lines.append(raw_line)
+    remaining = {k: v for k, v in extras.items() if k not in values}
+    if remaining:
+        if result_lines and result_lines[-1] != "":
+            result_lines.append("")
+        result_lines.append('# Custom entries preserved from existing .env')
+        for key in sorted(remaining):
+            result_lines.append(f"{key}={remaining[key]}")
+    result_lines.append("")
+    return "\n".join(result_lines)
 
 
 def _abort_on_None(value: Optional[str]) -> None:
@@ -123,8 +182,14 @@ class SingleEdit(object):
     def edit_update(self, edit: urwid.Edit, new_edit_text: str) -> None:
         self._choice = new_edit_text
 
-    def __init__(self, title: str, question: str, default: str, helpmsg: str,
-                 statusmsg: str):
+    def __init__(self,
+                 title: str,
+                 question: str,
+                 default: str,
+                 helpmsg: str,
+                 statusmsg: str,
+                 *,
+                 mask: Optional[str] = None):
         # process arguments
         self._choice = default
         # header and footer
@@ -137,7 +202,7 @@ class SingleEdit(object):
             urwid.Divider(),
         ]
         # build the edit widget
-        edit = urwid.Edit("", default)
+        edit = urwid.Edit("", default, mask=mask)
         urwid.connect_signal(edit, 'change', self.edit_update)
         edit = urwid.LineBox(edit)
         body.append(edit)
@@ -451,6 +516,44 @@ def _edit_config_template(config_template: str, key: str, value: str) -> str:
     return '\n'.join(newlines)
 
 
+def configure_vector_service_env(root: Optional[Path] = None) -> int:
+    base_dir = Path(root) if root is not None else DEFAULT_VECTOR_SERVICE_DIR
+    example_path = base_dir / '.env.example'
+    target_path = base_dir / '.env'
+
+    if not example_path.exists():
+        console.print(
+            f"[red]debgpt: vector-config: missing {example_path}[/red]")
+        return 1
+
+    example_lines, order, defaults = _vector_read_example(example_path)
+    existing = _vector_parse_env(target_path)
+
+    console.print(
+        f"[bold]{_VECTOR_TITLE}[/bold]\nEditing {target_path} (Esc to abort)")
+
+    values: Dict[str, str] = {}
+    for key in order:
+        baseline = existing.get(key, defaults.get(key, ''))
+        mask = '*' if _vector_is_secret(key) else None
+        helpmsg = 'Leave the suggestion as-is to keep the current value.'
+        if mask:
+            helpmsg = (
+                'Value masked; press Enter to keep the stored value or type a new one.'
+            )
+        question = f"Enter value for {key}:"
+        editor = SingleEdit(_VECTOR_TITLE, question, baseline, helpmsg,
+                            'Press Enter to confirm. Press Esc to abort.',
+                            mask=mask)
+        value = editor.run()
+        values[key] = value
+
+    output = _vector_build_output(example_lines, values, existing)
+    target_path.write_text(output)
+    console.print(f"[green]Wrote {target_path}[/green]")
+    return 0
+
+
 def fresh_install_guide(dest: Optional[str] = None) -> dict:
     '''
     This function is a configuration guide for fresh installation of DebGPT.
@@ -471,7 +574,7 @@ def fresh_install_guide(dest: Optional[str] = None) -> dict:
         'Anthropic (Claude) | commercial,  Anthropic-API',
         'Google    (Gemini) | commercial,  Google-API',
         'xAI       (Grok)   | commercial,  OpenAI-API',
-        'Nvidia    (*)      | commercial,  OpenAI-API', 
+        'Nvidia    (*)      | commercial,  OpenAI-API',
         'DeepSeek           | commercial,  OpenAI-API, MIT-Licensed Model',
         'Ollama    (*)      | self-hosted, OpenAI-API',
         'llama.cpp (*)      | self-hosted, OpenAI-API',
@@ -539,11 +642,11 @@ using the `--frontend|-F` argument.",
 #        "Select an embedding frontend that DebGPT will use:",
 #        embedding_frontends,
 #        "An embedding model turns text into vector embeddings, \
-#unlocking use cases like search. Choose a frontend that will compute the \
-#embedding vectors.\n\n\
-#The embedding frontend can be different from the frontend.\n\n\
-#If you are not going to use the embedding-realted feature, such as vectordb,\
-#retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'.",
+# unlocking use cases like search. Choose a frontend that will compute the \
+# embedding vectors.\n\n\
+# The embedding frontend can be different from the frontend.\n\n\
+# If you are not going to use the embedding-realted feature, such as vectordb,\
+# retrieval, retrieval-augmented-generation (RAG), etc., you can select 'Random'.",
 #        "Press Enter to confirm. Press Esc to abort.",
 #        focus=embedding_frontends_focus).run()
 #    _abort_on_None(embedding_frontend)

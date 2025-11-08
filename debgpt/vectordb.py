@@ -14,7 +14,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
-from typing import Optional
+from typing import Optional, Sequence, Dict, Any
 import textwrap
 import sys
 from typing import Union, List, Tuple
@@ -254,6 +254,29 @@ class VectorDB:
             f'\nlen(vector)={len(vector)}',
             f'\nvector={vector}',
         )
+
+    def dump(self,
+             ids: Optional[Sequence[int]] = None,
+             include_vector: bool = False) -> List[Dict[str, Any]]:
+        '''
+        Collect vector entries for structured export.
+        '''
+        rows: List[List[Union[int, str, np.ndarray]]]
+        if ids:
+            rows = [self.get_byid(int(idx)) for idx in ids]
+        else:
+            rows = self.get_all()
+        payload: List[Dict[str, Any]] = []
+        for idx, source, text, vector in rows:
+            item: Dict[str, Any] = {
+                'id': idx,
+                'source': source,
+                'text': text,
+            }
+            if include_vector:
+                item['vector'] = vector.tolist()
+            payload.append(item)
+        return payload
 
 
 def main(argv: List[str]) -> None:

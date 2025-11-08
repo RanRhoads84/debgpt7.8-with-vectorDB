@@ -21,6 +21,8 @@ class VectorServiceClient:
     ) -> None:
         self.base_url = base_url.rstrip("/") or "http://127.0.0.1:8000"
         self.timeout = timeout
+        # Keep vector checks snappy so the CLI does not stall when the service is down.
+        self._connect_timeout = max(0.2, min(timeout, 1.0))
         self.enabled = enabled
         self._checked = False
         self._available = False
@@ -44,7 +46,8 @@ class VectorServiceClient:
     def _healthcheck(self) -> bool:
         try:
             response = self._session.get(
-                self._url("/healthz"), timeout=self.timeout
+                self._url("/healthz"),
+                timeout=(self._connect_timeout, self.timeout)
             )
             response.raise_for_status()
             return True
@@ -79,7 +82,7 @@ class VectorServiceClient:
                     "query": query,
                     "k": top_k,
                 },
-                timeout=self.timeout,
+                timeout=(self._connect_timeout, self.timeout),
             )
             response.raise_for_status()
             data = response.json()
@@ -109,7 +112,9 @@ class VectorServiceClient:
         }
         try:
             response = self._session.post(
-                self._url("/message"), json=payload, timeout=self.timeout
+                self._url("/message"),
+                json=payload,
+                timeout=(self._connect_timeout, self.timeout),
             )
             response.raise_for_status()
             data = response.json()

@@ -35,10 +35,14 @@ TABLE OF CONTENTS
 - [NAME](#name)
 - [SYNOPSIS](#synopsis)
 - [DESCRIPTION](#description)
+- [FORK BACKGROUND](#fork-background)
+- [MAJOR CHANGES IN THIS FORK](#major-changes-in-this-fork)
 - [QUICK START](#quick-start)
+- [INSTALLING WITH PIP OR UV](#installing-with-pip-or-uv)
+- [COMMAND-LINE HELP](#command-line-help)
 - [FRONTENDS](#frontends)
 - [TUTORIAL](#tutorial)
-  - [1. Chatting with LLM and CLI Behavior](#1-chatting-with-llm-and-cli-behavior)
+  - [1. Chatting with LLM and CLI Behavior](#1-interaction-mode-with-llm-and-cli-behavior)
   - [2. Context Readers for Additional Information](#2-context-readers-for-additional-information)
   - [3. Inplace Editing of a File](#3-inplace-editing-of-a-file)
   - [4. Vector Retriever for Most Relevant Information](#4-vector-retriever-for-most-relevant-information)
@@ -58,29 +62,69 @@ TABLE OF CONTENTS
 - [LICENSE and ACKNOWLEDGEMENT](#license-and-acknowledgement)
 
 
+FORK BACKGROUND
+===============
+
+This repository, `debgpt7.8-with-vectorDB`, is a fork of
+[Mo Zhou's original DebGPT project](https://salsa.debian.org/deeplearning-team/debgpt.git).
+The fork is maintained by RanRhoads84, with ongoing coding work
+handled by GitHub Copilot (this assistant) to extend and polish the toolkit on
+top of Mo Zhou's foundation. We continue to honor Mo's authorship and upstream
+licensing while iterating on ergonomics and the vector search workflow.
+
+MAJOR CHANGES IN THIS FORK
+==========================
+
+- Added the `--vector-config` flag and a native urwid-based wizard to edit the
+  vector service `.env` file directly from the CLI without spawning the legacy
+  helper script.
+- Optimized `debgpt --help` for instant feedback by short-circuiting argument
+  parsing, while documenting that `--help-all` retains the full man-page
+  content.
+- Refreshed the vector configurator UI to match `debgpt config`, including
+  masking for secrets and preservation of custom `.env` entries.
+- Reduced vector service connection backoff so interactive sessions fail fast
+  when the microservice is offline instead of delaying OpenAI requests.
+- Added `debgpt vdb dump` to export stored vectors as JSON lines for easier
+  inspection or archival.
+- General README updates to document the fork provenance, acknowledge
+  contributors, and surface the new flags and UX tweaks.
+
+
 QUICK START
 ===========
 
-First, install `DebGPT` from PyPI or Git repository:
+First, download the Debian package produced by this fork (see the GitHub
+releases or your CI artifacts). Each release bundles an `amd64` `.deb` and the
+accompanying `.changes` metadata. Install it with `dpkg`:
 
 ```
-pip3 install debgpt
-pip3 install git+https://salsa.debian.org/deeplearning-team/debgpt.git
+sudo dpkg -i debgpt_*.deb
+sudo apt-get -f install
 ```
 
-The bare minimum "configuration" required to make `debgpt` work is
-`export OPENAI_API_KEY="your-api-key"`. If anything else is needed,
-use the TUI-based wizard to (re-)configure:
+This drops the `debgpt` executable and its man page (`man debgpt`) into the
+system PATH. The CLI reuses Mo Zhou’s upstream code base available at
+https://salsa.debian.org/deeplearning-team/debgpt.git, with this fork adding
+the vector-aware improvements documented above.
+
+Before launching the CLI, configure your OpenAI key (or another frontend’s API
+credentials):
+
+```
+export OPENAI_API_KEY="your-api-key"
+```
+or run the interactive setup wizard, which now includes the vector service TUI:
 
 ```
 debgpt config
+debgpt --vector-config
 ```
 
-Or use `debgpt genconfig` to generate a configuration template and place it at
-`$HOME/.debgpt/config.toml`.  Both `config` and `genconfig` will inherit any
-existing configurations.
+If you prefer to edit a template manually, generate it with
+`debgpt genconfig > ~/.debgpt/config.toml`.
 
-Upon completion, you can start an interactive chat with the LLM:
+Once configured, start chatting:
 
 ```
 debgpt
@@ -90,6 +134,55 @@ Enjoy the chat!
 
 Hint: A collection of samples generated using DebGPT can be found at
 [this repository](https://salsa.debian.org/lumin/ai-noises).
+
+INSTALLING WITH PIP OR UV
+==========================
+
+If you prefer to work from source or run DebGPT on a non-Debian system, install
+it inside an isolated Python environment so that the `debgpt` entry point, its
+dependencies, and any optional extras stay contained.
+
+**Using pip**
+
+```
+git clone https://github.com/RanRhoads84/debgpt7.8-with-vectorDB.git
+cd debgpt7.8-with-vectorDB/debgpt7.8-src
+python3 -m venv .venv
+source .venv/bin/activate
+pip install .
+# Optional: pip install .[vector-service]
+debgpt --help
+```
+
+Keep the virtual environment activated whenever you run `debgpt`; otherwise the
+shell will not find the script or its dependencies.
+
+**Using uv**
+
+```
+git clone https://github.com/RanRhoads84/debgpt7.8-with-vectorDB.git
+cd debgpt7.8-with-vectorDB/debgpt7.8-src
+uv venv
+source .venv/bin/activate
+uv pip install .
+# Optional: uv pip install .[vector-service]
+uv run debgpt --help
+```
+
+`uv run` automatically executes the command inside the active environment, so
+you can keep dependencies isolated without manually manipulating `PATH`.
+
+COMMAND-LINE HELP
+=================
+
+`debgpt --help` prints a condensed cheat sheet that loads instantly and
+covers the flags most people reach for during day-to-day use. When you need
+the exhaustive reference—including every frontend option, reader, and
+subcommand—run `debgpt --help-all` or consult this man page. Both commands
+exit immediately after printing their respective summaries, so they are safe
+to call from scripts or during interactive exploration. Use `debgpt
+--vector-config` to launch the interactive helper that writes or updates the
+vector service `.env` file under `contrib/vector_service/`.
 
 FRONTENDS
 =========
@@ -131,7 +224,7 @@ debgpt
 During the interactive chatting mode, you may press `/` and see a list of
 available escaped commands that will not be seen as LLM prompt.
 
-* `/save <path.txt>`: save the last LLM response to the specified file.
+* `/save <name.extention>`: save the last LLM response to the specified file.
 
 * `/reset`: clear the context. So you can start a new conversation without quiting.
 
@@ -199,8 +292,7 @@ debgpt -Hf cmd:'git diff --staged' -A 'briefly summarize the changes and provide
 
 The reader can be specified multiple times to put multiple information source
 into a single context.  The full list of supported reader specs, as well as
-corresponding examples, can be printed using `debgpt -f :`, or `debgpt -f "?"`,
-or `debgpt -x :`.
+corresponding examples, are summarized in the MapReduce section below.
 
 #### 3. Inplace Editing of a File
 
@@ -326,8 +418,7 @@ The pipe mode can be used for editing something in vim in-place.
 
 This looks interesting, right? `debgpt` has a git wrapper that automatically
 generates the git commit message for the staged contents and commit the message.
-Just try `debgpt git commit --amend` to see how it works. This will also be
-mentioned in the subcommands section.
+See [DebGPT Subcommands](#7-debgpt-subcommands) for details.
 
 
 #### 7. DebGPT Subcommands
@@ -543,12 +634,6 @@ is the maximum length of each llm reply). You can adjust it as wish.
 
 REFERENCES
 ==========
-
-[1] Access large language models from the command-line
-: https://github.com/simonw/llm
-
-VECTOR SERVICE
-==============
 
 An optional FastAPI microservice ships with the source tree to persist chat
 history in SQLite while storing embeddings in Qdrant. Install DebGPT with the
