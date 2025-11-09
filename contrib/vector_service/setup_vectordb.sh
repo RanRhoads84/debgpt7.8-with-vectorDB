@@ -132,7 +132,7 @@ fallback_startup() {
     if pgrep -f '^qdrant' >/dev/null 2>&1; then
       echo "[+] qdrant is already running; skipping manual start."
     else
-      nohup qdrant --config /etc/qdrant/config.yaml >/var/log/qdrant/standalone.log 2>&1 &
+  nohup qdrant --config-path /etc/qdrant/config.yaml >/var/log/qdrant/standalone.log 2>&1 &
       sleep 2
       if pgrep -f '^qdrant' >/dev/null 2>&1; then
         echo "[+] qdrant standalone launch succeeded."

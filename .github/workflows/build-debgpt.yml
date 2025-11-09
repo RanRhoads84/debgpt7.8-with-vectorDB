@@ -254,6 +254,7 @@ jobs:
           
           # Check if Qdrant is already running, if not start it manually
           if ! pgrep -f '^qdrant' >/dev/null 2>&1; then
+
             echo "Qdrant process not detected, starting manually..."
             mkdir -p /var/log/qdrant
             nohup qdrant --config /etc/qdrant/config.yaml >/var/log/qdrant/standalone.log 2>&1 &
@@ -268,6 +269,10 @@ jobs:
             fi
           else
             echo "✓ Qdrant process already running"
+            =======
+            echo "Starting qdrant manually"
+            nohup qdrant --config-path /etc/qdrant/config.yaml >/var/log/qdrant/standalone.log 2>&1 &
+
           fi
 
           echo ""
